@@ -63,19 +63,36 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   const password = (formData.get("password") as string | null) ?? "";
   const name = (formData.get("name") as string | null)?.trim() || null;
   const role = (formData.get("role") as string | null) === "admin" ? "admin" : "viewer";
+  const organizationId = (formData.get("organizationId") as string | null) || null;
 
   const emailErr = validateEmail(email);
   if (emailErr) return { ok: false, error: emailErr };
   const pwErr = validatePassword(password);
   if (pwErr) return { ok: false, error: pwErr };
+  if (!organizationId) return { ok: false, error: "Bitte eine Organisation auswählen." };
 
   try {
-    await createUser({ email, password, name, role });
+    await createUser({ email, password, name, role, organizationId });
   } catch (e) {
     return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
   }
 
   revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function reassignUserOrgAction(
+  userId: string,
+  organizationId: string
+): Promise<ActionResult> {
+  const session = await requireAdmin();
+  if (!organizationId) return { ok: false, error: "Organisation darf nicht leer sein." };
+
+  const { updateUserOrg } = await import("@/lib/auth/users");
+  await updateUserOrg(userId, organizationId);
+
+  revalidatePath("/settings");
+  void session;
   return { ok: true };
 }
 

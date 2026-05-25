@@ -43,6 +43,7 @@ export interface CreateUserInput {
   password: string;
   name?: string | null;
   role: "admin" | "viewer";
+  organizationId?: string | null;
 }
 
 export async function createUser(input: CreateUserInput) {
@@ -52,7 +53,10 @@ export async function createUser(input: CreateUserInput) {
     throw new Error("Eine Nutzerin/ein Nutzer mit dieser E-Mail existiert bereits.");
   }
 
-  const org = await getOrCreateDefaultOrg();
+  // Wenn keine Org angegeben wurde, in die Default-Org packen
+  // (für den Bootstrap-Fall des ersten Admins)
+  const organizationId =
+    input.organizationId ?? (await getOrCreateDefaultOrg()).id;
   const passwordHash = await hashPassword(input.password);
 
   await db.insert(users).values({
@@ -60,10 +64,14 @@ export async function createUser(input: CreateUserInput) {
     passwordHash,
     name: input.name ?? null,
     role: input.role,
-    organizationId: org.id,
+    organizationId,
   });
 
   return getUserByEmail(email);
+}
+
+export async function updateUserOrg(userId: string, organizationId: string | null) {
+  await db.update(users).set({ organizationId }).where(eq(users.id, userId));
 }
 
 export async function deleteUser(id: string) {

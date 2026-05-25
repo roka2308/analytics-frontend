@@ -1,8 +1,18 @@
 "use client";
 
 import { useState, useTransition } from "react";
-import { createUserAction, deleteUserAction } from "@/lib/actions/users";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import {
+  createUserAction,
+  deleteUserAction,
+  reassignUserOrgAction,
+} from "@/lib/actions/users";
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -19,27 +29,36 @@ interface UserRow {
   email: string;
   name: string | null;
   role: "admin" | "viewer";
-  createdAt: Date;
+  organizationId: string | null;
+  orgName: string;
+}
+
+interface Org {
+  id: string;
+  name: string;
 }
 
 interface Props {
   users: UserRow[];
+  orgs: Org[];
   currentUserId: string;
 }
 
-export function UserList({ users, currentUserId }: Props) {
+export function UserList({ users, orgs, currentUserId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [role, setRole] = useState<"admin" | "viewer">("viewer");
+  const [selectedOrg, setSelectedOrg] = useState<string>(orgs[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
 
   const handleCreate = (formData: FormData) => {
     setError(null);
     setSuccess(null);
     formData.set("role", role);
+    formData.set("organizationId", selectedOrg);
     startTransition(async () => {
-      const result = await createUserAction(formData);
-      if (!result.ok) setError(result.error ?? "Unbekannter Fehler");
+      const r = await createUserAction(formData);
+      if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
       else {
         setSuccess("Nutzer angelegt.");
         (document.getElementById("add-user-form") as HTMLFormElement)?.reset();
@@ -53,9 +72,19 @@ export function UserList({ users, currentUserId }: Props) {
     setError(null);
     setSuccess(null);
     startTransition(async () => {
-      const result = await deleteUserAction(userId);
-      if (!result.ok) setError(result.error ?? "Unbekannter Fehler");
+      const r = await deleteUserAction(userId);
+      if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
       else setSuccess("Nutzer entfernt.");
+    });
+  };
+
+  const handleReassign = (userId: string, orgId: string) => {
+    setError(null);
+    setSuccess(null);
+    startTransition(async () => {
+      const r = await reassignUserOrgAction(userId, orgId);
+      if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
+      else setSuccess("Organisation aktualisiert.");
     });
   };
 
@@ -65,15 +94,14 @@ export function UserList({ users, currentUserId }: Props) {
         <CardHeader>
           <CardTitle>Nutzerkonten</CardTitle>
           <CardDescription>
-            Wer hat Zugriff auf das Dashboard? Admins können Nutzer und Sites verwalten,
-            Viewer sehen nur das Dashboard.
+            Admins verwalten alles. Viewer sehen nur die Sites ihrer eigenen Organisation.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <div className="divide-y divide-slate-100">
             {users.map((u) => (
               <div key={u.id} className="flex items-center justify-between py-3">
-                <div>
+                <div className="min-w-0 flex-1">
                   <p className="text-sm font-medium text-slate-900">
                     {u.name ?? u.email}
                     {u.id === currentUserId && (
@@ -81,20 +109,42 @@ export function UserList({ users, currentUserId }: Props) {
                     )}
                   </p>
                   <p className="text-xs text-slate-500">
-                    {u.email} · {u.role === "admin" ? "Admin" : "Viewer"}
+                    {u.email} · {u.role === "admin" ? "Admin" : "Viewer"} ·{" "}
+                    <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">
+                      {u.orgName}
+                    </span>
                   </p>
                 </div>
-                {u.id !== currentUserId && (
-                  <Button
-                    variant="ghost"
-                    size="sm"
-                    onClick={() => handleDelete(u.id, u.email)}
-                    disabled={isPending}
-                    className="text-red-600 hover:bg-red-50 hover:text-red-700"
-                  >
-                    Löschen
-                  </Button>
-                )}
+                <div className="flex items-center gap-2">
+                  {u.role === "viewer" && (
+                    <Select
+                      value={u.organizationId ?? ""}
+                      onValueChange={(v) => handleReassign(u.id, v)}
+                    >
+                      <SelectTrigger className="w-40">
+                        <SelectValue placeholder="Org wählen" />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {orgs.map((o) => (
+                          <SelectItem key={o.id} value={o.id}>
+                            {o.name}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  )}
+                  {u.id !== currentUserId && (
+                    <Button
+                      variant="ghost"
+                      size="sm"
+                      onClick={() => handleDelete(u.id, u.email)}
+                      disabled={isPending}
+                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                    >
+                      Löschen
+                    </Button>
+                  )}
+                </div>
               </div>
             ))}
           </div>
@@ -105,66 +155,87 @@ export function UserList({ users, currentUserId }: Props) {
         <CardHeader>
           <CardTitle>Neuen Nutzer anlegen</CardTitle>
           <CardDescription>
-            Du legst Passwort und Rolle fest. Der Nutzer kann sein Passwort später selbst ändern.
+            Du legst Passwort, Rolle und Organisation fest. Der Nutzer kann sein Passwort später selbst ändern.
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <form id="add-user-form" action={handleCreate} className="space-y-4">
-            <div className="grid gap-4 sm:grid-cols-2">
-              <div className="space-y-1.5">
-                <Label htmlFor="user-name">Name (optional)</Label>
-                <Input id="user-name" name="name" type="text" placeholder="Max Mustermann" />
+          {orgs.length === 0 ? (
+            <p className="text-sm text-amber-700">
+              Lege zuerst eine Organisation an, dann kannst du Nutzer anlegen.
+            </p>
+          ) : (
+            <form id="add-user-form" action={handleCreate} className="space-y-4">
+              <div className="grid gap-4 sm:grid-cols-2">
+                <div className="space-y-1.5">
+                  <Label htmlFor="user-name">Name (optional)</Label>
+                  <Input id="user-name" name="name" type="text" placeholder="Max Mustermann" />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="user-email">E-Mail</Label>
+                  <Input
+                    id="user-email"
+                    name="email"
+                    type="email"
+                    required
+                    placeholder="kunde@firma.de"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="user-password">Passwort (min. 8 Zeichen)</Label>
+                  <Input
+                    id="user-password"
+                    name="password"
+                    type="password"
+                    required
+                    minLength={8}
+                    placeholder="••••••••"
+                  />
+                </div>
+                <div className="space-y-1.5">
+                  <Label htmlFor="user-org">Organisation</Label>
+                  <Select value={selectedOrg} onValueChange={setSelectedOrg}>
+                    <SelectTrigger id="user-org">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      {orgs.map((o) => (
+                        <SelectItem key={o.id} value={o.id}>
+                          {o.name}
+                        </SelectItem>
+                      ))}
+                    </SelectContent>
+                  </Select>
+                </div>
+                <div className="space-y-1.5 sm:col-span-2">
+                  <Label htmlFor="user-role">Rolle</Label>
+                  <Select value={role} onValueChange={(v) => setRole(v as "admin" | "viewer")}>
+                    <SelectTrigger id="user-role">
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="viewer">Viewer (sieht nur Sites der eigenen Org)</SelectItem>
+                      <SelectItem value="admin">Admin (sieht und verwaltet alles)</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
               </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="user-email">E-Mail</Label>
-                <Input
-                  id="user-email"
-                  name="email"
-                  type="email"
-                  required
-                  placeholder="kunde@firma.de"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="user-password">Passwort (min. 8 Zeichen)</Label>
-                <Input
-                  id="user-password"
-                  name="password"
-                  type="password"
-                  required
-                  minLength={8}
-                  placeholder="••••••••"
-                />
-              </div>
-              <div className="space-y-1.5">
-                <Label htmlFor="user-role">Rolle</Label>
-                <Select value={role} onValueChange={(v) => setRole(v as "admin" | "viewer")}>
-                  <SelectTrigger id="user-role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="viewer">Viewer (nur Dashboard)</SelectItem>
-                    <SelectItem value="admin">Admin (alles verwalten)</SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-            </div>
 
-            <div>
-              <Button type="submit" disabled={isPending}>
-                {isPending ? "Anlegen…" : "Nutzer anlegen"}
-              </Button>
-            </div>
+              <div>
+                <Button type="submit" disabled={isPending}>
+                  {isPending ? "Anlegen…" : "Nutzer anlegen"}
+                </Button>
+              </div>
 
-            {error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
-            )}
-            {success && (
-              <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
-                {success}
-              </p>
-            )}
-          </form>
+              {error && (
+                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+              )}
+              {success && (
+                <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                  {success}
+                </p>
+              )}
+            </form>
+          )}
         </CardContent>
       </Card>
     </div>

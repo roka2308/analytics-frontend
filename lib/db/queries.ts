@@ -1,15 +1,23 @@
 import "server-only";
 import { db } from "./index";
-import { organizations, matomoSites } from "./schema";
-import { eq, asc } from "drizzle-orm";
+import { organizations, matomoSites, users } from "./schema";
+import { eq, asc, count } from "drizzle-orm";
 
 const DEFAULT_ORG_NAME = "Standard-Organisation";
 
-/**
- * Gibt die Default-Organisation zurück. Legt sie an, wenn noch keine existiert.
- * Im Single-User-Modus (M4.1) hat alles dieselbe Org.
- * In M4.2 wird das durch echte User-Org-Zuordnungen ersetzt.
- */
+// ──────────────────────────────────────────────────────────────
+// Organizations
+// ──────────────────────────────────────────────────────────────
+
+export async function listOrganizations() {
+  return db.select().from(organizations).orderBy(asc(organizations.name));
+}
+
+export async function getOrgById(id: string) {
+  const rows = await db.select().from(organizations).where(eq(organizations.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
 export async function getOrCreateDefaultOrg() {
   const existing = await db.select().from(organizations).limit(1);
   if (existing.length > 0) return existing[0];
@@ -20,12 +28,52 @@ export async function getOrCreateDefaultOrg() {
   return created;
 }
 
+export async function createOrganization(name: string) {
+  const id = crypto.randomUUID();
+  await db.insert(organizations).values({ id, name });
+  const [created] = await db.select().from(organizations).where(eq(organizations.id, id));
+  return created;
+}
+
+export async function renameOrganization(id: string, name: string) {
+  await db.update(organizations).set({ name }).where(eq(organizations.id, id));
+}
+
+export async function deleteOrganization(id: string) {
+  await db.delete(organizations).where(eq(organizations.id, id));
+}
+
+export async function countUsersInOrg(orgId: string): Promise<number> {
+  const result = await db
+    .select({ value: count() })
+    .from(users)
+    .where(eq(users.organizationId, orgId));
+  return result[0]?.value ?? 0;
+}
+
+export async function countSitesInOrg(orgId: string): Promise<number> {
+  const result = await db
+    .select({ value: count() })
+    .from(matomoSites)
+    .where(eq(matomoSites.organizationId, orgId));
+  return result[0]?.value ?? 0;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Sites
+// ──────────────────────────────────────────────────────────────
+
 /**
- * Beim allerersten Start: Wenn DEFAULT_MATOMO_SITE_ID in .env gesetzt ist
- * und noch keine Site existiert, wird sie automatisch angelegt.
+ * Auto-Seed beim allerersten Start: Wenn noch keine Site existiert
+ * und DEFAULT_MATOMO_SITE_ID in .env gesetzt ist, wird sie der Default-Org
+ * zugeordnet.
  */
 export async function ensureSeedSite(orgId: string) {
-  const existing = await db.select().from(matomoSites).where(eq(matomoSites.organizationId, orgId)).limit(1);
+  const existing = await db
+    .select()
+    .from(matomoSites)
+    .where(eq(matomoSites.organizationId, orgId))
+    .limit(1);
   if (existing.length > 0) return;
 
   const envSiteId = process.env.DEFAULT_MATOMO_SITE_ID;
@@ -46,13 +94,43 @@ export async function getSitesForOrg(orgId: string) {
     .orderBy(asc(matomoSites.createdAt));
 }
 
+export interface SiteWithOrg {
+  id: string;
+  matomoSiteId: number;
+  label: string;
+  organizationId: string;
+  orgName: string;
+  createdAt: Date;
+}
+
+export async function getAllSitesWithOrg(): Promise<SiteWithOrg[]> {
+  const rows = await db
+    .select({
+      id: matomoSites.id,
+      matomoSiteId: matomoSites.matomoSiteId,
+      label: matomoSites.label,
+      organizationId: matomoSites.organizationId,
+      orgName: organizations.name,
+      createdAt: matomoSites.createdAt,
+    })
+    .from(matomoSites)
+    .innerJoin(organizations, eq(matomoSites.organizationId, organizations.id))
+    .orderBy(asc(organizations.name), asc(matomoSites.createdAt));
+  return rows;
+}
+
 export async function getSiteByMatomoId(orgId: string, matomoSiteId: number) {
   const rows = await db
     .select()
     .from(matomoSites)
     .where(eq(matomoSites.organizationId, orgId))
-    .limit(50);
+    .limit(100);
   return rows.find((r) => r.matomoSiteId === matomoSiteId) ?? null;
+}
+
+export async function findSiteByMatomoIdAnyOrg(matomoSiteId: number) {
+  const all = await db.select().from(matomoSites);
+  return all.find((r) => r.matomoSiteId === matomoSiteId) ?? null;
 }
 
 export async function addSite(orgId: string, matomoSiteId: number, label: string) {
@@ -68,7 +146,35 @@ export async function removeSite(siteId: string) {
 }
 
 /**
- * Bequemer Helfer: Default-Org abrufen, Seed-Site sicherstellen, Sites zurückgeben.
+ * Liefert die im aktuellen Session-Kontext sichtbaren Sites:
+ * - Admin: alle Sites aller Organisationen (mit Org-Namen für UI-Prefix)
+ * - Viewer: nur Sites seiner zugewiesenen Organisation
+ */
+export async function getVisibleSitesForSession(session: {
+  user: { role: "admin" | "viewer"; organizationId: string | null };
+}): Promise<SiteWithOrg[]> {
+  if (session.user.role === "admin") {
+    return getAllSitesWithOrg();
+  }
+
+  if (!session.user.organizationId) return [];
+
+  const sites = await getSitesForOrg(session.user.organizationId);
+  const org = await getOrgById(session.user.organizationId);
+  const orgName = org?.name ?? "—";
+  return sites.map((s) => ({
+    id: s.id,
+    matomoSiteId: s.matomoSiteId,
+    label: s.label,
+    organizationId: s.organizationId,
+    orgName,
+    createdAt: s.createdAt,
+  }));
+}
+
+/**
+ * Legacy-Helfer aus M4.1 – wird vom Dashboard-Setup verwendet, um beim ersten
+ * Start die Default-Org plus Seed-Site bereitzustellen.
  */
 export async function getDefaultOrgWithSites() {
   const org = await getOrCreateDefaultOrg();
