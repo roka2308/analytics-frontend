@@ -1,16 +1,17 @@
 import { Suspense } from "react";
-import { requireUser } from "@/lib/auth/requireUser";
+import { redirect } from "next/navigation";
+import { requireUser, assertSiteAccess } from "@/lib/auth/requireUser";
+import { getDefaultOrgWithSites } from "@/lib/db/queries";
 import { Header } from "@/components/dashboard/Header";
 import { KpiCard, KpiCardSkeleton } from "@/components/dashboard/KpiCard";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
+import { SiteSelector } from "@/components/dashboard/SiteSelector";
 import { TopPagesTable } from "@/components/dashboard/TopPagesTable";
 import { VisitorTrendChart } from "@/components/charts/VisitorTrendChart";
 import { Skeleton } from "@/components/ui/skeleton";
 import { getVisitorsOverview, getVisitorTrend } from "@/lib/matomo/transforms";
 import { getCacheAge } from "@/lib/matomo/cache";
 import { formatDuration } from "@/lib/utils";
-
-const SITE_ID = parseInt(process.env.DEFAULT_MATOMO_SITE_ID ?? "1");
 
 // Zeitraum-Parameter aus URL-Wert berechnen
 function getRangeConfig(range: string) {
@@ -26,19 +27,18 @@ function getRangeConfig(range: string) {
   }
 }
 
-// KPI-Karten mit echten Daten
-async function KpiSection({ period, date, trendDays }: {
+async function KpiSection({ siteId, period, date }: {
+  siteId: number;
   period: "day" | "range";
   date: string;
-  trendDays: number;
 }) {
   let overview;
   let cacheAgeMinutes: number | null = null;
   let error: string | null = null;
 
   try {
-    overview = await getVisitorsOverview(SITE_ID, period, date);
-    cacheAgeMinutes = await getCacheAge(`visitors_overview_${SITE_ID}_${period}_${date}`);
+    overview = await getVisitorsOverview(siteId, period, date);
+    cacheAgeMinutes = await getCacheAge(`visitors_overview_${siteId}_${period}_${date}`);
   } catch (e) {
     error = e instanceof Error ? e.message : "Unbekannter Fehler";
   }
@@ -62,14 +62,8 @@ async function KpiSection({ period, date, trendDays }: {
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard
-          title="Besuche"
-          value={overview.visits.toLocaleString("de-DE")}
-        />
-        <KpiCard
-          title="Seitenaufrufe"
-          value={overview.pageviews.toLocaleString("de-DE")}
-        />
+        <KpiCard title="Besuche" value={overview.visits.toLocaleString("de-DE")} />
+        <KpiCard title="Seitenaufrufe" value={overview.pageviews.toLocaleString("de-DE")} />
         <KpiCard
           title="Bounce Rate"
           value={overview.bounceRate}
@@ -85,28 +79,42 @@ async function KpiSection({ period, date, trendDays }: {
   );
 }
 
-// Trend-Diagramm mit echten Daten
-async function TrendSection({ trendDays }: { trendDays: number }) {
+async function TrendSection({ siteId, trendDays }: { siteId: number; trendDays: number }) {
   let data: Awaited<ReturnType<typeof getVisitorTrend>> = [];
-
   try {
-    data = await getVisitorTrend(SITE_ID, trendDays);
-  } catch {
-    // Fehler still ignorieren – Chart zeigt leeren Zustand
-  }
-
+    data = await getVisitorTrend(siteId, trendDays);
+  } catch {}
   return <VisitorTrendChart data={data} />;
 }
 
 export default async function DashboardPage({
   searchParams,
 }: {
-  searchParams: { range?: string };
+  searchParams: { range?: string; site?: string };
 }) {
   await requireUser();
 
+  // Alle Sites der Default-Org laden (mit Auto-Seed beim ersten Mal)
+  const { sites } = await getDefaultOrgWithSites();
+
+  // Wenn keine Site verknüpft ist → Settings
+  if (sites.length === 0) {
+    redirect("/settings");
+  }
+
+  // Site aus URL oder Default (erste Site der Liste)
+  const requestedSiteId = searchParams.site ? parseInt(searchParams.site, 10) : null;
+  const currentSiteId =
+    requestedSiteId && sites.some((s) => s.matomoSiteId === requestedSiteId)
+      ? requestedSiteId
+      : sites[0].matomoSiteId;
+
+  // Zugriff prüfen (DB-basiert)
+  await assertSiteAccess(currentSiteId);
+
   const range = searchParams.range ?? "7";
   const { period, date, label, trendDays } = getRangeConfig(range);
+  const currentSiteLabel = sites.find((s) => s.matomoSiteId === currentSiteId)?.label ?? "";
 
   return (
     <div className="flex min-h-screen flex-col bg-slate-50">
@@ -114,21 +122,28 @@ export default async function DashboardPage({
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto max-w-7xl space-y-8">
 
-          {/* Titel + Zeitraum-Auswahl */}
-          <div className="flex flex-wrap items-center justify-between gap-4">
+          {/* Titel-Zeile mit Site-Selector und Zeitraum-Picker */}
+          <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900">Dashboard</h1>
-              <p className="mt-1 text-sm text-slate-500">
-                Daten der {label}
-              </p>
+              <h1 className="text-2xl font-semibold text-slate-900">{currentSiteLabel}</h1>
+              <p className="mt-1 text-sm text-slate-500">Daten der {label}</p>
             </div>
-            <Suspense fallback={<Skeleton className="h-10 w-72" />}>
-              <DateRangePicker />
-            </Suspense>
+            <div className="flex flex-wrap items-center gap-3">
+              {sites.length > 1 && (
+                <SiteSelector
+                  sites={sites.map((s) => ({ matomoSiteId: s.matomoSiteId, label: s.label }))}
+                  currentSiteId={currentSiteId}
+                />
+              )}
+              <Suspense fallback={<Skeleton className="h-10 w-72" />}>
+                <DateRangePicker />
+              </Suspense>
+            </div>
           </div>
 
           {/* KPI-Karten */}
           <Suspense
+            key={`kpi-${currentSiteId}-${range}`}
             fallback={
               <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
                 <KpiCardSkeleton /><KpiCardSkeleton />
@@ -136,7 +151,7 @@ export default async function DashboardPage({
               </div>
             }
           >
-            <KpiSection period={period} date={date} trendDays={trendDays} />
+            <KpiSection siteId={currentSiteId} period={period} date={date} />
           </Suspense>
 
           {/* Besuchertrend */}
@@ -144,17 +159,19 @@ export default async function DashboardPage({
             <h2 className="mb-4 text-sm font-medium text-slate-700">
               Besuchertrend – täglich
             </h2>
-            <Suspense fallback={<Skeleton className="h-52 w-full" />}>
-              <TrendSection trendDays={trendDays} />
+            <Suspense
+              key={`trend-${currentSiteId}-${trendDays}`}
+              fallback={<Skeleton className="h-52 w-full" />}
+            >
+              <TrendSection siteId={currentSiteId} trendDays={trendDays} />
             </Suspense>
           </div>
 
           {/* Top-Seiten */}
           <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-medium text-slate-700">
-              Top-Seiten
-            </h2>
+            <h2 className="mb-4 text-sm font-medium text-slate-700">Top-Seiten</h2>
             <Suspense
+              key={`pages-${currentSiteId}-${range}`}
               fallback={
                 <div className="space-y-2">
                   {Array.from({ length: 5 }).map((_, i) => (
@@ -163,7 +180,7 @@ export default async function DashboardPage({
                 </div>
               }
             >
-              <TopPagesTable siteId={SITE_ID} period={period} date={date} />
+              <TopPagesTable siteId={currentSiteId} period={period} date={date} />
             </Suspense>
           </div>
 
