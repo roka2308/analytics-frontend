@@ -1,0 +1,17 @@
+{
+  "permissions": {
+    "allow": [
+      "Skill(anthropic-skills:docx)",
+      "Skill(anthropic-skills:docx:*)",
+      "Read(//c/Users/Robert/AppData/Roaming/Claude/local-agent-mode-sessions/skills-plugin/33b0e2fe-cb5e-4681-bc71-b12ba90c7772/3c9a56ff-6bbd-46c8-ba3b-0cac690b4cd1/skills/docx/**)",
+      "Bash(python scripts/office/unpack.py \"C:\\\\Users\\\\Robert\\\\Desktop\\\\Projekt-Briefing_Matomo-Frontend.docx\" \"C:\\\\Users\\\\Robert\\\\Desktop\\\\briefing_unpacked\\\\\")",
+      "Bash(python scripts/office/unpack.py \"C:/Users/Robert/Desktop/Projekt-Briefing_Matomo-Frontend.docx\" \"C:/Users/Robert/Desktop/briefing_unpacked\")",
+      "PowerShell(Add-Type -AssemblyName System.IO.Compression.FileSystem; $zip = [System.IO.Compression.ZipFile]::OpenRead\\(\"C:\\\\Users\\\\Robert\\\\Desktop\\\\Projekt-Briefing_Matomo-Frontend.docx\"\\); $entry = $zip.Entries | Where-Object { $_.FullName -eq \"word/document.xml\" }; $reader = New-Object System.IO.StreamReader\\($entry.Open\\(\\)\\); $content = $reader.ReadToEnd\\(\\); $reader.Close\\(\\); $zip.Dispose\\(\\); $content)",
+      "Bash(npx create-next-app@latest . --typescript --tailwind --app --eslint --no-src-dir --import-alias \"@/*\" --yes)",
+      "PowerShell(node --version; npm --version; \\(Get-Command node\\).Source)",
+      "PowerShell($env:PATH -split ';' | Where-Object { $_ -match 'node|npm' })",
+      "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\nodejs\" -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem \"C:\\\\Program Files \\(x86\\)\\\\nodejs\" -ErrorAction SilentlyContinue | Select-Object Name; Test-Path \"$env:APPDATA\\\\npm\\\\node.exe\"; Test-Path \"C:\\\\Users\\\\Robert\\\\AppData\\\\Roaming\\\\nvm\")",
+      "PowerShell(ls \"C:\\\\Program Files\\\\\")"
+    ]
+  }
+}
