@@ -61,18 +61,3 @@ export const users = sqliteTable("users", {
     .default(sql`(unixepoch())`),
 });
 
-// Legacy-Tabelle aus Clerk-Zeit – bleibt erhalten für mögliche Migration,
-// wird ab M4.2 nicht mehr aktiv genutzt.
-export const userOrganizations = sqliteTable("user_organizations", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  clerkUserId: text("clerk_user_id").notNull(),
-  organizationId: text("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  role: text("role", { enum: ["admin", "viewer"] }).notNull().default("viewer"),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-});
