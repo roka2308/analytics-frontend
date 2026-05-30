@@ -1,4 +1,10 @@
 import type { Config } from "drizzle-kit";
+import { config } from "dotenv";
+
+// drizzle-kit laedt von Haus aus nur .env, nicht .env.local.
+// Hier laden wir explizit aus .env.local, damit Migrationen
+// gegen die richtige DB (Turso in Produktion, file:local.db lokal) laufen.
+config({ path: ".env.local" });
 
 // Wenn DATABASE_URL eine libsql://-URL ist (= Turso),
 // nutzen wir den turso-Dialekt mit AuthToken.
