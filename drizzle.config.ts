@@ -2,6 +2,8 @@ import type { Config } from "drizzle-kit";
 
 // Wenn DATABASE_URL eine libsql://-URL ist (= Turso),
 // nutzen wir den turso-Dialekt mit AuthToken.
+// Hinweis: "turso" funktioniert zur Laufzeit in drizzle-kit 0.22,
+// ist aber in den TS-Typen noch nicht enthalten -> daher der Cast.
 const url = process.env.DATABASE_URL ?? "file:local.db";
 const isTurso = url.startsWith("libsql://");
 
@@ -13,4 +15,4 @@ export default {
     url,
     authToken: process.env.DATABASE_AUTH_TOKEN,
   },
-} satisfies Config;
+} as Config;
