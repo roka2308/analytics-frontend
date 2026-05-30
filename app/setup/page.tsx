@@ -2,6 +2,9 @@ import { redirect } from "next/navigation";
 import { countUsers } from "@/lib/auth/users";
 import { SetupForm } from "@/components/setup/SetupForm";
 
+// Pro Request frisch rendern, nie statisch beim Build vorberechnen
+export const dynamic = "force-dynamic";
+
 export default async function SetupPage() {
   const existing = await countUsers();
   if (existing > 0) {
