@@ -1,11 +1,11 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { getVisitorsOverview } from "@/lib/matomo/transforms";
+import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
+import { getVisitorsOverviewWithCompare } from "@/lib/matomo/transforms";
 import { formatDuration, cn } from "@/lib/utils";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface KpiCardConfig {
   metric: "visits" | "pageviews" | "bounceRate" | "avgDuration" | "uniqueVisitors";
-  /** Magenta-Akzent oben (zur Hervorhebung) */
   accent?: boolean;
 }
 
@@ -22,36 +22,73 @@ const METRIC_DESCRIPTIONS: Partial<Record<KpiCardConfig["metric"], string>> = {
   avgDuration: "pro Besuch",
 };
 
+/** Welche Metriken sind "weniger ist besser" (z.B. Bounce Rate)? */
+const LOWER_IS_BETTER = new Set<KpiCardConfig["metric"]>(["bounceRate"]);
+
+function formatValue(metric: KpiCardConfig["metric"], v: {
+  visits: number;
+  pageviews: number;
+  bounceRate: string;
+  avgVisitDurationSeconds: number;
+  uniqueVisitors: number;
+}): string {
+  switch (metric) {
+    case "visits": return v.visits.toLocaleString("de-DE");
+    case "pageviews": return v.pageviews.toLocaleString("de-DE");
+    case "bounceRate": return v.bounceRate;
+    case "avgDuration": return formatDuration(v.avgVisitDurationSeconds);
+    case "uniqueVisitors": return v.uniqueVisitors.toLocaleString("de-DE");
+    default: return "—";
+  }
+}
+
+function formatPercent(p: number | null): string {
+  if (p === null) return "—";
+  const sign = p > 0 ? "+" : "";
+  return `${sign}${p.toFixed(1).replace(".", ",")} %`;
+}
+
 export async function KpiCardWidget({
   config,
   title,
   ctx,
 }: WidgetProps<KpiCardConfig>) {
-  const overview = await getVisitorsOverview(ctx.siteId, ctx.period, ctx.date);
+  const result = await getVisitorsOverviewWithCompare(
+    ctx.siteId,
+    { from: ctx.range.from, to: ctx.range.to },
+    ctx.compareRange
+  );
 
-  let value: string;
-  switch (config.metric) {
-    case "visits":
-      value = overview.visits.toLocaleString("de-DE");
-      break;
-    case "pageviews":
-      value = overview.pageviews.toLocaleString("de-DE");
-      break;
-    case "bounceRate":
-      value = overview.bounceRate;
-      break;
-    case "avgDuration":
-      value = formatDuration(overview.avgVisitDurationSeconds);
-      break;
-    case "uniqueVisitors":
-      value = overview.uniqueVisitors.toLocaleString("de-DE");
-      break;
-    default:
-      value = "—";
-  }
-
+  const value = formatValue(config.metric, result.current);
   const displayTitle = title ?? METRIC_LABELS[config.metric];
   const description = METRIC_DESCRIPTIONS[config.metric];
+
+  // Delta fuer aktuelle Metrik berechnen
+  const deltaForMetric = result.delta
+    ? config.metric === "avgDuration"
+      ? result.delta.avgDuration
+      : result.delta[config.metric]
+    : null;
+
+  const previousValue = result.previous
+    ? formatValue(config.metric, result.previous)
+    : null;
+
+  const lowerIsBetter = LOWER_IS_BETTER.has(config.metric);
+
+  // Vorzeichen → "gut" oder "schlecht"
+  let trendKind: "up" | "down" | "flat" = "flat";
+  if (deltaForMetric && deltaForMetric.pct !== null) {
+    if (deltaForMetric.pct > 0.05) trendKind = "up";
+    else if (deltaForMetric.pct < -0.05) trendKind = "down";
+  }
+
+  const isPositive =
+    trendKind === "flat"
+      ? null
+      : lowerIsBetter
+      ? trendKind === "down"
+      : trendKind === "up";
 
   return (
     <Card
@@ -75,9 +112,29 @@ export async function KpiCardWidget({
         <div className="text-3xl font-bold tabular-nums text-foreground">
           {value}
         </div>
-        {description && (
+
+        {deltaForMetric && previousValue && ctx.compareRange ? (
+          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+            <span
+              className={cn(
+                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums",
+                isPositive === true && "bg-success/10 text-success",
+                isPositive === false && "bg-destructive/10 text-destructive",
+                isPositive === null && "bg-muted text-muted-foreground"
+              )}
+            >
+              {trendKind === "up" && <ArrowUpRight className="h-3 w-3" />}
+              {trendKind === "down" && <ArrowDownRight className="h-3 w-3" />}
+              {trendKind === "flat" && <Minus className="h-3 w-3" />}
+              {formatPercent(deltaForMetric.pct)}
+            </span>
+            <span className="text-xs text-muted-foreground">
+              vs. {previousValue} ({ctx.compareRange.label})
+            </span>
+          </div>
+        ) : description ? (
           <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-        )}
+        ) : null}
       </CardContent>
     </Card>
   );

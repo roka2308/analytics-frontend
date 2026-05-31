@@ -10,6 +10,7 @@ import {
   listDashboardsForOrg,
 } from "@/lib/db/queries";
 import { ensureSeedDashboard } from "@/lib/widgets/seed";
+import { resolveDateRange, computeCompareRange } from "@/lib/dateRange";
 import { Header } from "@/components/dashboard/Header";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { SiteSelector } from "@/components/dashboard/SiteSelector";
@@ -18,44 +19,32 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
 
-function getRangeConfig(range: string) {
-  switch (range) {
-    case "today":
-      return { period: "day" as const, date: "today", label: "Heute", trendDays: 7 };
-    case "30":
-      return { period: "range" as const, date: "last30", label: "letzten 30 Tage", trendDays: 30 };
-    case "90":
-      return { period: "range" as const, date: "last90", label: "letzten 90 Tage", trendDays: 90 };
-    default:
-      return { period: "range" as const, date: "last7", label: "letzten 7 Tage", trendDays: 7 };
-  }
-}
-
 interface PageProps {
   params: { slug: string };
-  searchParams: { range?: string; site?: string };
+  searchParams: {
+    range?: string;
+    from?: string;
+    to?: string;
+    compare?: string;
+    site?: string;
+  };
 }
 
 export default async function DashboardSlugPage({ params, searchParams }: PageProps) {
   const session = await requireUser();
   const isAdmin = session.user.role === "admin";
 
-  // Org-Kontext bestimmen (Admin: Default-Org als Container, Viewer: eigene Org)
   const defaultOrg = await getOrCreateDefaultOrg();
   const orgId = isAdmin ? defaultOrg.id : session.user.organizationId ?? defaultOrg.id;
 
-  // Auto-Seed sicherstellen (idempotent)
   await ensureSeedSite(defaultOrg.id);
   await ensureSeedDashboard(orgId);
 
-  // Dashboard nachschlagen
   const dashboard = await getDashboardBySlug(orgId, params.slug);
   if (!dashboard) notFound();
 
-  // Alle Dashboards der Org fuer Dashboard-Picker
   const allDashboards = await listDashboardsForOrg(orgId);
 
-  // Sichtbare Sites
   const sites = await getVisibleSitesForSession(session);
   if (sites.length === 0) {
     if (isAdmin) redirect("/settings");
@@ -84,13 +73,19 @@ export default async function DashboardSlugPage({ params, searchParams }: PagePr
 
   await assertSiteAccess(currentSiteId);
 
-  const range = searchParams.range ?? "7";
-  const { period, date, label, trendDays } = getRangeConfig(range);
+  // Range + Compare zentral aufloesen
+  const range = resolveDateRange({
+    preset: searchParams.range,
+    from: searchParams.from,
+    to: searchParams.to,
+    compare: searchParams.compare,
+  });
+  const compareRange = computeCompareRange(range);
+
   const currentSite = sites.find((s) => s.matomoSiteId === currentSiteId);
   const currentSiteLabel = currentSite?.label ?? "";
   const currentOrgName = currentSite?.orgName ?? "";
 
-  // Widgets dieses Dashboards laden
   const widgets = await getWidgetsForDashboard(dashboard.id);
 
   return (
@@ -106,14 +101,21 @@ export default async function DashboardSlugPage({ params, searchParams }: PagePr
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
               <h1 className="text-2xl font-semibold text-foreground">{dashboard.name}</h1>
-              <p className="mt-1 flex items-center text-sm text-muted-foreground">
+              <p className="mt-1 flex flex-wrap items-center text-sm text-muted-foreground">
                 {isAdmin && currentOrgName && (
                   <span className="mr-2 inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground">
                     {currentOrgName}
                   </span>
                 )}
-                <span className="mr-2 font-medium text-foreground">{currentSiteLabel}</span>·
-                <span className="ml-2">Daten der {label}</span>
+                <span className="mr-2 font-medium text-foreground">{currentSiteLabel}</span>
+                <span className="mx-1">·</span>
+                <span>{range.label}</span>
+                {compareRange && (
+                  <>
+                    <span className="mx-1">·</span>
+                    <span className="text-accent-text">vs. {compareRange.label}</span>
+                  </>
+                )}
               </p>
             </div>
             <div className="flex flex-wrap items-center gap-3">
@@ -137,7 +139,7 @@ export default async function DashboardSlugPage({ params, searchParams }: PagePr
           {/* Widget-Grid */}
           <DashboardRenderer
             widgets={widgets}
-            ctx={{ siteId: currentSiteId, period, date, trendDays }}
+            ctx={{ siteId: currentSiteId, range, compareRange }}
           />
         </div>
       </main>

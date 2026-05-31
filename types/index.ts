@@ -1,7 +1,10 @@
 export interface VisitorsOverview {
   visits: number;
   uniqueVisitors: number;
+  /** Formatierter String, z.B. "32%" */
   bounceRate: string;
+  /** Numerischer Anteil (z.B. 32) – fuer Delta-Berechnungen */
+  bounceRateNum: number;
   avgVisitDurationSeconds: number;
   pageviews: number;
 }

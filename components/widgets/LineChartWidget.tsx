@@ -1,10 +1,9 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { VisitorTrendChart } from "@/components/charts/VisitorTrendChart";
-import { getVisitorTrend } from "@/lib/matomo/transforms";
+import { getVisitorTrendForRange } from "@/lib/matomo/transforms";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface LineChartConfig {
-  /** Aktuell unterstuetzt: nur "visits" (kann spaeter erweitert werden) */
   metric?: "visits";
 }
 
@@ -12,9 +11,13 @@ export async function LineChartWidget({
   title,
   ctx,
 }: WidgetProps<LineChartConfig>) {
-  let data: Awaited<ReturnType<typeof getVisitorTrend>> = [];
+  let data: Awaited<ReturnType<typeof getVisitorTrendForRange>> = [];
   try {
-    data = await getVisitorTrend(ctx.siteId, ctx.trendDays);
+    data = await getVisitorTrendForRange(
+      ctx.siteId,
+      { from: ctx.range.from, to: ctx.range.to },
+      ctx.compareRange
+    );
   } catch {
     // leise schlucken – Chart zeigt eigenen Leer-Zustand
   }
@@ -27,7 +30,7 @@ export async function LineChartWidget({
         </CardTitle>
       </CardHeader>
       <CardContent>
-        <VisitorTrendChart data={data} />
+        <VisitorTrendChart data={data} hasCompare={!!ctx.compareRange} />
       </CardContent>
     </Card>
   );

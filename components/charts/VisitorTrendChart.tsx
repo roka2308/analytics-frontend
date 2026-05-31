@@ -5,9 +5,10 @@ import type { TrendDataPoint } from "@/lib/matomo/transforms";
 
 interface Props {
   data: TrendDataPoint[];
+  hasCompare?: boolean;
 }
 
-export function VisitorTrendChart({ data }: Props) {
+export function VisitorTrendChart({ data, hasCompare }: Props) {
   if (data.length === 0) {
     return (
       <div className="flex h-52 items-center justify-center text-sm text-muted-foreground">
@@ -16,16 +17,19 @@ export function VisitorTrendChart({ data }: Props) {
     );
   }
 
+  const categories = hasCompare ? ["Besuche", "Vergleich"] : ["Besuche"];
+  // Magenta (Akzent) fuer aktuell, neutral fuer Vergleichszeitraum
+  const colors = hasCompare ? ["pink", "slate"] : ["pink"];
+
   return (
     <AreaChart
       data={data}
       index="date"
-      categories={["Besuche"]}
-      // Tremor laesst nur seine Palette zu - "pink" als Naehe zum Magenta-Akzent
-      colors={["pink"]}
+      categories={categories}
+      colors={colors}
       className="h-52"
       showAnimation
-      showLegend={false}
+      showLegend={hasCompare}
       showGridLines
       curveType="monotone"
       yAxisWidth={36}

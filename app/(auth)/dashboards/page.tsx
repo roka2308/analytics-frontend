@@ -5,13 +5,10 @@ import { getOrCreateDefaultDashboard } from "@/lib/widgets/seed";
 
 export const dynamic = "force-dynamic";
 
-/**
- * /dashboards ohne Slug -> Weiterleitung zum Default-Dashboard.
- */
 export default async function DashboardsIndex({
   searchParams,
 }: {
-  searchParams: { range?: string; site?: string };
+  searchParams: Record<string, string | undefined>;
 }) {
   const session = await requireUser();
   const defaultOrg = await getOrCreateDefaultOrg();
@@ -21,14 +18,13 @@ export default async function DashboardsIndex({
       : session.user.organizationId ?? defaultOrg.id;
 
   const dashboard = await getOrCreateDefaultDashboard(orgId);
-  if (!dashboard) {
-    redirect("/settings");
-  }
+  if (!dashboard) redirect("/settings");
 
-  const qs = new URLSearchParams();
-  if (searchParams.range) qs.set("range", searchParams.range);
-  if (searchParams.site) qs.set("site", searchParams.site);
-  const tail = qs.toString() ? `?${qs.toString()}` : "";
+  const params = new URLSearchParams();
+  for (const [k, v] of Object.entries(searchParams)) {
+    if (v) params.set(k, v);
+  }
+  const tail = params.toString() ? `?${params.toString()}` : "";
 
   redirect(`/dashboards/${dashboard.slug}${tail}`);
 }

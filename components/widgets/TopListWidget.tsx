@@ -7,11 +7,10 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getTopPages } from "@/lib/matomo/transforms";
+import { getTopPagesForRange } from "@/lib/matomo/transforms";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface TopListConfig {
-  /** Welche Top-Liste? Aktuell unterstuetzt: "pages". Weitere folgen in Phase E. */
   source: "pages";
   limit?: number;
 }
@@ -23,11 +22,15 @@ export async function TopListWidget({
 }: WidgetProps<TopListConfig>) {
   const limit = config.limit ?? 10;
 
-  let rows: Awaited<ReturnType<typeof getTopPages>> = [];
+  let rows: Awaited<ReturnType<typeof getTopPagesForRange>> = [];
   let error: string | null = null;
 
   try {
-    rows = await getTopPages(ctx.siteId, ctx.period, ctx.date, limit);
+    rows = await getTopPagesForRange(
+      ctx.siteId,
+      { from: ctx.range.from, to: ctx.range.to },
+      limit
+    );
   } catch (e) {
     error = e instanceof Error ? e.message : "Fehler beim Laden";
   }
