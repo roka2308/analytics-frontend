@@ -3,14 +3,19 @@ import {
   ensureSeedSite,
   getAllSitesWithOrg,
   getOrCreateDefaultOrg,
+  listDashboardsForOrg,
   listOrganizations,
 } from "@/lib/db/queries";
+import { ensureSeedDashboard } from "@/lib/widgets/seed";
 import { listUsers } from "@/lib/auth/users";
 import { Header } from "@/components/dashboard/Header";
 import { OrgList } from "@/components/settings/OrgList";
 import { SiteList } from "@/components/settings/SiteList";
 import { UserList } from "@/components/settings/UserList";
+import { DashboardList } from "@/components/settings/DashboardList";
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
+
+export const dynamic = "force-dynamic";
 
 export default async function SettingsPage({
   searchParams,
@@ -20,15 +25,15 @@ export default async function SettingsPage({
   const session = await requireUser();
   const isAdmin = session.user.role === "admin";
 
-  // Beim allerersten Aufruf: Default-Org + Seed-Site sicherstellen
   const defaultOrg = await getOrCreateDefaultOrg();
   await ensureSeedSite(defaultOrg.id);
+  await ensureSeedDashboard(defaultOrg.id);
 
   const orgs = isAdmin ? await listOrganizations() : [];
   const sites = isAdmin ? await getAllSitesWithOrg() : [];
   const usersRaw = isAdmin ? await listUsers() : [];
+  const dashboardsRaw = isAdmin ? await listDashboardsForOrg(defaultOrg.id) : [];
 
-  // Map User → orgName
   const orgById = new Map(orgs.map((o) => [o.id, o.name] as const));
   const usersForUi = usersRaw.map((u) => ({
     id: u.id,
@@ -48,7 +53,7 @@ export default async function SettingsPage({
             <h1 className="text-2xl font-semibold text-foreground">Einstellungen</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {isAdmin
-                ? "Verwalte Organisationen, Websites, Nutzer und dein eigenes Passwort."
+                ? "Verwalte Dashboards, Organisationen, Websites, Nutzer und dein eigenes Passwort."
                 : "Hier kannst du dein Passwort ändern."}
             </p>
           </div>
@@ -58,6 +63,21 @@ export default async function SettingsPage({
               Du hast versucht, eine Website aufzurufen, die nicht (mehr) verknüpft ist
               oder zu der du keinen Zugriff hast.
             </div>
+          )}
+
+          {isAdmin && (
+            <section id="dashboards" className="space-y-3 scroll-mt-24">
+              <h2 className="text-lg font-medium text-foreground">Dashboards</h2>
+              <DashboardList
+                dashboards={dashboardsRaw.map((d) => ({
+                  id: d.id,
+                  slug: d.slug,
+                  name: d.name,
+                  description: d.description,
+                  isDefault: d.isDefault,
+                }))}
+              />
+            </section>
           )}
 
           {isAdmin && (
