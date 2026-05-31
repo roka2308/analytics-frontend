@@ -6,11 +6,9 @@ import { getOrCreateDefaultDashboard } from "@/lib/widgets/seed";
 export const dynamic = "force-dynamic";
 
 /**
- * Legacy-Alias /dashboard (singular).
- * Leitet auf das Default-Dashboard der aktiven Org weiter.
- * Querystring (range, site) wird durchgereicht.
+ * /dashboards ohne Slug -> Weiterleitung zum Default-Dashboard.
  */
-export default async function DashboardLegacyAlias({
+export default async function DashboardsIndex({
   searchParams,
 }: {
   searchParams: { range?: string; site?: string };
