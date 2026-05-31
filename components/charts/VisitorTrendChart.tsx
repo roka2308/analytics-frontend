@@ -10,7 +10,7 @@ interface Props {
 export function VisitorTrendChart({ data }: Props) {
   if (data.length === 0) {
     return (
-      <div className="flex h-52 items-center justify-center text-sm text-slate-400">
+      <div className="flex h-52 items-center justify-center text-sm text-muted-foreground">
         Keine Daten verfügbar
       </div>
     );
@@ -21,12 +21,14 @@ export function VisitorTrendChart({ data }: Props) {
       data={data}
       index="date"
       categories={["Besuche"]}
-      colors={["slate"]}
+      // Tremor laesst nur seine Palette zu - "pink" als Naehe zum Magenta-Akzent
+      colors={["pink"]}
       className="h-52"
       showAnimation
       showLegend={false}
       showGridLines
       curveType="monotone"
+      yAxisWidth={36}
     />
   );
 }

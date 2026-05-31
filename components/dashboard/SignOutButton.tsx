@@ -1,14 +1,17 @@
 "use client";
 
 import { signOut } from "next-auth/react";
+import { LogOut } from "lucide-react";
 
 export function SignOutButton() {
   return (
     <button
       onClick={() => signOut({ callbackUrl: "/" })}
-      className="text-sm text-slate-500 hover:text-slate-900 transition-colors"
+      aria-label="Abmelden"
+      className="inline-flex h-9 w-9 items-center justify-center rounded-md text-muted-foreground transition-colors hover:bg-muted hover:text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
+      title="Abmelden"
     >
-      Abmelden
+      <LogOut className="h-4 w-4" />
     </button>
   );
 }

@@ -17,7 +17,6 @@ import { getVisitorsOverview, getVisitorTrend } from "@/lib/matomo/transforms";
 import { getCacheAge } from "@/lib/matomo/cache";
 import { formatDuration } from "@/lib/utils";
 
-// Zeitraum-Parameter aus URL-Wert berechnen
 function getRangeConfig(range: string) {
   switch (range) {
     case "today":
@@ -53,9 +52,9 @@ async function KpiSection({
 
   if (error) {
     return (
-      <div className="rounded-lg border border-red-200 bg-red-50 p-6 text-center">
-        <p className="font-medium text-red-800">Matomo ist nicht erreichbar</p>
-        <p className="mt-1 text-sm text-red-600">{error}</p>
+      <div className="rounded-lg border border-destructive/30 bg-destructive/10 p-6 text-center">
+        <p className="font-medium text-destructive">Matomo ist nicht erreichbar</p>
+        <p className="mt-1 text-sm text-destructive/80">{error}</p>
       </div>
     );
   }
@@ -65,13 +64,13 @@ async function KpiSection({
   return (
     <div className="space-y-2">
       {cacheAgeMinutes !== null && cacheAgeMinutes > 0 && (
-        <p className="text-xs text-slate-400">
+        <p className="text-xs text-muted-foreground">
           Daten von vor {cacheAgeMinutes} {cacheAgeMinutes === 1 ? "Minute" : "Minuten"} ·
           wird alle 10 Min. aktualisiert
         </p>
       )}
       <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4">
-        <KpiCard title="Besuche" value={overview.visits.toLocaleString("de-DE")} />
+        <KpiCard accent title="Besuche" value={overview.visits.toLocaleString("de-DE")} />
         <KpiCard title="Seitenaufrufe" value={overview.pageviews.toLocaleString("de-DE")} />
         <KpiCard
           title="Bounce Rate"
@@ -104,24 +103,21 @@ export default async function DashboardPage({
   const session = await requireUser();
   const isAdmin = session.user.role === "admin";
 
-  // Beim ersten Aufruf Default-Org und Seed-Site sicherstellen
   const defaultOrg = await getOrCreateDefaultOrg();
   await ensureSeedSite(defaultOrg.id);
 
-  // Sichtbare Sites laden (Admin sieht alles, Viewer nur eigene Org)
   const sites = await getVisibleSitesForSession(session);
 
-  // Keine sichtbaren Sites → entweder noch keine angelegt (Admin) oder kein Zugriff (Viewer)
   if (sites.length === 0) {
     if (isAdmin) redirect("/settings");
     return (
-      <div className="flex min-h-screen flex-col bg-slate-50">
+      <div className="flex min-h-screen flex-col bg-background">
         <Header />
         <main className="flex-1 px-6 py-8">
           <div className="mx-auto max-w-3xl">
-            <div className="rounded-lg border border-amber-200 bg-amber-50 p-6 text-center">
-              <p className="font-medium text-amber-900">Keine Websites zugewiesen</p>
-              <p className="mt-2 text-sm text-amber-700">
+            <div className="rounded-lg border border-warning/30 bg-warning/10 p-6 text-center">
+              <p className="font-medium text-foreground">Keine Websites zugewiesen</p>
+              <p className="mt-2 text-sm text-muted-foreground">
                 Bitte wende dich an einen Admin, um Zugriff auf eine Website zu erhalten.
               </p>
             </div>
@@ -131,7 +127,6 @@ export default async function DashboardPage({
     );
   }
 
-  // Site aus URL oder Default (erste sichtbare Site)
   const requestedSiteId = searchParams.site ? parseInt(searchParams.site, 10) : null;
   const currentSiteId =
     requestedSiteId && sites.some((s) => s.matomoSiteId === requestedSiteId)
@@ -147,7 +142,7 @@ export default async function DashboardPage({
   const currentOrgName = currentSite?.orgName ?? "";
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header />
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto max-w-7xl space-y-8">
@@ -155,10 +150,10 @@ export default async function DashboardPage({
           {/* Titel-Zeile mit Site-Selector und Zeitraum-Picker */}
           <div className="flex flex-wrap items-end justify-between gap-4">
             <div>
-              <h1 className="text-2xl font-semibold text-slate-900">{currentSiteLabel}</h1>
-              <p className="mt-1 text-sm text-slate-500">
+              <h1 className="text-2xl font-semibold text-foreground">{currentSiteLabel}</h1>
+              <p className="mt-1 flex items-center text-sm text-muted-foreground">
                 {isAdmin && currentOrgName && (
-                  <span className="mr-2 inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">
+                  <span className="mr-2 inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground">
                     {currentOrgName}
                   </span>
                 )}
@@ -197,8 +192,8 @@ export default async function DashboardPage({
           </Suspense>
 
           {/* Besuchertrend */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-medium text-slate-700">
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <h2 className="mb-4 text-sm font-medium text-foreground">
               Besuchertrend – täglich
             </h2>
             <Suspense
@@ -210,8 +205,8 @@ export default async function DashboardPage({
           </div>
 
           {/* Top-Seiten */}
-          <div className="rounded-lg border border-slate-200 bg-white p-6 shadow-sm">
-            <h2 className="mb-4 text-sm font-medium text-slate-700">Top-Seiten</h2>
+          <div className="rounded-lg border border-border bg-card p-6 shadow-sm">
+            <h2 className="mb-4 text-sm font-medium text-foreground">Top-Seiten</h2>
             <Suspense
               key={`pages-${currentSiteId}-${range}`}
               fallback={

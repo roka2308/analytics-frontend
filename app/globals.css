@@ -2,50 +2,111 @@
 @tailwind components;
 @tailwind utilities;
 
+/*
+ * Theme-System:
+ * - Alle Komponenten nutzen ausschliesslich diese CSS-Variablen,
+ *   NIE hardcoded Tailwind-Farben wie "slate-900" oder "white".
+ * - Light/Dark wird per next-themes umgeschaltet (class="dark" auf <html>).
+ * - Spaeter koennen Org-spezifische Themes weitere Variablen ueberschreiben.
+ *
+ * Farbwerte als HSL-Tripel (ohne hsl()-Wrapper),
+ * damit wir Alpha-Kanaele via "hsl(var(--xy) / 0.5)" nutzen koennen.
+ */
+
 @layer base {
   :root {
-    --background: 0 0% 100%;
-    --foreground: 222.2 84% 4.9%;
-    --card: 0 0% 100%;
-    --card-foreground: 222.2 84% 4.9%;
-    --popover: 0 0% 100%;
-    --popover-foreground: 222.2 84% 4.9%;
-    --primary: 222.2 47.4% 11.2%;
-    --primary-foreground: 210 40% 98%;
-    --secondary: 210 40% 96.1%;
-    --secondary-foreground: 222.2 47.4% 11.2%;
-    --muted: 210 40% 96.1%;
-    --muted-foreground: 215.4 16.3% 46.9%;
-    --accent: 210 40% 96.1%;
-    --accent-foreground: 222.2 47.4% 11.2%;
-    --destructive: 0 84.2% 60.2%;
-    --destructive-foreground: 210 40% 98%;
-    --border: 214.3 31.8% 91.4%;
-    --input: 214.3 31.8% 91.4%;
-    --ring: 222.2 84% 4.9%;
+    /* Layout */
     --radius: 0.5rem;
+
+    /* Background / Foreground */
+    --background: 0 0% 100%;
+    --foreground: 222.2 47% 11%;
+
+    /* Karten und Popovers */
+    --card: 0 0% 100%;
+    --card-foreground: 222.2 47% 11%;
+    --popover: 0 0% 100%;
+    --popover-foreground: 222.2 47% 11%;
+
+    /* Sekundaerflaechen */
+    --muted: 210 40% 96%;
+    --muted-foreground: 215 16% 47%;
+    --secondary: 210 40% 96%;
+    --secondary-foreground: 222.2 47% 11%;
+
+    /* Borders, Inputs, Ringe */
+    --border: 214 32% 91%;
+    --input: 214 32% 91%;
+    --ring: 222.2 47% 11%;
+
+    /* Primaer (neutral dunkel, fuer Standard-Buttons) */
+    --primary: 222.2 47% 11%;
+    --primary-foreground: 210 40% 98%;
+
+    /* Akzent (Magenta) – ZWEI Toene fuer Accessibility:
+     *  --accent: lebhaftes Magenta fuer Icons, Borders, Buttons (>=3:1)
+     *  --accent-text: dunkleres Magenta, WCAG AA fuer Body-Text (>=4.5:1) */
+    --accent: 330 78% 50%;            /* ~#E0008A – kraeftig, sichtbar */
+    --accent-foreground: 0 0% 100%;   /* weisse Schrift auf Magenta */
+    --accent-text: 330 78% 37%;       /* ~#A8005F – dunkler, gut lesbar */
+    --accent-hover: 330 78% 45%;      /* etwas dunkler fuer Hover */
+
+    /* Status-Farben (semantisch) */
+    --success: 142 71% 35%;
+    --success-foreground: 0 0% 100%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 222.2 47% 11%;
+    --destructive: 0 72% 51%;
+    --destructive-foreground: 0 0% 100%;
+
+    /* Chart-Palette (5 Farben, harmonisch, Magenta-zentriert) */
+    --chart-1: 330 78% 50%;   /* Magenta */
+    --chart-2: 210 90% 55%;   /* Blau */
+    --chart-3: 142 71% 45%;   /* Gruen */
+    --chart-4: 38 92% 55%;    /* Orange */
+    --chart-5: 263 70% 60%;   /* Violett */
   }
 
   .dark {
-    --background: 222.2 84% 4.9%;
+    --background: 222.2 47% 6%;        /* sehr dunkles Slate, nicht 100% schwarz */
     --foreground: 210 40% 98%;
-    --card: 222.2 84% 4.9%;
+
+    --card: 222.2 47% 9%;
     --card-foreground: 210 40% 98%;
-    --popover: 222.2 84% 4.9%;
+    --popover: 222.2 47% 9%;
     --popover-foreground: 210 40% 98%;
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47.4% 11.2%;
-    --secondary: 217.2 32.6% 17.5%;
+
+    --muted: 217 33% 17%;
+    --muted-foreground: 215 20% 65%;
+    --secondary: 217 33% 17%;
     --secondary-foreground: 210 40% 98%;
-    --muted: 217.2 32.6% 17.5%;
-    --muted-foreground: 215 20.2% 65.1%;
-    --accent: 217.2 32.6% 17.5%;
-    --accent-foreground: 210 40% 98%;
-    --destructive: 0 62.8% 30.6%;
+
+    --border: 217 33% 22%;
+    --input: 217 33% 22%;
+    --ring: 212 27% 84%;
+
+    --primary: 210 40% 98%;
+    --primary-foreground: 222.2 47% 11%;
+
+    /* Magenta im Dark Mode: heller fuer Kontrast auf dunklem Grund */
+    --accent: 330 90% 65%;             /* ~#F559A2 – heller im Dark */
+    --accent-foreground: 222.2 47% 11%;
+    --accent-text: 330 90% 72%;        /* ~#F985B6 – noch heller fuer Text */
+    --accent-hover: 330 90% 58%;
+
+    --success: 142 65% 50%;
+    --success-foreground: 222.2 47% 11%;
+    --warning: 38 90% 60%;
+    --warning-foreground: 222.2 47% 11%;
+    --destructive: 0 70% 60%;
     --destructive-foreground: 210 40% 98%;
-    --border: 217.2 32.6% 17.5%;
-    --input: 217.2 32.6% 17.5%;
-    --ring: 212.7 26.8% 83.9%;
+
+    /* Chart-Palette im Dark Mode etwas heller / saturiert */
+    --chart-1: 330 90% 65%;
+    --chart-2: 210 90% 65%;
+    --chart-3: 142 65% 55%;
+    --chart-4: 38 90% 60%;
+    --chart-5: 263 80% 70%;
   }
 }
 
@@ -55,5 +116,14 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* Etwas weichere Schrift-Antialiasing-Defaults */
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  /* WCAG: sichtbarer Fokus-Ring fuer Tastatur-Nutzer */
+  *:focus-visible {
+    outline: 2px solid hsl(var(--accent));
+    outline-offset: 2px;
   }
 }

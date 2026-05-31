@@ -40,13 +40,13 @@ export default async function SettingsPage({
   }));
 
   return (
-    <div className="flex min-h-screen flex-col bg-slate-50">
+    <div className="flex min-h-screen flex-col bg-background">
       <Header />
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto max-w-3xl space-y-10">
           <div>
-            <h1 className="text-2xl font-semibold text-slate-900">Einstellungen</h1>
-            <p className="mt-1 text-sm text-slate-500">
+            <h1 className="text-2xl font-semibold text-foreground">Einstellungen</h1>
+            <p className="mt-1 text-sm text-muted-foreground">
               {isAdmin
                 ? "Verwalte Organisationen, Websites, Nutzer und dein eigenes Passwort."
                 : "Hier kannst du dein Passwort ändern."}
@@ -54,7 +54,7 @@ export default async function SettingsPage({
           </div>
 
           {searchParams.error === "no-access" && (
-            <div className="rounded-md border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+            <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
               Du hast versucht, eine Website aufzurufen, die nicht (mehr) verknüpft ist
               oder zu der du keinen Zugriff hast.
             </div>
@@ -62,14 +62,14 @@ export default async function SettingsPage({
 
           {isAdmin && (
             <section className="space-y-3">
-              <h2 className="text-lg font-medium text-slate-800">Organisationen</h2>
+              <h2 className="text-lg font-medium text-foreground">Organisationen</h2>
               <OrgList orgs={orgs.map((o) => ({ id: o.id, name: o.name }))} />
             </section>
           )}
 
           {isAdmin && (
             <section className="space-y-3">
-              <h2 className="text-lg font-medium text-slate-800">Websites</h2>
+              <h2 className="text-lg font-medium text-foreground">Websites</h2>
               <SiteList
                 sites={sites.map((s) => ({
                   id: s.id,
@@ -84,7 +84,7 @@ export default async function SettingsPage({
 
           {isAdmin && (
             <section className="space-y-3">
-              <h2 className="text-lg font-medium text-slate-800">Nutzerkonten</h2>
+              <h2 className="text-lg font-medium text-foreground">Nutzerkonten</h2>
               <UserList
                 users={usersForUi}
                 orgs={orgs.map((o) => ({ id: o.id, name: o.name }))}
@@ -94,7 +94,7 @@ export default async function SettingsPage({
           )}
 
           <section className="space-y-3">
-            <h2 className="text-lg font-medium text-slate-800">Mein Konto</h2>
+            <h2 className="text-lg font-medium text-foreground">Mein Konto</h2>
             <ChangePasswordForm />
           </section>
         </div>

@@ -26,13 +26,13 @@ export async function TopPagesTable({ siteId, period, date }: Props) {
 
   if (error) {
     return (
-      <p className="text-sm text-slate-400">Top-Seiten konnten nicht geladen werden.</p>
+      <p className="text-sm text-muted-foreground">Top-Seiten konnten nicht geladen werden.</p>
     );
   }
 
   if (pages.length === 0) {
     return (
-      <p className="text-sm text-slate-400">Keine Seitendaten für diesen Zeitraum.</p>
+      <p className="text-sm text-muted-foreground">Keine Seitendaten für diesen Zeitraum.</p>
     );
   }
 
@@ -40,6 +40,7 @@ export async function TopPagesTable({ siteId, period, date }: Props) {
     <Table>
       <TableHeader>
         <TableRow>
+          <TableHead className="w-12 text-center">#</TableHead>
           <TableHead>Seite</TableHead>
           <TableHead className="text-right w-28">Besuche</TableHead>
           <TableHead className="text-right w-36">Seitenaufrufe</TableHead>
@@ -48,7 +49,10 @@ export async function TopPagesTable({ siteId, period, date }: Props) {
       <TableBody>
         {pages.map((page, i) => (
           <TableRow key={i}>
-            <TableCell className="font-mono text-xs text-slate-600 truncate max-w-xs">
+            <TableCell className="text-center text-xs font-mono text-muted-foreground tabular-nums">
+              {i + 1}
+            </TableCell>
+            <TableCell className="font-mono text-xs text-foreground truncate max-w-xs">
               {page.label}
             </TableCell>
             <TableCell className="text-right tabular-nums">

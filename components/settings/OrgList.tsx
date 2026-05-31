@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import {
@@ -83,9 +83,9 @@ export function OrgList({ orgs }: Props) {
         </CardHeader>
         <CardContent>
           {orgs.length === 0 ? (
-            <p className="text-sm text-slate-400">Noch keine Organisationen vorhanden.</p>
+            <p className="text-sm text-muted-foreground">Noch keine Organisationen vorhanden.</p>
           ) : (
-            <div className="divide-y divide-slate-100">
+            <div className="divide-y divide-border">
               {orgs.map((org) => (
                 <div key={org.id} className="flex items-center justify-between py-3">
                   {editingId === org.id ? (
@@ -116,7 +116,7 @@ export function OrgList({ orgs }: Props) {
                     </>
                   ) : (
                     <>
-                      <p className="text-sm font-medium text-slate-900">{org.name}</p>
+                      <p className="text-sm font-medium text-foreground">{org.name}</p>
                       <div className="flex gap-1">
                         <Button
                           size="sm"
@@ -135,7 +135,7 @@ export function OrgList({ orgs }: Props) {
                           variant="ghost"
                           onClick={() => handleDelete(org.id, org.name)}
                           disabled={isPending}
-                          className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                         >
                           Löschen
                         </Button>
@@ -177,10 +177,10 @@ export function OrgList({ orgs }: Props) {
             </div>
 
             {error && (
-              <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+              <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
             )}
             {success && (
-              <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+              <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">
                 {success}
               </p>
             )}

@@ -16,21 +16,30 @@ export function DateRangePicker() {
   const current = searchParams.get("range") ?? "7";
 
   return (
-    <div className="flex gap-1 rounded-lg border border-slate-200 bg-white p-1 shadow-sm">
-      {ranges.map(({ label, value }) => (
-        <Link
-          key={value}
-          href={`/dashboard?range=${value}`}
-          className={cn(
-            "rounded-md px-4 py-1.5 text-sm font-medium transition-colors",
-            current === value
-              ? "bg-slate-900 text-white"
-              : "text-slate-600 hover:bg-slate-100"
-          )}
-        >
-          {label}
-        </Link>
-      ))}
+    <div
+      role="tablist"
+      aria-label="Zeitraum auswählen"
+      className="flex gap-1 rounded-lg border border-border bg-card p-1 shadow-sm"
+    >
+      {ranges.map(({ label, value }) => {
+        const isActive = current === value;
+        return (
+          <Link
+            key={value}
+            href={`/dashboard?range=${value}`}
+            role="tab"
+            aria-selected={isActive}
+            className={cn(
+              "rounded-md px-4 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+              isActive
+                ? "bg-foreground text-background"
+                : "text-muted-foreground hover:bg-muted hover:text-foreground"
+            )}
+          >
+            {label}
+          </Link>
+        );
+      })}
     </div>
   );
 }

@@ -1,4 +1,4 @@
-"use client";
+﻿"use client";
 
 import { useState, useTransition } from "react";
 import {
@@ -98,19 +98,19 @@ export function UserList({ users, orgs, currentUserId }: Props) {
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <div className="divide-y divide-slate-100">
+          <div className="divide-y divide-border">
             {users.map((u) => (
               <div key={u.id} className="flex items-center justify-between py-3">
                 <div className="min-w-0 flex-1">
-                  <p className="text-sm font-medium text-slate-900">
+                  <p className="text-sm font-medium text-foreground">
                     {u.name ?? u.email}
                     {u.id === currentUserId && (
-                      <span className="ml-2 text-xs text-slate-400">(du)</span>
+                      <span className="ml-2 text-xs text-muted-foreground">(du)</span>
                     )}
                   </p>
-                  <p className="text-xs text-slate-500">
+                  <p className="text-xs text-muted-foreground">
                     {u.email} · {u.role === "admin" ? "Admin" : "Viewer"} ·{" "}
-                    <span className="inline-flex items-center rounded-md bg-slate-100 px-1.5 py-0.5 text-xs font-medium text-slate-700">
+                    <span className="inline-flex items-center rounded-md bg-muted px-1.5 py-0.5 text-xs font-medium text-foreground">
                       {u.orgName}
                     </span>
                   </p>
@@ -139,7 +139,7 @@ export function UserList({ users, orgs, currentUserId }: Props) {
                       size="sm"
                       onClick={() => handleDelete(u.id, u.email)}
                       disabled={isPending}
-                      className="text-red-600 hover:bg-red-50 hover:text-red-700"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
                     >
                       Löschen
                     </Button>
@@ -160,7 +160,7 @@ export function UserList({ users, orgs, currentUserId }: Props) {
         </CardHeader>
         <CardContent>
           {orgs.length === 0 ? (
-            <p className="text-sm text-amber-700">
+            <p className="text-sm text-warning">
               Lege zuerst eine Organisation an, dann kannst du Nutzer anlegen.
             </p>
           ) : (
@@ -227,10 +227,10 @@ export function UserList({ users, orgs, currentUserId }: Props) {
               </div>
 
               {error && (
-                <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+                <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">{error}</p>
               )}
               {success && (
-                <p className="rounded-md bg-emerald-50 px-3 py-2 text-sm text-emerald-700">
+                <p className="rounded-md bg-success/10 px-3 py-2 text-sm text-success">
                   {success}
                 </p>
               )}

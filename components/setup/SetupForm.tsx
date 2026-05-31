@@ -22,7 +22,6 @@ export function SetupForm() {
         return;
       }
 
-      // Direkt einloggen nach erfolgreicher Erstellung
       const signInResult = await signIn("credentials", {
         email,
         password,
@@ -32,7 +31,6 @@ export function SetupForm() {
       if (signInResult?.ok) {
         router.push("/dashboard");
       } else {
-        // Konto wurde angelegt, aber Auto-Login schlug fehl → manueller Login
         router.push("/login");
       }
     });
@@ -41,23 +39,23 @@ export function SetupForm() {
   return (
     <form
       action={handleSubmit}
-      className="space-y-4 rounded-lg border border-slate-200 bg-white p-8 shadow-sm"
+      className="space-y-4 rounded-lg border border-border bg-card p-8 shadow-sm"
     >
       <div>
-        <label htmlFor="name" className="block text-sm font-medium text-slate-700">
-          Name <span className="text-slate-400">(optional)</span>
+        <label htmlFor="name" className="block text-sm font-medium text-foreground">
+          Name <span className="text-muted-foreground">(optional)</span>
         </label>
         <input
           id="name"
           name="name"
           type="text"
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           placeholder="Dein Name"
         />
       </div>
 
       <div>
-        <label htmlFor="email" className="block text-sm font-medium text-slate-700">
+        <label htmlFor="email" className="block text-sm font-medium text-foreground">
           E-Mail
         </label>
         <input
@@ -66,14 +64,14 @@ export function SetupForm() {
           type="email"
           required
           autoComplete="email"
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           placeholder="du@deine-domain.de"
         />
       </div>
 
       <div>
-        <label htmlFor="password" className="block text-sm font-medium text-slate-700">
-          Passwort <span className="text-slate-400">(min. 8 Zeichen)</span>
+        <label htmlFor="password" className="block text-sm font-medium text-foreground">
+          Passwort <span className="text-muted-foreground">(min. 8 Zeichen)</span>
         </label>
         <input
           id="password"
@@ -82,19 +80,21 @@ export function SetupForm() {
           required
           minLength={8}
           autoComplete="new-password"
-          className="mt-1 block w-full rounded-md border border-slate-300 px-3 py-2 text-sm focus:border-slate-500 focus:outline-none focus:ring-1 focus:ring-slate-500"
+          className="mt-1 block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground placeholder:text-muted-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2"
           placeholder="••••••••"
         />
       </div>
 
       {error && (
-        <p className="rounded-md bg-red-50 px-3 py-2 text-sm text-red-600">{error}</p>
+        <p className="rounded-md bg-destructive/10 px-3 py-2 text-sm text-destructive">
+          {error}
+        </p>
       )}
 
       <button
         type="submit"
         disabled={isPending}
-        className="w-full rounded-md bg-slate-900 px-4 py-2 text-sm font-medium text-white transition-colors hover:bg-slate-700 disabled:cursor-not-allowed disabled:opacity-50"
+        className="w-full rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2 disabled:cursor-not-allowed disabled:opacity-50"
       >
         {isPending ? "Konto wird erstellt…" : "Admin-Konto anlegen"}
       </button>
