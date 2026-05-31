@@ -1,14 +1,17 @@
 /**
- * Manuelles Migrations-Skript fuer Turso.
+ * Universelles Migrations-Skript.
  *
- * Liest alle SQL-Dateien aus ./drizzle/ und wendet sie der Reihe nach
- * direkt via @libsql/client an. Umgeht drizzle-kit, das bei uns
- * silent ausgestiegen ist.
+ * Funktioniert sowohl mit lokaler SQLite-Datei (file:local.db)
+ * als auch mit Turso (libsql://...). Liest alle .sql-Dateien aus
+ * ./drizzle/ und wendet sie der Reihe nach an.
+ *
+ * Verwendet eine eigene __migrations-Tabelle, um bereits angewendete
+ * Migrationen zu ueberspringen (idempotent).
  *
  * Aufruf:
  *   node scripts/migrate-turso.mjs
  *
- * Erwartet DATABASE_URL und DATABASE_AUTH_TOKEN in .env.local.
+ * Erwartet DATABASE_URL (und optional DATABASE_AUTH_TOKEN) in .env.local.
  */
 import { createClient } from "@libsql/client";
 import { readdir, readFile } from "node:fs/promises";
@@ -17,30 +20,45 @@ import { config } from "dotenv";
 
 config({ path: ".env.local" });
 
-const url = process.env.DATABASE_URL;
+const url = process.env.DATABASE_URL ?? "file:local.db";
 const authToken = process.env.DATABASE_AUTH_TOKEN;
 
-if (!url) {
-  console.error("✗ DATABASE_URL fehlt in .env.local");
-  process.exit(1);
-}
+const isTurso = url.startsWith("libsql://");
+const target = isTurso ? "TURSO (Produktion)" : "LOKALE SQLite-Datei";
 
-if (!url.startsWith("libsql://")) {
-  console.error(`✗ DATABASE_URL ist nicht Turso: ${url}`);
-  console.error("  Erwartet: libsql://...");
-  process.exit(1);
+console.log("→ Ziel:", target);
+console.log("→ URL:", url);
+if (isTurso) {
+  console.log(
+    "→ Auth-Token vorhanden:",
+    authToken ? `ja (${authToken.length} Zeichen)` : "FEHLT!"
+  );
 }
-
-console.log("→ Ziel-DB:", url);
-console.log("→ Auth-Token vorhanden:", authToken ? `ja (${authToken.length} Zeichen)` : "nein");
 console.log("");
 
 const client = createClient({ url, authToken });
 
+// Migrations-Tracking-Tabelle (eigene, statt drizzle-spezifischer)
+await client.execute(`
+  CREATE TABLE IF NOT EXISTS __migrations (
+    name TEXT PRIMARY KEY,
+    applied_at INTEGER NOT NULL DEFAULT (unixepoch())
+  )
+`);
+
+const appliedRes = await client.execute("SELECT name FROM __migrations");
+const applied = new Set(appliedRes.rows.map((r) => r.name));
+
+console.log(`→ Bereits angewendete Migrationen: ${applied.size}`);
+if (applied.size > 0) {
+  [...applied].sort().forEach((n) => console.log("  ✓", n));
+  console.log("");
+}
+
 // Vorher-Zustand
 console.log("→ Vorher-Zustand der DB:");
 const beforeRes = await client.execute(
-  "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+  "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' ORDER BY name"
 );
 if (beforeRes.rows.length === 0) {
   console.log("  (keine Tabellen)");
@@ -52,19 +70,20 @@ console.log("");
 // Migrationen einlesen
 const migrationsDir = "./drizzle";
 const allFiles = await readdir(migrationsDir);
-const sqlFiles = allFiles
-  .filter((f) => f.endsWith(".sql"))
-  .sort();
+const sqlFiles = allFiles.filter((f) => f.endsWith(".sql")).sort();
 
 console.log(`→ Gefundene Migrations-Dateien: ${sqlFiles.length}`);
-sqlFiles.forEach((f) => console.log("  -", f));
+sqlFiles.forEach((f) => console.log("  -", f, applied.has(f) ? "(schon angewendet)" : ""));
 console.log("");
 
+let pendingCount = 0;
 for (const file of sqlFiles) {
+  if (applied.has(file)) continue;
+  pendingCount++;
+
   console.log(`→ Wende ${file} an ...`);
   const sql = await readFile(join(migrationsDir, file), "utf-8");
 
-  // Drizzle splittet einzelne Statements mit "--> statement-breakpoint"
   const statements = sql
     .split(/-->\s*statement-breakpoint/g)
     .flatMap((s) => s.split(";"))
@@ -75,7 +94,6 @@ for (const file of sqlFiles) {
     try {
       await client.execute(stmt);
     } catch (e) {
-      // "already exists" Fehler bei CREATE TABLE ignorieren (Reapply-Faelle)
       const msg = (e?.message ?? "").toLowerCase();
       if (msg.includes("already exists")) {
         console.log("  ⚠ schon vorhanden, ueberspringe");
@@ -87,16 +105,27 @@ for (const file of sqlFiles) {
       process.exit(1);
     }
   }
+
+  // Migration als angewendet markieren
+  await client.execute({
+    sql: "INSERT INTO __migrations (name) VALUES (?)",
+    args: [file],
+  });
+
   console.log(`  ✓ ${file} angewendet (${statements.length} Statement(s))`);
 }
 console.log("");
 
+if (pendingCount === 0) {
+  console.log("✓ Nichts zu tun – DB ist auf dem aktuellen Stand");
+} else {
+  console.log(`✓ ${pendingCount} Migration(en) angewendet`);
+}
+
 // Nachher-Zustand
-console.log("→ Nachher-Zustand der DB:");
+console.log("");
+console.log("→ Aktueller Zustand der DB:");
 const afterRes = await client.execute(
-  "SELECT name FROM sqlite_master WHERE type='table' ORDER BY name"
+  "SELECT name FROM sqlite_master WHERE type='table' AND name NOT LIKE 'sqlite_%' AND name != '__migrations' ORDER BY name"
 );
 afterRes.rows.forEach((r) => console.log("  -", r.name));
-console.log("");
-
-console.log("✓ Migration abgeschlossen");

@@ -1,7 +1,13 @@
 import "server-only";
 import { db } from "./index";
-import { organizations, matomoSites, users } from "./schema";
-import { eq, asc, count } from "drizzle-orm";
+import {
+  organizations,
+  matomoSites,
+  users,
+  dashboards,
+  dashboardWidgets,
+} from "./schema";
+import { eq, asc, count, and } from "drizzle-orm";
 
 const DEFAULT_ORG_NAME = "Standard-Organisation";
 
@@ -181,4 +187,190 @@ export async function getDefaultOrgWithSites() {
   await ensureSeedSite(org.id);
   const sites = await getSitesForOrg(org.id);
   return { org, sites };
+}
+
+// ──────────────────────────────────────────────────────────────
+// Dashboards
+// ──────────────────────────────────────────────────────────────
+
+export interface WidgetLayout {
+  x: number;
+  y: number;
+  w: number;
+  h: number;
+}
+
+export interface DashboardWidgetRow {
+  id: string;
+  dashboardId: string;
+  type: string;
+  title: string | null;
+  layout: WidgetLayout;
+  config: Record<string, unknown>;
+  position: number;
+}
+
+export interface DashboardRow {
+  id: string;
+  organizationId: string;
+  slug: string;
+  name: string;
+  description: string | null;
+  isDefault: boolean;
+  position: number;
+}
+
+function parseWidget(raw: typeof dashboardWidgets.$inferSelect): DashboardWidgetRow {
+  let layout: WidgetLayout;
+  let config: Record<string, unknown>;
+  try {
+    layout = JSON.parse(raw.layout);
+  } catch {
+    layout = { x: 0, y: 0, w: 12, h: 4 };
+  }
+  try {
+    config = JSON.parse(raw.config);
+  } catch {
+    config = {};
+  }
+  return {
+    id: raw.id,
+    dashboardId: raw.dashboardId,
+    type: raw.type,
+    title: raw.title,
+    layout,
+    config,
+    position: raw.position,
+  };
+}
+
+export async function listDashboardsForOrg(orgId: string): Promise<DashboardRow[]> {
+  const rows = await db
+    .select()
+    .from(dashboards)
+    .where(eq(dashboards.organizationId, orgId))
+    .orderBy(asc(dashboards.position), asc(dashboards.createdAt));
+  return rows.map((r) => ({
+    id: r.id,
+    organizationId: r.organizationId,
+    slug: r.slug,
+    name: r.name,
+    description: r.description,
+    isDefault: r.isDefault,
+    position: r.position,
+  }));
+}
+
+export async function getDashboardBySlug(
+  orgId: string,
+  slug: string
+): Promise<DashboardRow | null> {
+  const rows = await db
+    .select()
+    .from(dashboards)
+    .where(and(eq(dashboards.organizationId, orgId), eq(dashboards.slug, slug)))
+    .limit(1);
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: r.id,
+    organizationId: r.organizationId,
+    slug: r.slug,
+    name: r.name,
+    description: r.description,
+    isDefault: r.isDefault,
+    position: r.position,
+  };
+}
+
+export async function getDefaultDashboardForOrg(orgId: string): Promise<DashboardRow | null> {
+  const list = await listDashboardsForOrg(orgId);
+  return list.find((d) => d.isDefault) ?? list[0] ?? null;
+}
+
+export async function getWidgetsForDashboard(dashboardId: string): Promise<DashboardWidgetRow[]> {
+  const rows = await db
+    .select()
+    .from(dashboardWidgets)
+    .where(eq(dashboardWidgets.dashboardId, dashboardId))
+    .orderBy(asc(dashboardWidgets.position), asc(dashboardWidgets.createdAt));
+  return rows.map(parseWidget);
+}
+
+export interface CreateDashboardInput {
+  organizationId: string;
+  slug: string;
+  name: string;
+  description?: string | null;
+  isDefault?: boolean;
+  position?: number;
+}
+
+export async function createDashboard(input: CreateDashboardInput): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.insert(dashboards).values({
+    id,
+    organizationId: input.organizationId,
+    slug: input.slug,
+    name: input.name,
+    description: input.description ?? null,
+    isDefault: input.isDefault ?? false,
+    position: input.position ?? 0,
+  });
+  return id;
+}
+
+export interface CreateWidgetInput {
+  dashboardId: string;
+  type: string;
+  title?: string | null;
+  layout: WidgetLayout;
+  config: Record<string, unknown>;
+  position?: number;
+}
+
+export async function createWidget(input: CreateWidgetInput): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.insert(dashboardWidgets).values({
+    id,
+    dashboardId: input.dashboardId,
+    type: input.type,
+    title: input.title ?? null,
+    layout: JSON.stringify(input.layout),
+    config: JSON.stringify(input.config),
+    position: input.position ?? 0,
+  });
+  return id;
+}
+
+export async function renameDashboard(dashboardId: string, name: string, description: string | null) {
+  await db
+    .update(dashboards)
+    .set({ name, description, updatedAt: new Date() })
+    .where(eq(dashboards.id, dashboardId));
+}
+
+export async function deleteDashboard(dashboardId: string) {
+  await db.delete(dashboards).where(eq(dashboards.id, dashboardId));
+}
+
+export async function setDefaultDashboard(orgId: string, dashboardId: string) {
+  // erst alle der Org auf false setzen
+  await db
+    .update(dashboards)
+    .set({ isDefault: false })
+    .where(eq(dashboards.organizationId, orgId));
+  // dann das gewuenschte auf true
+  await db
+    .update(dashboards)
+    .set({ isDefault: true, updatedAt: new Date() })
+    .where(eq(dashboards.id, dashboardId));
+}
+
+export async function countDashboardsForOrg(orgId: string): Promise<number> {
+  const res = await db
+    .select({ value: count() })
+    .from(dashboards)
+    .where(eq(dashboards.organizationId, orgId));
+  return res[0]?.value ?? 0;
 }
