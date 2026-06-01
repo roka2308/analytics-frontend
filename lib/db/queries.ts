@@ -15,6 +15,35 @@ const DEFAULT_ORG_NAME = "Standard-Organisation";
 // Organizations
 // ──────────────────────────────────────────────────────────────
 
+function slugify(input: string): string {
+  return input
+    .toLowerCase()
+    .replace(/ä/g, "ae")
+    .replace(/ö/g, "oe")
+    .replace(/ü/g, "ue")
+    .replace(/ß/g, "ss")
+    .normalize("NFD")
+    .replace(/[̀-ͯ]/g, "")
+    .replace(/[^a-z0-9]+/g, "-")
+    .replace(/^-+|-+$/g, "")
+    .slice(0, 60);
+}
+
+async function ensureUniqueOrgSlug(baseSlug: string): Promise<string> {
+  let slug = baseSlug || "projekt";
+  let counter = 2;
+  while (true) {
+    const existing = await db
+      .select({ id: organizations.id })
+      .from(organizations)
+      .where(eq(organizations.slug, slug))
+      .limit(1);
+    if (existing.length === 0) return slug;
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
 export async function listOrganizations() {
   return db.select().from(organizations).orderBy(asc(organizations.name));
 }
@@ -24,19 +53,30 @@ export async function getOrgById(id: string) {
   return rows[0] ?? null;
 }
 
+export async function getOrgBySlug(slug: string) {
+  const rows = await db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.slug, slug))
+    .limit(1);
+  return rows[0] ?? null;
+}
+
 export async function getOrCreateDefaultOrg() {
   const existing = await db.select().from(organizations).limit(1);
   if (existing.length > 0) return existing[0];
 
   const id = crypto.randomUUID();
-  await db.insert(organizations).values({ id, name: DEFAULT_ORG_NAME });
+  const slug = await ensureUniqueOrgSlug(slugify(DEFAULT_ORG_NAME));
+  await db.insert(organizations).values({ id, name: DEFAULT_ORG_NAME, slug });
   const [created] = await db.select().from(organizations).where(eq(organizations.id, id));
   return created;
 }
 
 export async function createOrganization(name: string) {
   const id = crypto.randomUUID();
-  await db.insert(organizations).values({ id, name });
+  const slug = await ensureUniqueOrgSlug(slugify(name));
+  await db.insert(organizations).values({ id, name, slug });
   const [created] = await db.select().from(organizations).where(eq(organizations.id, id));
   return created;
 }
@@ -47,6 +87,22 @@ export async function renameOrganization(id: string, name: string) {
 
 export async function deleteOrganization(id: string) {
   await db.delete(organizations).where(eq(organizations.id, id));
+}
+
+/**
+ * Liefert die im aktuellen Session-Kontext sichtbaren Projekte:
+ * - Admin: alle Projekte
+ * - Viewer: nur das eigene Projekt
+ */
+export async function getVisibleProjectsForSession(session: {
+  user: { role: "admin" | "viewer"; organizationId: string | null };
+}) {
+  if (session.user.role === "admin") {
+    return listOrganizations();
+  }
+  if (!session.user.organizationId) return [];
+  const org = await getOrgById(session.user.organizationId);
+  return org ? [org] : [];
 }
 
 export async function countUsersInOrg(orgId: string): Promise<number> {

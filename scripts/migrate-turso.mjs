@@ -84,11 +84,22 @@ for (const file of sqlFiles) {
   console.log(`→ Wende ${file} an ...`);
   const sql = await readFile(join(migrationsDir, file), "utf-8");
 
+  // Statements splitten:
+  //  1. an "--> statement-breakpoint" trennen
+  //  2. innerhalb am Semikolon trennen
+  //  3. fuehrende Kommentar-Zeilen jedes Statements entfernen
+  //  4. leere Statements ueberspringen
   const statements = sql
     .split(/-->\s*statement-breakpoint/g)
     .flatMap((s) => s.split(";"))
-    .map((s) => s.trim())
-    .filter((s) => s.length > 0 && !s.startsWith("--"));
+    .map((s) =>
+      s
+        .split("\n")
+        .filter((line) => !line.trim().startsWith("--"))
+        .join("\n")
+        .trim()
+    )
+    .filter((s) => s.length > 0);
 
   for (const stmt of statements) {
     try {

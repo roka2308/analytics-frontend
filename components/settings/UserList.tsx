@@ -84,7 +84,7 @@ export function UserList({ users, orgs, currentUserId }: Props) {
     startTransition(async () => {
       const r = await reassignUserOrgAction(userId, orgId);
       if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
-      else setSuccess("Organisation aktualisiert.");
+      else setSuccess("Projekt aktualisiert.");
     });
   };
 
@@ -94,7 +94,7 @@ export function UserList({ users, orgs, currentUserId }: Props) {
         <CardHeader>
           <CardTitle>Nutzerkonten</CardTitle>
           <CardDescription>
-            Admins verwalten alles. Viewer sehen nur die Sites ihrer eigenen Organisation.
+            Admins verwalten alles. Viewer sehen nur die Sites ihrer eigenen Projekt.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -122,7 +122,7 @@ export function UserList({ users, orgs, currentUserId }: Props) {
                       onValueChange={(v) => handleReassign(u.id, v)}
                     >
                       <SelectTrigger className="w-40">
-                        <SelectValue placeholder="Org wählen" />
+                        <SelectValue placeholder="Projekt wählen" />
                       </SelectTrigger>
                       <SelectContent>
                         {orgs.map((o) => (
@@ -155,13 +155,13 @@ export function UserList({ users, orgs, currentUserId }: Props) {
         <CardHeader>
           <CardTitle>Neuen Nutzer anlegen</CardTitle>
           <CardDescription>
-            Du legst Passwort, Rolle und Organisation fest. Der Nutzer kann sein Passwort später selbst ändern.
+            Du legst Passwort, Rolle und Projekt fest. Der Nutzer kann sein Passwort später selbst ändern.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {orgs.length === 0 ? (
             <p className="text-sm text-warning">
-              Lege zuerst eine Organisation an, dann kannst du Nutzer anlegen.
+              Lege zuerst ein Projekt an, dann kannst du Nutzer anlegen.
             </p>
           ) : (
             <form id="add-user-form" action={handleCreate} className="space-y-4">
@@ -192,7 +192,7 @@ export function UserList({ users, orgs, currentUserId }: Props) {
                   />
                 </div>
                 <div className="space-y-1.5">
-                  <Label htmlFor="user-org">Organisation</Label>
+                  <Label htmlFor="user-org">Projekt</Label>
                   <Select value={selectedOrg} onValueChange={setSelectedOrg}>
                     <SelectTrigger id="user-org">
                       <SelectValue />

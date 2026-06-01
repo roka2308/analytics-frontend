@@ -20,6 +20,7 @@ import { Button } from "@/components/ui/button";
 interface Org {
   id: string;
   name: string;
+  slug?: string;
 }
 
 interface Props {
@@ -44,7 +45,7 @@ export function OrgList({ orgs }: Props) {
       const r = await createOrgAction(formData);
       if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
       else {
-        setSuccess("Organisation angelegt.");
+        setSuccess("Projekt angelegt.");
         (document.getElementById("add-org-form") as HTMLFormElement)?.reset();
       }
     });
@@ -63,12 +64,12 @@ export function OrgList({ orgs }: Props) {
   };
 
   const handleDelete = (orgId: string, name: string) => {
-    if (!confirm(`Organisation "${name}" wirklich löschen?`)) return;
+    if (!confirm(`Projekt "${name}" wirklich löschen?`)) return;
     reset();
     startTransition(async () => {
       const r = await deleteOrgAction(orgId);
       if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
-      else setSuccess("Organisation gelöscht.");
+      else setSuccess("Projekt gelöscht.");
     });
   };
 
@@ -76,14 +77,15 @@ export function OrgList({ orgs }: Props) {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Organisationen</CardTitle>
+          <CardTitle>Projekte</CardTitle>
           <CardDescription>
-            Z.B. eine Organisation pro Beratungskunde. Jede Org hat ihre eigenen Sites und Nutzer.
+            Ein Projekt entspricht einem Kunden / einer Marke. Jedes Projekt hat
+            eigene Sites, Dashboards und Nutzer.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {orgs.length === 0 ? (
-            <p className="text-sm text-muted-foreground">Noch keine Organisationen vorhanden.</p>
+            <p className="text-sm text-muted-foreground">Noch keine Projekte vorhanden.</p>
           ) : (
             <div className="divide-y divide-border">
               {orgs.map((org) => (
@@ -116,7 +118,14 @@ export function OrgList({ orgs }: Props) {
                     </>
                   ) : (
                     <>
-                      <p className="text-sm font-medium text-foreground">{org.name}</p>
+                      <div className="min-w-0 flex-1">
+                        <p className="text-sm font-medium text-foreground">{org.name}</p>
+                        {org.slug && (
+                          <p className="text-xs text-muted-foreground font-mono">
+                            /projekte/{org.slug}
+                          </p>
+                        )}
+                      </div>
                       <div className="flex gap-1">
                         <Button
                           size="sm"
@@ -151,16 +160,17 @@ export function OrgList({ orgs }: Props) {
 
       <Card>
         <CardHeader>
-          <CardTitle>Neue Organisation anlegen</CardTitle>
+          <CardTitle>Neues Projekt anlegen</CardTitle>
           <CardDescription>
-            Lege eine Organisation für einen weiteren Kunden / Mandanten an.
+            Lege ein neues Projekt für einen weiteren Kunden / eine weitere Marke an.
+            Der URL-Slug wird automatisch aus dem Namen abgeleitet.
           </CardDescription>
         </CardHeader>
         <CardContent>
           <form id="add-org-form" action={handleCreate} className="space-y-4">
             <div className="grid gap-4 sm:grid-cols-[1fr_auto]">
               <div className="space-y-1.5">
-                <Label htmlFor="org-name">Name</Label>
+                <Label htmlFor="org-name">Projektname</Label>
                 <Input
                   id="org-name"
                   name="name"

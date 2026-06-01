@@ -6,6 +6,9 @@ export const organizations = sqliteTable("organizations", {
     .primaryKey()
     .$defaultFn(() => crypto.randomUUID()),
   name: text("name").notNull(),
+  // URL-freundlicher Identifier, eindeutig global.
+  // UI-Begriff "Projekt"; Code-Begriff bleibt "organization".
+  slug: text("slug").notNull().unique(),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

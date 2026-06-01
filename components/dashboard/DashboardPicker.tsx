@@ -1,7 +1,7 @@
 "use client";
 
 import Link from "next/link";
-import { useSearchParams } from "next/navigation";
+import { useParams, useSearchParams } from "next/navigation";
 import { ChevronDown, LayoutDashboard } from "lucide-react";
 import {
   DropdownMenu,
@@ -23,10 +23,18 @@ interface Props {
 }
 
 export function DashboardPicker({ dashboards, currentSlug }: Props) {
+  const params = useParams();
   const searchParams = useSearchParams();
-  // range und site sollen beim Wechsel erhalten bleiben
+  const orgSlug = (params?.orgSlug as string | undefined) ?? null;
+
+  // Query-Params beim Wechsel mitnehmen (range, compare, site).
   const qs = searchParams.toString();
   const tail = qs ? `?${qs}` : "";
+
+  const buildHref = (dashSlug: string) =>
+    orgSlug
+      ? `/projekte/${orgSlug}/dashboards/${dashSlug}${tail}`
+      : `/dashboards/${dashSlug}${tail}`;
 
   const current = dashboards.find((d) => d.slug === currentSlug);
   const displayName = current?.name ?? "Dashboards";
@@ -44,7 +52,7 @@ export function DashboardPicker({ dashboards, currentSlug }: Props) {
         {dashboards.map((d) => (
           <DropdownMenuItem key={d.slug} asChild>
             <Link
-              href={`/dashboards/${d.slug}${tail}`}
+              href={buildHref(d.slug)}
               className={d.slug === currentSlug ? "bg-muted" : ""}
             >
               {d.name}

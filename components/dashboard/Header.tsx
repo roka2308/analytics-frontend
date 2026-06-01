@@ -2,35 +2,55 @@ import Link from "next/link";
 import { SignOutButton } from "./SignOutButton";
 import { ThemeToggle } from "./ThemeToggle";
 import { DashboardPicker, type DashboardLink } from "./DashboardPicker";
+import { ProjectPicker, type ProjectLink } from "./ProjectPicker";
 
 interface Props {
+  projects?: ProjectLink[];
+  currentProjectSlug?: string;
   dashboards?: DashboardLink[];
   currentDashboardSlug?: string;
 }
 
-export function Header({ dashboards, currentDashboardSlug }: Props = {}) {
+export function Header({
+  projects,
+  currentProjectSlug,
+  dashboards,
+  currentDashboardSlug,
+}: Props = {}) {
+  const showProjectPicker = projects && projects.length > 0;
+  const showDashboardPicker = dashboards && dashboards.length > 0;
+
   return (
     <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
       <div className="mx-auto flex max-w-7xl items-center justify-between px-6 py-4">
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2 sm:gap-3">
           <Link
-            href="/dashboard"
+            href="/"
             className="text-xl font-semibold text-foreground hover:text-accent-text transition-colors"
           >
             Analytics
           </Link>
-          {dashboards && dashboards.length > 0 && (
+          {showProjectPicker && (
+            <>
+              <span aria-hidden className="text-muted-foreground">/</span>
+              <ProjectPicker
+                projects={projects!}
+                currentSlug={currentProjectSlug}
+              />
+            </>
+          )}
+          {showDashboardPicker && (
             <>
               <span aria-hidden className="text-muted-foreground">/</span>
               <DashboardPicker
-                dashboards={dashboards}
+                dashboards={dashboards!}
                 currentSlug={currentDashboardSlug}
               />
             </>
           )}
         </div>
         <nav className="flex items-center gap-1 sm:gap-2">
-          {!dashboards && (
+          {!showDashboardPicker && (
             <Link
               href="/dashboard"
               className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"

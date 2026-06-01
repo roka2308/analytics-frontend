@@ -74,7 +74,7 @@ export function SiteList({ sites, orgs }: Props) {
         <CardHeader>
           <CardTitle>Verknüpfte Websites</CardTitle>
           <CardDescription>
-            Alle Matomo-Sites, gruppiert nach Organisation.
+            Alle Matomo-Sites, gruppiert nach Projekt.
           </CardDescription>
         </CardHeader>
         <CardContent>
@@ -115,19 +115,19 @@ export function SiteList({ sites, orgs }: Props) {
         <CardHeader>
           <CardTitle>Neue Website verknüpfen</CardTitle>
           <CardDescription>
-            Wähle Organisation und gib Matomo-Site-ID + Bezeichnung an.
+            Wähle Projekt und gib Matomo-Site-ID + Bezeichnung an.
           </CardDescription>
         </CardHeader>
         <CardContent>
           {orgs.length === 0 ? (
             <p className="text-sm text-warning">
-              Lege zuerst eine Organisation an, dann kannst du Websites verknüpfen.
+              Lege zuerst ein Projekt an, dann kannst du Websites verknüpfen.
             </p>
           ) : (
             <form id="add-site-form" action={handleAdd} className="space-y-4">
               <div className="grid gap-4 sm:grid-cols-[180px_140px_1fr_auto]">
                 <div className="space-y-1.5">
-                  <Label htmlFor="site-org">Organisation</Label>
+                  <Label htmlFor="site-org">Projekt</Label>
                   <Select value={selectedOrg} onValueChange={setSelectedOrg}>
                     <SelectTrigger id="site-org">
                       <SelectValue />

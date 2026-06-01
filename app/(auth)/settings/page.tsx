@@ -3,6 +3,7 @@ import {
   ensureSeedSite,
   getAllSitesWithOrg,
   getOrCreateDefaultOrg,
+  getVisibleProjectsForSession,
   listDashboardsForOrg,
   listOrganizations,
 } from "@/lib/db/queries";
@@ -34,6 +35,8 @@ export default async function SettingsPage({
   const usersRaw = isAdmin ? await listUsers() : [];
   const dashboardsRaw = isAdmin ? await listDashboardsForOrg(defaultOrg.id) : [];
 
+  const projectsForHeader = await getVisibleProjectsForSession(session);
+
   const orgById = new Map(orgs.map((o) => [o.id, o.name] as const));
   const usersForUi = usersRaw.map((u) => ({
     id: u.id,
@@ -46,28 +49,40 @@ export default async function SettingsPage({
 
   return (
     <div className="flex min-h-screen flex-col bg-background">
-      <Header />
+      <Header
+        projects={projectsForHeader.map((p) => ({ slug: p.slug, name: p.name }))}
+      />
       <main className="flex-1 px-6 py-8">
         <div className="mx-auto max-w-3xl space-y-10">
           <div>
             <h1 className="text-2xl font-semibold text-foreground">Einstellungen</h1>
             <p className="mt-1 text-sm text-muted-foreground">
               {isAdmin
-                ? "Verwalte Dashboards, Organisationen, Websites, Nutzer und dein eigenes Passwort."
+                ? "Verwalte Projekte, Dashboards, Websites, Nutzer und dein eigenes Passwort."
                 : "Hier kannst du dein Passwort ändern."}
             </p>
           </div>
 
           {searchParams.error === "no-access" && (
             <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
-              Du hast versucht, eine Website aufzurufen, die nicht (mehr) verknüpft ist
-              oder zu der du keinen Zugriff hast.
+              Du hast versucht, eine Ressource aufzurufen, zu der du keinen Zugriff hast.
             </div>
           )}
 
           {isAdmin && (
+            <section className="space-y-3">
+              <h2 className="text-lg font-medium text-foreground">Projekte</h2>
+              <OrgList orgs={orgs.map((o) => ({ id: o.id, name: o.name, slug: o.slug }))} />
+            </section>
+          )}
+
+          {isAdmin && (
             <section id="dashboards" className="space-y-3 scroll-mt-24">
-              <h2 className="text-lg font-medium text-foreground">Dashboards</h2>
+              <h2 className="text-lg font-medium text-foreground">Dashboards (Standard-Projekt)</h2>
+              <p className="text-sm text-muted-foreground">
+                Aktuell werden hier die Dashboards des Default-Projekts angezeigt.
+                Projekt-spezifische Dashboard-Verwaltung kommt in der nächsten Phase.
+              </p>
               <DashboardList
                 dashboards={dashboardsRaw.map((d) => ({
                   id: d.id,
@@ -77,13 +92,6 @@ export default async function SettingsPage({
                   isDefault: d.isDefault,
                 }))}
               />
-            </section>
-          )}
-
-          {isAdmin && (
-            <section className="space-y-3">
-              <h2 className="text-lg font-medium text-foreground">Organisationen</h2>
-              <OrgList orgs={orgs.map((o) => ({ id: o.id, name: o.name }))} />
             </section>
           )}
 
