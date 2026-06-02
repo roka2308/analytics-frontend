@@ -2,6 +2,19 @@ import { KpiCardWidget, type KpiCardConfig } from "@/components/widgets/KpiCardW
 import { LineChartWidget, type LineChartConfig } from "@/components/widgets/LineChartWidget";
 import { TopListWidget, type TopListConfig } from "@/components/widgets/TopListWidget";
 import { TextBlockWidget, type TextBlockConfig } from "@/components/widgets/TextBlockWidget";
+import {
+  BreakdownWidget,
+  type BreakdownConfig,
+} from "@/components/widgets/BreakdownWidget";
+import { DonutWidget, type DonutConfig } from "@/components/widgets/DonutWidget";
+import {
+  BarChartWidget,
+  type BarChartConfig,
+} from "@/components/widgets/BarChartWidget";
+import {
+  CrossTabWidget,
+  type CrossTabConfig,
+} from "@/components/widgets/CrossTabWidget";
 import type { WidgetDefinition } from "./types";
 
 /**
@@ -44,6 +57,40 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     component: TextBlockWidget as unknown as WidgetDefinition["component"],
     defaultConfig: { text: "Neue Notiz", variant: "body" } satisfies TextBlockConfig,
     defaultLayout: { x: 0, y: 0, w: 12, h: 2 },
+  },
+  // Phase H – neue Visualisierungs-Typen
+  breakdown: {
+    type: "breakdown",
+    label: "Breakdown-Tabelle",
+    description:
+      "Top-N einer Dimension als Tabelle (z.B. Geraete, Laender, Browser).",
+    component: BreakdownWidget as unknown as WidgetDefinition["component"],
+    defaultConfig: { source: "device-type", limit: 10 } satisfies BreakdownConfig,
+    defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
+  },
+  donut: {
+    type: "donut",
+    label: "Donut-Diagramm",
+    description: "Anteilige Verteilung einer Dimension als Tortendiagramm.",
+    component: DonutWidget as unknown as WidgetDefinition["component"],
+    defaultConfig: { source: "device-type", limit: 6 } satisfies DonutConfig,
+    defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
+  },
+  "bar-chart": {
+    type: "bar-chart",
+    label: "Balken-Diagramm",
+    description: "Horizontale Balken fuer Rankings (z.B. Traffic-Quellen).",
+    component: BarChartWidget as unknown as WidgetDefinition["component"],
+    defaultConfig: { source: "referrer-type", limit: 8 } satisfies BarChartConfig,
+    defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
+  },
+  "cross-tab": {
+    type: "cross-tab",
+    label: "Pivot-Tabelle (Seiten × Events)",
+    description: "Verknuepfung von Top-Seiten mit ihren Top-Ereignissen.",
+    component: CrossTabWidget as unknown as WidgetDefinition["component"],
+    defaultConfig: { topPagesLimit: 5, topEventsPerPage: 3 } satisfies CrossTabConfig,
+    defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
   },
 };
 

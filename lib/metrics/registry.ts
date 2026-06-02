@@ -115,6 +115,58 @@ export const METRIC_REGISTRY: Record<string, MetricDefinition> = {
 // ──────────────────────────────────────────────────────────────
 
 export const ANALYSIS_REGISTRY: Record<string, MetricDefinition> = {
+  "device-type": {
+    id: "device-type",
+    kind: "analysis",
+    label: "Geräte-Verteilung",
+    definition: "Anteil der Besuche nach Gerätetyp (Desktop / Smartphone / Tablet).",
+    explanation:
+      "Zeigt, mit welchen Endgeräten deine Besucher unterwegs sind. Mobile-Anteile über 60% sind heute normal; B2B-Websites haben oft höhere Desktop-Anteile.",
+    recommendations: [
+      "Bei hohem Mobile-Anteil: Mobile-Performance und Touch-Bedienung prüfen.",
+      "Mobile Bounce Rate separat ansehen – meist deutlich höher als Desktop.",
+      "Tablet-Anteil unter 5% ist normal; eigene Tablet-Optimierung lohnt selten.",
+    ],
+  },
+  "referrer-type": {
+    id: "referrer-type",
+    kind: "analysis",
+    label: "Traffic-Quellen",
+    definition: "Wie kamen die Besucher zur Website? (Direkt / Suche / Social / Website / Kampagne)",
+    explanation:
+      "Direkt = URL eingegeben oder Bookmark. Suche = SEO. Website = von anderen Seiten verlinkt. Kampagne = utm-getaggte Links (also bezahlte oder eigene Marketing-Aktionen).",
+    recommendations: [
+      "Hoher Anteil 'Direkt' bei kleinen Sites: oft 'unbekannte Quelle' (App-Klicks, https→http). Nicht zwingend gute Marken-Bekanntheit.",
+      "Geringe Suche: SEO-Lücke. Top-Seiten und Indexierung prüfen.",
+      "Kampagnen-Anteil sollte bei aktiven Ads sichtbar sein – wenn nicht, utm-Tagging prüfen.",
+    ],
+  },
+  country: {
+    id: "country",
+    kind: "analysis",
+    label: "Top-Länder",
+    definition: "Verteilung der Besuche nach Herkunftsland.",
+    explanation:
+      "Für regional ausgerichtete Websites ein guter Sanity-Check. Für globale Sites zeigt es, wo Marketing am stärksten wirkt.",
+    recommendations: [
+      "Wenn das Zielland nicht dominiert: Geo-Targeting in Google Ads / Meta prüfen.",
+      "Bei hohem Anteil aus untypischen Ländern (z.B. China, Russland): Bot-Traffic-Verdacht.",
+      "Sprach-Varianten der Website prüfen, wenn nicht-deutscher Traffic relevant wird.",
+    ],
+  },
+  "page-event-pivot": {
+    id: "page-event-pivot",
+    kind: "analysis",
+    label: "Pivot: Seiten × Events",
+    definition: "Welche Ereignisse passieren auf welchen Top-Seiten?",
+    explanation:
+      "Verbindet die zwei wichtigsten Verhaltensdimensionen: Wo halten sich Nutzer auf und was tun sie dort? Nützlich für Conversion-Pfade (z.B. Add-to-Cart auf Produktseiten) und Interaktions-Hotspots.",
+    recommendations: [
+      "Sicherstellen, dass Events in Matomo konsistent benannt sind (Category/Action).",
+      "Top-Seiten ohne relevante Events: hier verlieren Nutzer Aufmerksamkeit, ggf. CTAs prüfen.",
+      "Hohe Event-Last auf wenigen Seiten: diese Seiten ausbauen oder Pattern auf ähnliche Seiten übertragen.",
+    ],
+  },
   "visitor-trend": {
     id: "visitor-trend",
     kind: "analysis",

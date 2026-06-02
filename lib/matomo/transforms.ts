@@ -324,3 +324,126 @@ export async function getTopPagesForRange(
     }));
   });
 }
+
+// ──────────────────────────────────────────────────────────────
+// Generische Breakdown-API (Phase H)
+// ──────────────────────────────────────────────────────────────
+
+export type BreakdownSource =
+  | "device-type"
+  | "device-brand"
+  | "browser"
+  | "os"
+  | "country"
+  | "referrer-type"
+  | "search-engine"
+  | "social-network"
+  | "event-category"
+  | "event-action";
+
+export interface BreakdownEntry {
+  label: string;
+  visits: number;
+}
+
+interface MatomoBreakdownRow {
+  label: string;
+  nb_visits?: number;
+}
+
+const BREAKDOWN_METHODS: Record<BreakdownSource, string> = {
+  "device-type": "DevicesDetection.getType",
+  "device-brand": "DevicesDetection.getBrand",
+  browser: "DevicesDetection.getBrowsers",
+  os: "DevicesDetection.getOsFamilies",
+  country: "UserCountry.getCountry",
+  "referrer-type": "Referrers.getReferrerType",
+  "search-engine": "Referrers.getSearchEngines",
+  "social-network": "Referrers.getSocials",
+  "event-category": "Events.getCategory",
+  "event-action": "Events.getAction",
+};
+
+export async function getBreakdownForRange(
+  source: BreakdownSource,
+  siteId: number,
+  range: RangeInput,
+  limit = 10
+): Promise<BreakdownEntry[]> {
+  const cacheKey = `breakdown_${source}_${siteId}_${range.from}_${range.to}_${limit}`;
+  const method = BREAKDOWN_METHODS[source];
+
+  return withCache(cacheKey, 600, async () => {
+    const data = await matomoRequest<MatomoBreakdownRow[]>({
+      method,
+      idSite: siteId,
+      period: "range",
+      date: toMatomoDate(range),
+      filter_limit: limit,
+    });
+
+    return (data ?? []).map((row) => ({
+      label: row.label ?? "—",
+      visits: row.nb_visits ?? 0,
+    }));
+  });
+}
+
+// ──────────────────────────────────────────────────────────────
+// Cross-Tab: Top-Pages × Events
+// ──────────────────────────────────────────────────────────────
+
+export interface CrossTabCell {
+  category: string;
+  visits: number;
+}
+
+export interface CrossTabRow {
+  page: string;
+  totalVisits: number;
+  topEvents: CrossTabCell[];
+}
+
+/**
+ * Fuer jede der Top-N Seiten werden parallel die Top-Events
+ * (Categories) ueber Matomo-Segment geholt.
+ *
+ * Hinweis: Das sind O(N) Matomo-Calls pro Widget. Mit Cache (10 Min)
+ * fuer normale Dashboard-Nutzung okay. Bei sehr hohen Seitenzahlen
+ * sollte topPagesLimit konservativ gewaehlt werden (max 5–10).
+ */
+export async function getPageEventCrossTab(
+  siteId: number,
+  range: RangeInput,
+  topPagesLimit = 5,
+  topEventsPerPage = 3
+): Promise<CrossTabRow[]> {
+  const cacheKey = `crosstab_pages_events_${siteId}_${range.from}_${range.to}_${topPagesLimit}_${topEventsPerPage}`;
+
+  return withCache(cacheKey, 600, async () => {
+    const pages = await getTopPagesForRange(siteId, range, topPagesLimit);
+    if (pages.length === 0) return [];
+
+    const eventCalls = pages.map((page) =>
+      matomoRequest<MatomoBreakdownRow[]>({
+        method: "Events.getCategory",
+        idSite: siteId,
+        period: "range",
+        date: toMatomoDate(range),
+        segment: `pageUrl==${encodeURIComponent(page.label)}`,
+        filter_limit: topEventsPerPage,
+      }).catch(() => [] as MatomoBreakdownRow[])
+    );
+
+    const eventResults = await Promise.all(eventCalls);
+
+    return pages.map((page, i) => ({
+      page: page.label,
+      totalVisits: page.visits,
+      topEvents: (eventResults[i] ?? []).map((e) => ({
+        category: e.label ?? "—",
+        visits: e.nb_visits ?? 0,
+      })),
+    }));
+  });
+}
