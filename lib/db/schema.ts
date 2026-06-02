@@ -9,6 +9,11 @@ export const organizations = sqliteTable("organizations", {
   // URL-freundlicher Identifier, eindeutig global.
   // UI-Begriff "Projekt"; Code-Begriff bleibt "organization".
   slug: text("slug").notNull().unique(),
+  // Branding (Phase D) – White-Label pro Projekt.
+  // Logo als Base64-Data-URL (klein halten, < 100KB empfohlen).
+  // Akzentfarbe als HSL-Tripel im Format "H S% L%" passend zu CSS-Variablen.
+  brandingLogoBase64: text("branding_logo_base64"),
+  brandingAccentHsl: text("branding_accent_hsl"),
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

@@ -15,6 +15,8 @@ import { SiteList } from "@/components/settings/SiteList";
 import { UserList } from "@/components/settings/UserList";
 import { DashboardList } from "@/components/settings/DashboardList";
 import { ChangePasswordForm } from "@/components/settings/ChangePasswordForm";
+import { ProjectBrandingForm } from "@/components/settings/ProjectBrandingForm";
+import { hslToHex } from "@/lib/branding";
 
 export const dynamic = "force-dynamic";
 
@@ -73,6 +75,27 @@ export default async function SettingsPage({
             <section className="space-y-3">
               <h2 className="text-lg font-medium text-foreground">Projekte</h2>
               <OrgList orgs={orgs.map((o) => ({ id: o.id, name: o.name, slug: o.slug }))} />
+            </section>
+          )}
+
+          {isAdmin && (
+            <section id="branding" className="space-y-3 scroll-mt-24">
+              <h2 className="text-lg font-medium text-foreground">Branding pro Projekt</h2>
+              <p className="text-sm text-muted-foreground">
+                Logo und Akzentfarbe pro Projekt. Das Logo erscheint dezent im Header,
+                die Akzentfarbe wird für Buttons, Hervorhebungen und Charts genutzt.
+              </p>
+              <ProjectBrandingForm
+                projects={orgs.map((o) => ({
+                  id: o.id,
+                  name: o.name,
+                  slug: o.slug,
+                  brandingLogoBase64: o.brandingLogoBase64 ?? null,
+                  brandingAccentHex: o.brandingAccentHsl
+                    ? hslToHex(o.brandingAccentHsl)
+                    : null,
+                }))}
+              />
             </section>
           )}
 

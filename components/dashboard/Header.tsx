@@ -7,6 +7,8 @@ import { ProjectPicker, type ProjectLink } from "./ProjectPicker";
 interface Props {
   projects?: ProjectLink[];
   currentProjectSlug?: string;
+  /** Optionales Projekt-Logo (Base64 Data-URL) fuer dezente Anzeige */
+  currentProjectLogo?: string | null;
   dashboards?: DashboardLink[];
   currentDashboardSlug?: string;
 }
@@ -14,6 +16,7 @@ interface Props {
 export function Header({
   projects,
   currentProjectSlug,
+  currentProjectLogo,
   dashboards,
   currentDashboardSlug,
 }: Props = {}) {
@@ -30,6 +33,23 @@ export function Header({
           >
             Analytics
           </Link>
+
+          {/* Dezentes Projekt-Logo in der Ecke (nur wenn vorhanden) */}
+          {currentProjectLogo && (
+            <span
+              aria-hidden
+              className="flex h-7 w-7 items-center justify-center overflow-hidden rounded-md bg-muted/40 border border-border"
+              title="Projekt-Logo"
+            >
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img
+                src={currentProjectLogo}
+                alt=""
+                className="max-h-full max-w-full object-contain"
+              />
+            </span>
+          )}
+
           {showProjectPicker && (
             <>
               <span aria-hidden className="text-muted-foreground">/</span>

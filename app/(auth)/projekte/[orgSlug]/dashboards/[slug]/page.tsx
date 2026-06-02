@@ -113,6 +113,7 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
       <Header
         projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
         currentProjectSlug={project.slug}
+        currentProjectLogo={project.brandingLogoBase64}
         dashboards={allDashboards.map((d) => ({ slug: d.slug, name: d.name }))}
         currentDashboardSlug={dashboard.slug}
       />
