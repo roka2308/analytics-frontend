@@ -21,12 +21,15 @@ import { Button } from "@/components/ui/button";
 import {
   Select,
   SelectContent,
+  SelectGroup,
   SelectItem,
+  SelectLabel,
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
 import { Star, StarOff, ExternalLink, Pencil, Trash2, Clock } from "lucide-react";
 import { DashboardDefaultRangeEditor } from "./DashboardDefaultRangeEditor";
+import { TEMPLATE_GROUPS, TEMPLATES } from "@/lib/widgets/templates";
 
 interface Dashboard {
   id: string;
@@ -278,11 +281,36 @@ export function DashboardList({ dashboards }: Props) {
                   <SelectTrigger id="db-template">
                     <SelectValue />
                   </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="empty">Leer (keine Widgets)</SelectItem>
-                    <SelectItem value="kpi-basics">KPI-Grundlage (4 KPI-Karten)</SelectItem>
+                  <SelectContent className="max-h-80">
+                    {TEMPLATE_GROUPS.map((group) => (
+                      <SelectGroup key={group.label}>
+                        <SelectLabel>{group.label}</SelectLabel>
+                        {group.templates.map((tplId) => {
+                          const t = TEMPLATES[tplId];
+                          if (!t) return null;
+                          return (
+                            <SelectItem key={t.id} value={t.id}>
+                              {t.label}
+                            </SelectItem>
+                          );
+                        })}
+                      </SelectGroup>
+                    ))}
                   </SelectContent>
                 </Select>
+                {TEMPLATES[template]?.description && (
+                  <p className="text-xs text-muted-foreground">
+                    {TEMPLATES[template].description}
+                    {TEMPLATES[template].bestFor && (
+                      <>
+                        {" "}
+                        <span className="font-medium text-foreground">
+                          ({TEMPLATES[template].bestFor})
+                        </span>
+                      </>
+                    )}
+                  </p>
+                )}
               </div>
               <div className="space-y-1.5 sm:col-span-2">
                 <Label htmlFor="db-description">Beschreibung (optional)</Label>

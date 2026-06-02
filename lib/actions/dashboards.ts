@@ -14,6 +14,7 @@ import {
   setDefaultDashboard,
   type DashboardDefaultRange,
 } from "@/lib/db/queries";
+import { getTemplate } from "@/lib/widgets/templates";
 
 export interface ActionResult {
   ok: boolean;
@@ -73,25 +74,32 @@ export async function createDashboardAction(formData: FormData): Promise<ActionR
     slug,
     name,
     description,
-    isDefault: existing.length === 0, // erstes Dashboard wird automatisch Default
+    isDefault: existing.length === 0,
     position: existing.length,
   });
 
-  // Optional: Template-Widgets befuellen
-  if (template === "kpi-basics") {
-    const kpis = ["visits", "pageviews", "bounceRate", "avgDuration"];
-    for (let k = 0; k < kpis.length; k++) {
+  // Template anwenden (Widgets + optional Default-Zeitraum)
+  const tpl = getTemplate(template);
+  if (tpl) {
+    for (const w of tpl.widgets) {
       await createWidget({
         dashboardId: id,
-        type: "kpi-card",
-        title: null,
-        layout: { x: k * 3, y: 0, w: 3, h: 2 },
-        config: { metric: kpis[k], accent: k === 0 },
-        position: k,
+        type: w.type,
+        title: w.title ?? null,
+        layout: w.layout,
+        config: w.config,
+        position: w.position,
+      });
+    }
+    if (tpl.defaultRange) {
+      await setDashboardDefaultRange(id, {
+        preset: tpl.defaultRange.preset,
+        from: null,
+        to: null,
+        compare: tpl.defaultRange.compare,
       });
     }
   }
-
   revalidatePath("/settings");
   revalidatePath("/dashboards");
   return { ok: true, data: { slug } };
