@@ -25,7 +25,8 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, StarOff, ExternalLink, Pencil, Trash2 } from "lucide-react";
+import { Star, StarOff, ExternalLink, Pencil, Trash2, Clock } from "lucide-react";
+import { DashboardDefaultRangeEditor } from "./DashboardDefaultRangeEditor";
 
 interface Dashboard {
   id: string;
@@ -33,6 +34,10 @@ interface Dashboard {
   name: string;
   description: string | null;
   isDefault: boolean;
+  defaultRangePreset: string | null;
+  defaultRangeFrom: string | null;
+  defaultRangeTo: string | null;
+  defaultCompareMode: string | null;
 }
 
 interface Props {
@@ -46,6 +51,7 @@ export function DashboardList({ dashboards }: Props) {
   const [editingId, setEditingId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
+  const [rangeEditorOpen, setRangeEditorOpen] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const reset = () => {
@@ -188,6 +194,22 @@ export function DashboardList({ dashboards }: Props) {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() =>
+                            setRangeEditorOpen(rangeEditorOpen === d.id ? null : d.id)
+                          }
+                          disabled={isPending}
+                          title="Standard-Zeitraum"
+                          className={
+                            d.defaultRangePreset || d.defaultCompareMode
+                              ? "text-accent-text"
+                              : ""
+                          }
+                        >
+                          <Clock className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => {
                             setEditingId(d.id);
                             setEditName(d.name);
@@ -210,6 +232,17 @@ export function DashboardList({ dashboards }: Props) {
                           <Trash2 className="h-3.5 w-3.5" />
                         </Button>
                       </div>
+                    </div>
+                  )}
+                  {rangeEditorOpen === d.id && editingId !== d.id && (
+                    <div className="mt-3">
+                      <DashboardDefaultRangeEditor
+                        dashboardId={d.id}
+                        currentPreset={d.defaultRangePreset}
+                        currentFrom={d.defaultRangeFrom}
+                        currentTo={d.defaultRangeTo}
+                        currentCompare={d.defaultCompareMode}
+                      />
                     </div>
                   )}
                 </div>

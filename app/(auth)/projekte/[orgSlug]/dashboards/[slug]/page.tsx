@@ -95,11 +95,19 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
 
   await assertProjectSiteAccess(project.id, currentSiteId);
 
+  // Falls die URL keinen Zeitraum vorgibt, nutze den Dashboard-Default
+  // (Phase F). URL-Werte haben Vorrang, damit teilbare Links eindeutig sind.
+  const effectivePreset = searchParams.range ?? dashboard.defaultRangePreset ?? undefined;
+  const effectiveFrom = searchParams.from ?? dashboard.defaultRangeFrom ?? undefined;
+  const effectiveTo = searchParams.to ?? dashboard.defaultRangeTo ?? undefined;
+  const effectiveCompare =
+    searchParams.compare ?? dashboard.defaultCompareMode ?? undefined;
+
   const range = resolveDateRange({
-    preset: searchParams.range,
-    from: searchParams.from,
-    to: searchParams.to,
-    compare: searchParams.compare,
+    preset: effectivePreset,
+    from: effectiveFrom,
+    to: effectiveTo,
+    compare: effectiveCompare,
   });
   const compareRange = computeCompareRange(range);
 

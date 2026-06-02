@@ -70,6 +70,13 @@ export const dashboards = sqliteTable("dashboards", {
   isDefault: integer("is_default", { mode: "boolean" }).notNull().default(false),
   // Sortier-Reihenfolge in der Dashboard-Liste
   position: integer("position").notNull().default(0),
+  // Default-Zeitraum dieses Dashboards.
+  // Wenn null: aus URL/Default lesen (heute = "letzte 7 Tage").
+  // Wenn gesetzt: dieser Preset wird verwendet, sofern URL nichts anderes vorgibt.
+  defaultRangePreset: text("default_range_preset"),
+  defaultRangeFrom: text("default_range_from"), // YYYY-MM-DD fuer custom-range
+  defaultRangeTo: text("default_range_to"),
+  defaultCompareMode: text("default_compare_mode"), // none/previous/year
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

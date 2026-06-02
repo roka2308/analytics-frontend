@@ -10,7 +10,9 @@ import {
   getOrCreateDefaultOrg,
   listDashboardsForOrg,
   renameDashboard,
+  setDashboardDefaultRange,
   setDefaultDashboard,
+  type DashboardDefaultRange,
 } from "@/lib/db/queries";
 
 export interface ActionResult {
@@ -142,6 +144,44 @@ export async function setDefaultDashboardAction(dashboardId: string): Promise<Ac
   await requireAdmin();
   const orgId = await adminOrgId();
   await setDefaultDashboard(orgId, dashboardId);
+  revalidatePath("/settings");
+  revalidatePath("/dashboards");
+  return { ok: true };
+}
+
+export async function setDashboardDefaultRangeAction(
+  dashboardId: string,
+  value: DashboardDefaultRange
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  // Mini-Validierung
+  const validPresets = new Set([
+    "today",
+    "yesterday",
+    "7",
+    "30",
+    "90",
+    "this-month",
+    "last-month",
+    "this-quarter",
+    "this-year",
+    "custom",
+  ]);
+  if (value.preset && !validPresets.has(value.preset)) {
+    return { ok: false, error: "Ungültiger Zeitraum-Preset." };
+  }
+  if (value.compare && !["none", "previous", "year"].includes(value.compare)) {
+    return { ok: false, error: "Ungültiger Vergleichsmodus." };
+  }
+  if (value.preset === "custom" && (!value.from || !value.to)) {
+    return {
+      ok: false,
+      error: "Bei benutzerdefiniertem Zeitraum bitte Start- und End-Datum angeben.",
+    };
+  }
+
+  await setDashboardDefaultRange(dashboardId, value);
   revalidatePath("/settings");
   revalidatePath("/dashboards");
   return { ok: true };

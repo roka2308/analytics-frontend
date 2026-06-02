@@ -113,6 +113,10 @@ export default async function SettingsPage({
                   name: d.name,
                   description: d.description,
                   isDefault: d.isDefault,
+                  defaultRangePreset: d.defaultRangePreset,
+                  defaultRangeFrom: d.defaultRangeFrom,
+                  defaultRangeTo: d.defaultRangeTo,
+                  defaultCompareMode: d.defaultCompareMode,
                 }))}
               />
             </section>

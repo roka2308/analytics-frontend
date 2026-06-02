@@ -274,6 +274,10 @@ export interface DashboardRow {
   description: string | null;
   isDefault: boolean;
   position: number;
+  defaultRangePreset: string | null;
+  defaultRangeFrom: string | null;
+  defaultRangeTo: string | null;
+  defaultCompareMode: string | null;
 }
 
 function parseWidget(raw: typeof dashboardWidgets.$inferSelect): DashboardWidgetRow {
@@ -314,6 +318,10 @@ export async function listDashboardsForOrg(orgId: string): Promise<DashboardRow[
     description: r.description,
     isDefault: r.isDefault,
     position: r.position,
+    defaultRangePreset: r.defaultRangePreset,
+    defaultRangeFrom: r.defaultRangeFrom,
+    defaultRangeTo: r.defaultRangeTo,
+    defaultCompareMode: r.defaultCompareMode,
   }));
 }
 
@@ -336,6 +344,10 @@ export async function getDashboardBySlug(
     description: r.description,
     isDefault: r.isDefault,
     position: r.position,
+    defaultRangePreset: r.defaultRangePreset,
+    defaultRangeFrom: r.defaultRangeFrom,
+    defaultRangeTo: r.defaultRangeTo,
+    defaultCompareMode: r.defaultCompareMode,
   };
 }
 
@@ -408,6 +420,29 @@ export async function renameDashboard(dashboardId: string, name: string, descrip
 
 export async function deleteDashboard(dashboardId: string) {
   await db.delete(dashboards).where(eq(dashboards.id, dashboardId));
+}
+
+export interface DashboardDefaultRange {
+  preset: string | null;
+  from: string | null;
+  to: string | null;
+  compare: string | null;
+}
+
+export async function setDashboardDefaultRange(
+  dashboardId: string,
+  value: DashboardDefaultRange
+) {
+  await db
+    .update(dashboards)
+    .set({
+      defaultRangePreset: value.preset,
+      defaultRangeFrom: value.from,
+      defaultRangeTo: value.to,
+      defaultCompareMode: value.compare,
+      updatedAt: new Date(),
+    })
+    .where(eq(dashboards.id, dashboardId));
 }
 
 export async function setDefaultDashboard(orgId: string, dashboardId: string) {
