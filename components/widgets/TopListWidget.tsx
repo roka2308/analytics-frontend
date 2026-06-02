@@ -9,6 +9,8 @@ import {
 } from "@/components/ui/table";
 import { getTopPagesForRange } from "@/lib/matomo/transforms";
 import type { WidgetProps } from "@/lib/widgets/types";
+import { getMetricDefinition } from "@/lib/metrics/registry";
+import { MetricInfo } from "@/components/dashboard/MetricInfo";
 
 export interface TopListConfig {
   source: "pages";
@@ -36,12 +38,14 @@ export async function TopListWidget({
   }
 
   const displayTitle = title ?? "Top-Seiten";
+  const def = getMetricDefinition("top-pages");
 
   return (
     <Card className="h-full">
       <CardHeader>
-        <CardTitle className="text-sm font-medium text-foreground">
-          {displayTitle}
+        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-foreground">
+          <span>{displayTitle}</span>
+          {def && <MetricInfo metric={def} size="md" />}
         </CardTitle>
       </CardHeader>
       <CardContent>

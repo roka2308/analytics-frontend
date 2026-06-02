@@ -3,6 +3,8 @@ import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
 import { getVisitorsOverviewWithCompare } from "@/lib/matomo/transforms";
 import { formatDuration, cn } from "@/lib/utils";
 import type { WidgetProps } from "@/lib/widgets/types";
+import { getMetricDefinition } from "@/lib/metrics/registry";
+import { MetricInfo } from "@/components/dashboard/MetricInfo";
 
 export interface KpiCardConfig {
   metric: "visits" | "pageviews" | "bounceRate" | "avgDuration" | "uniqueVisitors";
@@ -62,6 +64,7 @@ export async function KpiCardWidget({
   const value = formatValue(config.metric, result.current);
   const displayTitle = title ?? METRIC_LABELS[config.metric];
   const description = METRIC_DESCRIPTIONS[config.metric];
+  const metricDef = getMetricDefinition(config.metric);
 
   // Delta fuer aktuelle Metrik berechnen
   const deltaForMetric = result.delta
@@ -104,8 +107,9 @@ export async function KpiCardWidget({
         />
       )}
       <CardHeader className="pb-2">
-        <CardTitle className="text-sm font-medium text-muted-foreground">
-          {displayTitle}
+        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
+          <span>{displayTitle}</span>
+          {metricDef && <MetricInfo metric={metricDef} size="sm" />}
         </CardTitle>
       </CardHeader>
       <CardContent>
