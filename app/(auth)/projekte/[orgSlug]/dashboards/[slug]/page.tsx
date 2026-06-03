@@ -19,7 +19,8 @@ import {
 } from "@/lib/db/queries";
 import { ensureSeedDashboard } from "@/lib/widgets/seed";
 import { resolveDateRange, computeCompareRange } from "@/lib/dateRange";
-import { Header } from "@/components/dashboard/Header";
+import { AppShell } from "@/components/layout/AppShell";
+import { Topbar } from "@/components/layout/Topbar";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { SiteSelector } from "@/components/dashboard/SiteSelector";
 import { DashboardRenderer } from "@/components/dashboard/DashboardRenderer";
@@ -69,23 +70,30 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
   if (sites.length === 0) {
     if (isAdmin) redirect(`/settings?error=no-sites-in-project`);
     return (
-      <div className="flex min-h-screen flex-col bg-background">
-        <Header
-          projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
-          currentProjectSlug={project.slug}
-        />
-        <main className="flex-1 px-6 py-8">
+      <AppShell
+        projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
+        currentProjectSlug={project.slug}
+        currentProjectLogo={project.brandingLogoBase64}
+        dashboards={allDashboards.map((d) => ({
+          slug: d.slug,
+          name: d.name,
+          isDefault: d.isDefault,
+        }))}
+        currentDashboardSlug={dashboard.slug}
+      >
+        <Topbar title={dashboard.name} />
+        <main className="px-6 py-6">
           <div className="mx-auto max-w-3xl">
             <div className="rounded-lg border border-warning/30 bg-warning/10 p-6 text-center">
               <p className="font-medium text-foreground">Keine Websites zugewiesen</p>
               <p className="mt-2 text-sm text-muted-foreground">
-                Im Projekt „{project.name}" ist noch keine Website hinterlegt. Bitte
+                Im Projekt {project.name} ist noch keine Website hinterlegt. Bitte
                 wende dich an einen Admin.
               </p>
             </div>
           </div>
         </main>
-      </div>
+      </AppShell>
     );
   }
 
@@ -119,66 +127,69 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
   const widgets = await getWidgetsForDashboard(dashboard.id);
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header
-        projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
-        currentProjectSlug={project.slug}
-        currentProjectLogo={project.brandingLogoBase64}
-        dashboards={allDashboards.map((d) => ({ slug: d.slug, name: d.name }))}
-        currentDashboardSlug={dashboard.slug}
-      />
-      <main className="flex-1 px-6 py-8">
-        <div className="mx-auto max-w-7xl space-y-8">
-
-          <div className="flex flex-wrap items-end justify-between gap-4">
-            <div>
-              <h1 className="text-2xl font-semibold text-foreground">{dashboard.name}</h1>
-              <p className="mt-1 flex flex-wrap items-center text-sm text-muted-foreground">
-                <span className="mr-2 font-medium text-foreground">{currentSiteLabel}</span>
+    <AppShell
+      projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
+      currentProjectSlug={project.slug}
+      currentProjectLogo={project.brandingLogoBase64}
+      dashboards={allDashboards.map((d) => ({
+        slug: d.slug,
+        name: d.name,
+        isDefault: d.isDefault,
+      }))}
+      currentDashboardSlug={dashboard.slug}
+    >
+      <Topbar
+        title={dashboard.name}
+        subtitle={
+          <>
+            <span className="mr-2 font-medium text-foreground">{currentSiteLabel}</span>
+            <span className="mx-1">·</span>
+            <span>{range.label}</span>
+            {compareRange && (
+              <>
                 <span className="mx-1">·</span>
-                <span>{range.label}</span>
-                {compareRange && (
-                  <>
-                    <span className="mx-1">·</span>
-                    <span className="text-accent-text">vs. {compareRange.label}</span>
-                  </>
-                )}
-              </p>
-            </div>
-            <div className="flex flex-wrap items-center gap-3">
-              {sites.length > 1 && (
-                <SiteSelector
-                  sites={sites.map((s) => ({
-                    matomoSiteId: s.matomoSiteId,
-                    label: s.label,
-                    orgName: project.name,
-                  }))}
-                  currentSiteId={currentSiteId}
-                  showOrgGroups={false}
-                />
-              )}
-              <Suspense fallback={<Skeleton className="h-10 w-72" />}>
-                <DateRangePicker />
-              </Suspense>
-              {isAdmin && (
-                <Link
-                  href={`/projekte/${project.slug}/dashboards/${dashboard.slug}/edit`}
-                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
-                  title="Dashboard bearbeiten"
-                >
-                  <Pencil className="h-3.5 w-3.5" />
-                  Bearbeiten
-                </Link>
-              )}
-            </div>
-          </div>
-
+                <span className="text-accent-text">vs. {compareRange.label}</span>
+              </>
+            )}
+          </>
+        }
+        right={
+          <>
+            {sites.length > 1 && (
+              <SiteSelector
+                sites={sites.map((s) => ({
+                  matomoSiteId: s.matomoSiteId,
+                  label: s.label,
+                  orgName: project.name,
+                }))}
+                currentSiteId={currentSiteId}
+                showOrgGroups={false}
+              />
+            )}
+            <Suspense fallback={<Skeleton className="h-10 w-72" />}>
+              <DateRangePicker />
+            </Suspense>
+            {isAdmin && (
+              <Link
+                href={`/projekte/${project.slug}/dashboards/${dashboard.slug}/edit`}
+                className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                title="Dashboard bearbeiten"
+              >
+                <Pencil className="h-3.5 w-3.5" />
+                Bearbeiten
+              </Link>
+            )}
+          </>
+        }
+      />
+      <main className="px-6 py-6">
+        <div className="mx-auto max-w-7xl">
           <DashboardRenderer
             widgets={widgets}
             ctx={{ siteId: currentSiteId, range, compareRange }}
           />
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }

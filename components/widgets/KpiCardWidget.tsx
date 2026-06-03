@@ -1,10 +1,14 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { ArrowDownRight, ArrowUpRight, Minus } from "lucide-react";
-import { getVisitorsOverviewWithCompare } from "@/lib/matomo/transforms";
+import { TrendingUp, TrendingDown, Minus, Users, Eye, Activity, Clock, UserCheck } from "lucide-react";
+import {
+  getVisitorsOverviewWithCompare,
+  getVisitorTrendForRange,
+} from "@/lib/matomo/transforms";
 import { formatDuration, cn } from "@/lib/utils";
 import type { WidgetProps } from "@/lib/widgets/types";
 import { getMetricDefinition } from "@/lib/metrics/registry";
 import { MetricInfo } from "@/components/dashboard/MetricInfo";
+import { SparklineClient } from "@/components/charts/SparklineClient";
 
 export interface KpiCardConfig {
   metric: "visits" | "pageviews" | "bounceRate" | "avgDuration" | "uniqueVisitors";
@@ -19,12 +23,14 @@ const METRIC_LABELS: Record<KpiCardConfig["metric"], string> = {
   uniqueVisitors: "Unique Visitors",
 };
 
-const METRIC_DESCRIPTIONS: Partial<Record<KpiCardConfig["metric"], string>> = {
-  bounceRate: "Anteil Einzel-Seitenbesuche",
-  avgDuration: "pro Besuch",
+const METRIC_ICONS: Record<KpiCardConfig["metric"], React.ComponentType<{ className?: string }>> = {
+  visits: Users,
+  pageviews: Eye,
+  bounceRate: Activity,
+  avgDuration: Clock,
+  uniqueVisitors: UserCheck,
 };
 
-/** Welche Metriken sind "weniger ist besser" (z.B. Bounce Rate)? */
 const LOWER_IS_BETTER = new Set<KpiCardConfig["metric"]>(["bounceRate"]);
 
 function formatValue(metric: KpiCardConfig["metric"], v: {
@@ -55,31 +61,31 @@ export async function KpiCardWidget({
   title,
   ctx,
 }: WidgetProps<KpiCardConfig>) {
-  const result = await getVisitorsOverviewWithCompare(
-    ctx.siteId,
-    { from: ctx.range.from, to: ctx.range.to },
-    ctx.compareRange
-  );
+  // Parallele Calls: Overview (current+previous) + Sparkline-Trend
+  const [result, trendData] = await Promise.all([
+    getVisitorsOverviewWithCompare(
+      ctx.siteId,
+      { from: ctx.range.from, to: ctx.range.to },
+      ctx.compareRange
+    ),
+    getVisitorTrendForRange(ctx.siteId, { from: ctx.range.from, to: ctx.range.to }, null).catch(
+      () => [] as Awaited<ReturnType<typeof getVisitorTrendForRange>>
+    ),
+  ]);
 
   const value = formatValue(config.metric, result.current);
   const displayTitle = title ?? METRIC_LABELS[config.metric];
-  const description = METRIC_DESCRIPTIONS[config.metric];
   const metricDef = getMetricDefinition(config.metric);
+  const Icon = METRIC_ICONS[config.metric];
 
-  // Delta fuer aktuelle Metrik berechnen
   const deltaForMetric = result.delta
     ? config.metric === "avgDuration"
       ? result.delta.avgDuration
       : result.delta[config.metric]
     : null;
 
-  const previousValue = result.previous
-    ? formatValue(config.metric, result.previous)
-    : null;
-
   const lowerIsBetter = LOWER_IS_BETTER.has(config.metric);
 
-  // Vorzeichen → "gut" oder "schlecht"
   let trendKind: "up" | "down" | "flat" = "flat";
   if (deltaForMetric && deltaForMetric.pct !== null) {
     if (deltaForMetric.pct > 0.05) trendKind = "up";
@@ -93,10 +99,16 @@ export async function KpiCardWidget({
       ? trendKind === "down"
       : trendKind === "up";
 
+  // Sparkline-Daten in Tremor-Format
+  const sparklineData = trendData.map((p) => ({
+    date: p.date,
+    value: p.Besuche,
+  }));
+
   return (
     <Card
       className={cn(
-        "relative h-full overflow-hidden",
+        "relative h-full overflow-hidden border-border/60",
         config.accent && "border-accent/40"
       )}
     >
@@ -107,38 +119,53 @@ export async function KpiCardWidget({
         />
       )}
       <CardHeader className="pb-2">
-        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-muted-foreground">
-          <span>{displayTitle}</span>
-          {metricDef && <MetricInfo metric={metricDef} size="sm" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <div className="text-3xl font-bold tabular-nums text-foreground">
-          {value}
-        </div>
-
-        {deltaForMetric && previousValue && ctx.compareRange ? (
-          <div className="mt-2 flex flex-wrap items-center gap-x-2 gap-y-1">
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
             <span
+              aria-hidden
               className={cn(
-                "inline-flex items-center gap-1 rounded-md px-1.5 py-0.5 text-xs font-medium tabular-nums",
-                isPositive === true && "bg-success/10 text-success",
-                isPositive === false && "bg-destructive/10 text-destructive",
-                isPositive === null && "bg-muted text-muted-foreground"
+                "flex h-7 w-7 items-center justify-center rounded-md",
+                config.accent ? "bg-accent/10 text-accent-text" : "bg-muted text-muted-foreground"
               )}
             >
-              {trendKind === "up" && <ArrowUpRight className="h-3 w-3" />}
-              {trendKind === "down" && <ArrowDownRight className="h-3 w-3" />}
-              {trendKind === "flat" && <Minus className="h-3 w-3" />}
-              {formatPercent(deltaForMetric.pct)}
+              <Icon className="h-4 w-4" />
             </span>
-            <span className="text-xs text-muted-foreground">
-              vs. {previousValue} ({ctx.compareRange.label})
-            </span>
+            <span>{displayTitle}</span>
+            {metricDef && <MetricInfo metric={metricDef} size="sm" />}
+          </CardTitle>
+        </div>
+      </CardHeader>
+      <CardContent>
+        <div className="flex items-end justify-between gap-3">
+          <div className="min-w-0">
+            <div className="text-3xl font-bold tabular-nums text-foreground">
+              {value}
+            </div>
+            {deltaForMetric && ctx.compareRange ? (
+              <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium tabular-nums">
+                <span
+                  className={cn(
+                    "inline-flex items-center gap-0.5",
+                    isPositive === true && "text-success",
+                    isPositive === false && "text-destructive",
+                    isPositive === null && "text-muted-foreground"
+                  )}
+                >
+                  {trendKind === "up" && <TrendingUp className="h-3 w-3" />}
+                  {trendKind === "down" && <TrendingDown className="h-3 w-3" />}
+                  {trendKind === "flat" && <Minus className="h-3 w-3" />}
+                  {formatPercent(deltaForMetric.pct)}
+                </span>
+              </div>
+            ) : null}
           </div>
-        ) : description ? (
-          <p className="mt-1 text-xs text-muted-foreground">{description}</p>
-        ) : null}
+
+          {sparklineData.length > 0 && (
+            <div className="shrink-0 opacity-80">
+              <SparklineClient data={sparklineData} />
+            </div>
+          )}
+        </div>
       </CardContent>
     </Card>
   );

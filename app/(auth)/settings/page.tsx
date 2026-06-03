@@ -12,7 +12,8 @@ import {
 import { ensureSeedDashboard } from "@/lib/widgets/seed";
 import { listShareTokensForDashboard } from "@/lib/sharing/tokens";
 import { listUsers } from "@/lib/auth/users";
-import { Header } from "@/components/dashboard/Header";
+import { AppShell } from "@/components/layout/AppShell";
+import { Topbar } from "@/components/layout/Topbar";
 import { OrgList } from "@/components/settings/OrgList";
 import { SiteList } from "@/components/settings/SiteList";
 import { UserList } from "@/components/settings/UserList";
@@ -70,20 +71,26 @@ export default async function SettingsPage({
   }));
 
   return (
-    <div className="flex min-h-screen flex-col bg-background">
-      <Header
-        projects={projectsForHeader.map((p) => ({ slug: p.slug, name: p.name }))}
+    <AppShell
+      projects={projectsForHeader.map((p) => ({ slug: p.slug, name: p.name }))}
+      dashboards={dashboardsRaw.map((d) => ({
+        slug: d.slug,
+        name: d.name,
+        isDefault: d.isDefault,
+      }))}
+    >
+      <Topbar
+        title="Einstellungen"
+        subtitle={
+          <span>
+            {isAdmin
+              ? "Verwalte Projekte, Dashboards, Websites, Nutzer und dein Passwort."
+              : "Hier kannst du dein Passwort ändern."}
+          </span>
+        }
       />
-      <main className="flex-1 px-6 py-8">
+      <main className="px-6 py-6">
         <div className="mx-auto max-w-3xl space-y-10">
-          <div>
-            <h1 className="text-2xl font-semibold text-foreground">Einstellungen</h1>
-            <p className="mt-1 text-sm text-muted-foreground">
-              {isAdmin
-                ? "Verwalte Projekte, Dashboards, Websites, Nutzer und dein eigenes Passwort."
-                : "Hier kannst du dein Passwort ändern."}
-            </p>
-          </div>
 
           {searchParams.error === "no-access" && (
             <div className="rounded-md border border-warning/40 bg-warning/10 px-4 py-3 text-sm text-foreground">
@@ -180,6 +187,6 @@ export default async function SettingsPage({
           </section>
         </div>
       </main>
-    </div>
+    </AppShell>
   );
 }
