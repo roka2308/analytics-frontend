@@ -27,9 +27,20 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-import { Star, StarOff, ExternalLink, Pencil, Trash2, Clock } from "lucide-react";
+import { Star, StarOff, ExternalLink, Pencil, Trash2, Clock, Share2 } from "lucide-react";
 import { DashboardDefaultRangeEditor } from "./DashboardDefaultRangeEditor";
+import { ShareLinksEditor } from "./ShareLinksEditor";
 import { TEMPLATE_GROUPS, TEMPLATES } from "@/lib/widgets/templates";
+
+interface ShareTokenRowForList {
+  id: string;
+  token: string;
+  label: string | null;
+  matomoSiteId: number | null;
+  expiresAt: Date | null;
+  revokedAt: Date | null;
+  createdAt: Date;
+}
 
 interface Dashboard {
   id: string;
@@ -41,13 +52,21 @@ interface Dashboard {
   defaultRangeFrom: string | null;
   defaultRangeTo: string | null;
   defaultCompareMode: string | null;
+  shareTokens: ShareTokenRowForList[];
+}
+
+interface ProjectSite {
+  matomoSiteId: number;
+  label: string;
 }
 
 interface Props {
   dashboards: Dashboard[];
+  sites: ProjectSite[];
+  baseUrl: string;
 }
 
-export function DashboardList({ dashboards }: Props) {
+export function DashboardList({ dashboards, sites, baseUrl }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [template, setTemplate] = useState<string>("kpi-basics");
@@ -55,6 +74,7 @@ export function DashboardList({ dashboards }: Props) {
   const [editName, setEditName] = useState("");
   const [editDesc, setEditDesc] = useState("");
   const [rangeEditorOpen, setRangeEditorOpen] = useState<string | null>(null);
+  const [shareEditorOpen, setShareEditorOpen] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
   const reset = () => {
@@ -213,6 +233,22 @@ export function DashboardList({ dashboards }: Props) {
                         <Button
                           size="sm"
                           variant="ghost"
+                          onClick={() =>
+                            setShareEditorOpen(shareEditorOpen === d.id ? null : d.id)
+                          }
+                          disabled={isPending}
+                          title="Teilen"
+                          className={
+                            d.shareTokens.some((t) => !t.revokedAt)
+                              ? "text-accent-text"
+                              : ""
+                          }
+                        >
+                          <Share2 className="h-3.5 w-3.5" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
                           onClick={() => {
                             setEditingId(d.id);
                             setEditName(d.name);
@@ -245,6 +281,20 @@ export function DashboardList({ dashboards }: Props) {
                         currentFrom={d.defaultRangeFrom}
                         currentTo={d.defaultRangeTo}
                         currentCompare={d.defaultCompareMode}
+                      />
+                    </div>
+                  )}
+                  {shareEditorOpen === d.id && editingId !== d.id && (
+                    <div className="mt-3 rounded-md border border-border bg-muted/30 p-3">
+                      <div className="mb-2 flex items-center gap-1.5 text-xs font-medium text-muted-foreground uppercase tracking-wider">
+                        <Share2 className="h-3 w-3" />
+                        Share-Links
+                      </div>
+                      <ShareLinksEditor
+                        dashboardId={d.id}
+                        tokens={d.shareTokens}
+                        sites={sites}
+                        baseUrl={baseUrl}
                       />
                     </div>
                   )}

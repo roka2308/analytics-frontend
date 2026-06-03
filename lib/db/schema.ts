@@ -86,6 +86,37 @@ export const dashboards = sqliteTable("dashboards", {
 });
 
 /**
+ * Share-Tokens fuer Dashboard-Read-Only-Zugriff ohne Login.
+ *
+ * Architektur:
+ *  - Token wird kryptografisch sicher generiert (32 Byte → base64url)
+ *  - URL: /share/[token] – middleware laesst diese Route oeffentlich
+ *  - Optional: matomoSiteId (fixiert die Site), expiresAt (Ablauf),
+ *    revokedAt (Widerruf ohne Loeschen), label (Beschreibung)
+ */
+export const dashboardShareTokens = sqliteTable("dashboard_share_tokens", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  dashboardId: text("dashboard_id")
+    .notNull()
+    .references(() => dashboards.id, { onDelete: "cascade" }),
+  token: text("token").notNull().unique(),
+  label: text("label"),
+  // Optional eine bestimmte Site fixieren (sonst: erste Site des Projekts)
+  matomoSiteId: integer("matomo_site_id"),
+  // Optional Ablaufdatum
+  expiresAt: integer("expires_at", { mode: "timestamp" }),
+  // Widerruf-Marker (statt loeschen – Audit-Trail bleibt)
+  revokedAt: integer("revoked_at", { mode: "timestamp" }),
+  // Wer hat den Token erstellt
+  createdByUserId: text("created_by_user_id"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
  * Widgets eines Dashboards.
  * - type: bestimmt, welche Komponente gerendert wird (siehe Widget-Registry)
  * - config: JSON-String mit widget-spezifischen Einstellungen (Metrik, Farbe, etc.)

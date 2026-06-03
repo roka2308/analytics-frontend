@@ -1,13 +1,16 @@
+import { headers } from "next/headers";
 import { requireUser } from "@/lib/auth/requireUser";
 import {
   ensureSeedSite,
   getAllSitesWithOrg,
   getOrCreateDefaultOrg,
+  getSitesForOrg,
   getVisibleProjectsForSession,
   listDashboardsForOrg,
   listOrganizations,
 } from "@/lib/db/queries";
 import { ensureSeedDashboard } from "@/lib/widgets/seed";
+import { listShareTokensForDashboard } from "@/lib/sharing/tokens";
 import { listUsers } from "@/lib/auth/users";
 import { Header } from "@/components/dashboard/Header";
 import { OrgList } from "@/components/settings/OrgList";
@@ -36,6 +39,23 @@ export default async function SettingsPage({
   const sites = isAdmin ? await getAllSitesWithOrg() : [];
   const usersRaw = isAdmin ? await listUsers() : [];
   const dashboardsRaw = isAdmin ? await listDashboardsForOrg(defaultOrg.id) : [];
+
+  // Share-Tokens und Default-Projekt-Sites laden (fuer DashboardList)
+  const sitesForDefaultProject = isAdmin
+    ? await getSitesForOrg(defaultOrg.id)
+    : [];
+  const shareTokensByDashboard = new Map<string, Awaited<ReturnType<typeof listShareTokensForDashboard>>>();
+  if (isAdmin) {
+    for (const d of dashboardsRaw) {
+      shareTokensByDashboard.set(d.id, await listShareTokensForDashboard(d.id));
+    }
+  }
+
+  // Base-URL fuer Share-Links zusammenbauen
+  const hdrs = headers();
+  const proto = hdrs.get("x-forwarded-proto") ?? "https";
+  const host = hdrs.get("host") ?? "localhost:3000";
+  const baseUrl = `${proto}://${host}`;
 
   const projectsForHeader = await getVisibleProjectsForSession(session);
 
@@ -107,6 +127,11 @@ export default async function SettingsPage({
                 Projekt-spezifische Dashboard-Verwaltung kommt in der nächsten Phase.
               </p>
               <DashboardList
+                baseUrl={baseUrl}
+                sites={sitesForDefaultProject.map((s) => ({
+                  matomoSiteId: s.matomoSiteId,
+                  label: s.label,
+                }))}
                 dashboards={dashboardsRaw.map((d) => ({
                   id: d.id,
                   slug: d.slug,
@@ -117,6 +142,7 @@ export default async function SettingsPage({
                   defaultRangeFrom: d.defaultRangeFrom,
                   defaultRangeTo: d.defaultRangeTo,
                   defaultCompareMode: d.defaultCompareMode,
+                  shareTokens: shareTokensByDashboard.get(d.id) ?? [],
                 }))}
               />
             </section>
