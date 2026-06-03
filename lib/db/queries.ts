@@ -6,6 +6,7 @@ import {
   users,
   dashboards,
   dashboardWidgets,
+  dashboardSections,
 } from "./schema";
 import { eq, asc, count, and } from "drizzle-orm";
 
@@ -259,11 +260,21 @@ export interface WidgetLayout {
 export interface DashboardWidgetRow {
   id: string;
   dashboardId: string;
+  sectionId: string | null;
   type: string;
   title: string | null;
   layout: WidgetLayout;
   config: Record<string, unknown>;
   position: number;
+}
+
+export interface DashboardSectionRow {
+  id: string;
+  dashboardId: string;
+  title: string;
+  description: string | null;
+  position: number;
+  collapsed: boolean;
 }
 
 export interface DashboardRow {
@@ -296,6 +307,7 @@ function parseWidget(raw: typeof dashboardWidgets.$inferSelect): DashboardWidget
   return {
     id: raw.id,
     dashboardId: raw.dashboardId,
+    sectionId: raw.sectionId,
     type: raw.type,
     title: raw.title,
     layout,
@@ -464,4 +476,133 @@ export async function countDashboardsForOrg(orgId: string): Promise<number> {
     .from(dashboards)
     .where(eq(dashboards.organizationId, orgId));
   return res[0]?.value ?? 0;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Sections (Phase I.1)
+// ──────────────────────────────────────────────────────────────
+
+function parseSection(raw: typeof dashboardSections.$inferSelect): DashboardSectionRow {
+  return {
+    id: raw.id,
+    dashboardId: raw.dashboardId,
+    title: raw.title,
+    description: raw.description,
+    position: raw.position,
+    collapsed: raw.collapsed,
+  };
+}
+
+export async function listSectionsForDashboard(dashboardId: string): Promise<DashboardSectionRow[]> {
+  const rows = await db
+    .select()
+    .from(dashboardSections)
+    .where(eq(dashboardSections.dashboardId, dashboardId))
+    .orderBy(asc(dashboardSections.position), asc(dashboardSections.createdAt));
+  return rows.map(parseSection);
+}
+
+export async function createSection(input: {
+  dashboardId: string;
+  title: string;
+  description?: string | null;
+  position?: number;
+}): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.insert(dashboardSections).values({
+    id,
+    dashboardId: input.dashboardId,
+    title: input.title,
+    description: input.description ?? null,
+    position: input.position ?? 0,
+  });
+  return id;
+}
+
+export async function renameSection(
+  sectionId: string,
+  title: string,
+  description: string | null
+) {
+  await db
+    .update(dashboardSections)
+    .set({ title, description })
+    .where(eq(dashboardSections.id, sectionId));
+}
+
+export async function deleteSection(sectionId: string) {
+  // Widgets behalten – section_id wird beim Delete nicht automatisch genullt,
+  // daher hier explizit
+  await db
+    .update(dashboardWidgets)
+    .set({ sectionId: null })
+    .where(eq(dashboardWidgets.sectionId, sectionId));
+  await db.delete(dashboardSections).where(eq(dashboardSections.id, sectionId));
+}
+
+export async function reorderSections(items: { id: string; position: number }[]) {
+  for (const it of items) {
+    await db
+      .update(dashboardSections)
+      .set({ position: it.position })
+      .where(eq(dashboardSections.id, it.id));
+  }
+}
+
+// ──────────────────────────────────────────────────────────────
+// Widget-Operations (Phase I.1)
+// ──────────────────────────────────────────────────────────────
+
+export async function deleteWidget(widgetId: string) {
+  await db.delete(dashboardWidgets).where(eq(dashboardWidgets.id, widgetId));
+}
+
+export async function updateWidgetConfig(
+  widgetId: string,
+  config: Record<string, unknown>,
+  title: string | null
+) {
+  await db
+    .update(dashboardWidgets)
+    .set({
+      config: JSON.stringify(config),
+      title,
+    })
+    .where(eq(dashboardWidgets.id, widgetId));
+}
+
+export async function updateWidgetLayout(widgetId: string, layout: WidgetLayout) {
+  await db
+    .update(dashboardWidgets)
+    .set({ layout: JSON.stringify(layout) })
+    .where(eq(dashboardWidgets.id, widgetId));
+}
+
+export async function reorderWidgets(items: { id: string; position: number }[]) {
+  for (const it of items) {
+    await db
+      .update(dashboardWidgets)
+      .set({ position: it.position })
+      .where(eq(dashboardWidgets.id, it.id));
+  }
+}
+
+export async function moveWidgetToSection(
+  widgetId: string,
+  sectionId: string | null
+) {
+  await db
+    .update(dashboardWidgets)
+    .set({ sectionId })
+    .where(eq(dashboardWidgets.id, widgetId));
+}
+
+export async function getWidgetById(widgetId: string): Promise<DashboardWidgetRow | null> {
+  const rows = await db
+    .select()
+    .from(dashboardWidgets)
+    .where(eq(dashboardWidgets.id, widgetId))
+    .limit(1);
+  if (rows.length === 0) return null;
+  return parseWidget(rows[0]);
 }

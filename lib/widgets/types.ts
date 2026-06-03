@@ -20,6 +20,25 @@ export interface WidgetProps<TConfig = Record<string, unknown>> {
   ctx: WidgetRenderContext;
 }
 
+/**
+ * Schema fuer eine einzelne Widget-Config-Property.
+ * Wird verwendet, um automatisch Forms zur Konfiguration zu generieren.
+ *
+ * Bewusst minimal: text, number, select.
+ * Erweiterbar in spaeteren Phasen (boolean, color, etc.).
+ */
+export type WidgetConfigFieldType = "text" | "number" | "select" | "checkbox";
+
+export interface WidgetConfigField {
+  key: string;
+  label: string;
+  type: WidgetConfigFieldType;
+  description?: string;
+  options?: { value: string; label: string }[];
+  /** Default-Wert, falls in der Config nicht gesetzt */
+  defaultValue?: string | number | boolean;
+}
+
 export interface WidgetDefinition<TConfig = Record<string, unknown>> {
   type: string;
   label: string;
@@ -27,4 +46,6 @@ export interface WidgetDefinition<TConfig = Record<string, unknown>> {
   component: (props: WidgetProps<TConfig>) => ReactNode | Promise<ReactNode>;
   defaultConfig: TConfig;
   defaultLayout: WidgetLayout;
+  /** Optional: Schema fuer die Konfigurations-UI (Phase I.1) */
+  configSchema?: WidgetConfigField[];
 }

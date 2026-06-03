@@ -1,4 +1,6 @@
 import { Suspense } from "react";
+import Link from "next/link";
+import { Pencil } from "lucide-react";
 import { notFound, redirect } from "next/navigation";
 import {
   requireUser,
@@ -158,6 +160,16 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
               <Suspense fallback={<Skeleton className="h-10 w-72" />}>
                 <DateRangePicker />
               </Suspense>
+              {isAdmin && (
+                <Link
+                  href={`/projekte/${project.slug}/dashboards/${dashboard.slug}/edit`}
+                  className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
+                  title="Dashboard bearbeiten"
+                >
+                  <Pencil className="h-3.5 w-3.5" />
+                  Bearbeiten
+                </Link>
+              )}
             </div>
           </div>
 

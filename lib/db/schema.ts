@@ -86,6 +86,29 @@ export const dashboards = sqliteTable("dashboards", {
 });
 
 /**
+ * Sections gruppieren Widgets innerhalb eines Dashboards thematisch.
+ *
+ * Optional: Widgets ohne section_id liegen "freitstehend" (default).
+ * Sections sind die Vorbereitung fuer redaktionelle Layouts
+ * (z.B. "Traffic", "Engagement", "Conversion").
+ */
+export const dashboardSections = sqliteTable("dashboard_sections", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  dashboardId: text("dashboard_id")
+    .notNull()
+    .references(() => dashboards.id, { onDelete: "cascade" }),
+  title: text("title").notNull(),
+  description: text("description"),
+  position: integer("position").notNull().default(0),
+  collapsed: integer("collapsed", { mode: "boolean" }).notNull().default(false),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
  * Share-Tokens fuer Dashboard-Read-Only-Zugriff ohne Login.
  *
  * Architektur:
@@ -131,6 +154,9 @@ export const dashboardWidgets = sqliteTable("dashboard_widgets", {
   dashboardId: text("dashboard_id")
     .notNull()
     .references(() => dashboards.id, { onDelete: "cascade" }),
+  // Optionale Section-Zugehoerigkeit (Phase I.1).
+  // null = freistehendes Widget (bisheriges Verhalten).
+  sectionId: text("section_id"),
   type: text("type").notNull(),
   title: text("title"),
   // JSON: { x: 0-11, y: 0+, w: 1-12, h: 1+ } im 12-Spalten-Grid

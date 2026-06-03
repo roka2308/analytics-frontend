@@ -1,30 +1,26 @@
-import { KpiCardWidget, type KpiCardConfig } from "@/components/widgets/KpiCardWidget";
-import { LineChartWidget, type LineChartConfig } from "@/components/widgets/LineChartWidget";
-import { TopListWidget, type TopListConfig } from "@/components/widgets/TopListWidget";
-import { TextBlockWidget, type TextBlockConfig } from "@/components/widgets/TextBlockWidget";
-import {
-  BreakdownWidget,
-  type BreakdownConfig,
-} from "@/components/widgets/BreakdownWidget";
-import { DonutWidget, type DonutConfig } from "@/components/widgets/DonutWidget";
-import {
-  BarChartWidget,
-  type BarChartConfig,
-} from "@/components/widgets/BarChartWidget";
-import {
-  CrossTabWidget,
-  type CrossTabConfig,
-} from "@/components/widgets/CrossTabWidget";
-import type { WidgetDefinition } from "./types";
-
 /**
- * Zentrale Registry aller verfuegbaren Widget-Typen.
+ * Widget-META-Informationen, getrennt von den Widget-Komponenten.
  *
- * Neuen Widget-Typ hinzufuegen:
- *  1) Komponente in components/widgets/<Name>Widget.tsx anlegen
- *  2) Hier importieren und in WIDGET_REGISTRY eintragen
- *  3) Fertig – keine Schema- oder Renderer-Aenderung noetig.
+ * WICHTIG: Diese Datei darf KEINE Widget-Komponenten importieren,
+ * weil sie auch in Client-Components verwendet wird. Widget-Komponenten
+ * sind Server-Components, die wiederum server-only Matomo-Code laden.
+ *
+ * Server-Code nutzt weiterhin lib/widgets/registry.ts (mit components).
+ * Client-Code (z.B. Editor-UI) nutzt diese Meta-Datei.
  */
+
+import type { WidgetConfigField } from "./types";
+import type { WidgetLayout } from "@/lib/db/queries";
+
+export interface WidgetMeta {
+  type: string;
+  label: string;
+  description: string;
+  defaultConfig: Record<string, unknown>;
+  defaultLayout: WidgetLayout;
+  configSchema?: WidgetConfigField[];
+}
+
 const METRIC_OPTIONS = [
   { value: "visits", label: "Besuche" },
   { value: "uniqueVisitors", label: "Unique Visitors" },
@@ -46,13 +42,12 @@ const BREAKDOWN_SOURCE_OPTIONS = [
   { value: "event-action", label: "Event-Aktion" },
 ];
 
-export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
+export const WIDGET_META: Record<string, WidgetMeta> = {
   "kpi-card": {
     type: "kpi-card",
     label: "KPI-Karte",
     description: "Eine Kennzahl gross dargestellt (Besuche, Bounce Rate, etc.).",
-    component: KpiCardWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { metric: "visits", accent: false } satisfies KpiCardConfig,
+    defaultConfig: { metric: "visits", accent: false },
     defaultLayout: { x: 0, y: 0, w: 3, h: 2 },
     configSchema: [
       { key: "metric", label: "Kennzahl", type: "select", options: METRIC_OPTIONS, defaultValue: "visits" },
@@ -63,8 +58,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "line-chart",
     label: "Liniendiagramm",
     description: "Trend einer Kennzahl ueber Zeit (taeglich).",
-    component: LineChartWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { metric: "visits" } satisfies LineChartConfig,
+    defaultConfig: { metric: "visits" },
     defaultLayout: { x: 0, y: 0, w: 12, h: 4 },
     configSchema: [
       { key: "metric", label: "Kennzahl", type: "select", options: [{ value: "visits", label: "Besuche" }], defaultValue: "visits" },
@@ -74,8 +68,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "top-list",
     label: "Top-Liste",
     description: "Tabelle mit den Top-Eintraegen (z.B. Top-Seiten).",
-    component: TopListWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "pages", limit: 10 } satisfies TopListConfig,
+    defaultConfig: { source: "pages", limit: 10 },
     defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
     configSchema: [
       { key: "source", label: "Quelle", type: "select", options: [{ value: "pages", label: "Seiten" }], defaultValue: "pages" },
@@ -86,8 +79,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "text-block",
     label: "Text-Block",
     description: "Beliebiger Text/Hinweis zur Strukturierung des Dashboards.",
-    component: TextBlockWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { text: "Neue Notiz", variant: "body" } satisfies TextBlockConfig,
+    defaultConfig: { text: "Neue Notiz", variant: "body" },
     defaultLayout: { x: 0, y: 0, w: 12, h: 2 },
     configSchema: [
       { key: "text", label: "Text", type: "text", defaultValue: "Neue Notiz" },
@@ -98,8 +90,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "breakdown",
     label: "Breakdown-Tabelle",
     description: "Top-N einer Dimension als Tabelle (z.B. Geraete, Laender, Browser).",
-    component: BreakdownWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "device-type", limit: 10 } satisfies BreakdownConfig,
+    defaultConfig: { source: "device-type", limit: 10 },
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
     configSchema: [
       { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "device-type" },
@@ -110,8 +101,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "donut",
     label: "Donut-Diagramm",
     description: "Anteilige Verteilung einer Dimension als Tortendiagramm.",
-    component: DonutWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "device-type", limit: 6 } satisfies DonutConfig,
+    defaultConfig: { source: "device-type", limit: 6 },
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
     configSchema: [
       { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "device-type" },
@@ -122,8 +112,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "bar-chart",
     label: "Balken-Diagramm",
     description: "Horizontale Balken fuer Rankings (z.B. Traffic-Quellen).",
-    component: BarChartWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "referrer-type", limit: 8 } satisfies BarChartConfig,
+    defaultConfig: { source: "referrer-type", limit: 8 },
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
     configSchema: [
       { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "referrer-type" },
@@ -134,8 +123,7 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
     type: "cross-tab",
     label: "Pivot-Tabelle (Seiten × Events)",
     description: "Verknuepfung von Top-Seiten mit ihren Top-Ereignissen.",
-    component: CrossTabWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { topPagesLimit: 5, topEventsPerPage: 3 } satisfies CrossTabConfig,
+    defaultConfig: { topPagesLimit: 5, topEventsPerPage: 3 },
     defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
     configSchema: [
       { key: "topPagesLimit", label: "Anzahl Top-Seiten", type: "number", defaultValue: 5 },
@@ -144,10 +132,10 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   },
 };
 
-export function getWidgetDefinition(type: string): WidgetDefinition | null {
-  return WIDGET_REGISTRY[type] ?? null;
+export function getWidgetMeta(type: string): WidgetMeta | null {
+  return WIDGET_META[type] ?? null;
 }
 
-export function listWidgetDefinitions(): WidgetDefinition[] {
-  return Object.values(WIDGET_REGISTRY);
+export function listWidgetMeta(): WidgetMeta[] {
+  return Object.values(WIDGET_META);
 }
