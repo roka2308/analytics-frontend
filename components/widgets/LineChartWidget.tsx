@@ -1,9 +1,9 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { LineChart } from "lucide-react";
 import { VisitorTrendChart } from "@/components/charts/VisitorTrendChart";
 import { getVisitorTrendForRange } from "@/lib/matomo/transforms";
 import type { WidgetProps } from "@/lib/widgets/types";
 import { getMetricDefinition } from "@/lib/metrics/registry";
-import { MetricInfo } from "@/components/dashboard/MetricInfo";
+import { WidgetCard } from "./WidgetCard";
 
 export interface LineChartConfig {
   metric?: "visits";
@@ -27,16 +27,12 @@ export async function LineChartWidget({
   const def = getMetricDefinition("visitor-trend");
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-          <span>{title ?? "Besuchertrend – täglich"}</span>
-          {def && <MetricInfo metric={def} size="md" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        <VisitorTrendChart data={data} hasCompare={!!ctx.compareRange} />
-      </CardContent>
-    </Card>
+    <WidgetCard
+      title={title ?? "Besuchertrend – täglich"}
+      icon={<LineChart className="h-4 w-4" />}
+      metricDef={def}
+    >
+      <VisitorTrendChart data={data} hasCompare={!!ctx.compareRange} />
+    </WidgetCard>
   );
 }

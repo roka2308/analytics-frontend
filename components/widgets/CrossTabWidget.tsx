@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Grid3x3 } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -9,7 +9,7 @@ import {
 } from "@/components/ui/table";
 import { getPageEventCrossTab } from "@/lib/matomo/transforms";
 import { getMetricDefinition } from "@/lib/metrics/registry";
-import { MetricInfo } from "@/components/dashboard/MetricInfo";
+import { WidgetCard } from "./WidgetCard";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface CrossTabConfig {
@@ -59,55 +59,53 @@ export async function CrossTabWidget({
   const hasAnyEvents = rows.some((r) => r.topEvents.length > 0);
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-          <span>{displayTitle}</span>
-          {def && <MetricInfo metric={def} size="md" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {error ? (
+    <WidgetCard
+      title={displayTitle}
+      icon={<Grid3x3 className="h-4 w-4" />}
+      metricDef={def}
+      scroll
+    >
+      {error ? (
+        <p className="text-sm text-muted-foreground">
+          Daten konnten nicht geladen werden.
+        </p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Keine Daten für diesen Zeitraum.
+        </p>
+      ) : !hasAnyEvents ? (
+        <div className="space-y-2">
           <p className="text-sm text-muted-foreground">
-            Daten konnten nicht geladen werden.
+            Keine Ereignisse auf den Top-Seiten gefunden.
           </p>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Keine Daten für diesen Zeitraum.
+          <p className="text-xs text-muted-foreground">
+            Falls diese Sicht für deine Seite relevant sein soll, richte in Matomo
+            Event-Tracking ein (z.B. Add-to-Cart, Download, Newsletter-Signup).
           </p>
-        ) : !hasAnyEvents ? (
-          <div className="space-y-2">
-            <p className="text-sm text-muted-foreground">
-              Keine Ereignisse auf den Top-Seiten gefunden.
-            </p>
-            <p className="text-xs text-muted-foreground">
-              Falls diese Sicht für deine Seite relevant sein soll, richte in Matomo
-              Event-Tracking ein (z.B. Add-to-Cart, Download, Newsletter-Signup).
-            </p>
-          </div>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead className="w-12 text-center">#</TableHead>
-                <TableHead>Seite</TableHead>
-                <TableHead className="text-right w-24">Besuche</TableHead>
-                <TableHead>Top-Ereignisse</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((row, i) => (
-                <TableRow key={i}>
-                  <TableCell className="text-center text-xs font-mono text-muted-foreground tabular-nums">
-                    {i + 1}
-                  </TableCell>
-                  <TableCell className="font-mono text-xs text-foreground truncate max-w-xs">
-                    {row.page}
-                  </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {row.totalVisits.toLocaleString("de-DE")}
-                  </TableCell>
-                  <TableCell>
+        </div>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="h-8 w-8 text-center">#</TableHead>
+              <TableHead className="h-8">Seite</TableHead>
+              <TableHead className="h-8 w-20 text-right">Besuche</TableHead>
+              <TableHead className="h-8">Top-Ereignisse</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((row, i) => (
+              <TableRow key={i}>
+                <TableCell className="py-2 text-center font-mono text-xs tabular-nums text-muted-foreground">
+                  {i + 1}
+                </TableCell>
+                <TableCell className="max-w-xs truncate py-2 font-mono text-xs text-foreground">
+                  {row.page}
+                </TableCell>
+                <TableCell className="py-2 text-right text-sm tabular-nums">
+                  {row.totalVisits.toLocaleString("de-DE")}
+                </TableCell>
+                <TableCell className="py-2">
                     {row.topEvents.length === 0 ? (
                       <span className="text-xs text-muted-foreground">
                         (keine Events)
@@ -134,8 +132,7 @@ export async function CrossTabWidget({
               ))}
             </TableBody>
           </Table>
-        )}
-      </CardContent>
-    </Card>
+      )}
+    </WidgetCard>
   );
 }

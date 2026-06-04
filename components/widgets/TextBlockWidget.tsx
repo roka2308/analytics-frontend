@@ -15,8 +15,8 @@ export function TextBlockWidget({
   const variant = config.variant ?? "body";
 
   return (
-    <Card className="h-full">
-      <CardContent className="p-6">
+    <Card className="flex h-full flex-col">
+      <CardContent className="flex flex-1 flex-col justify-center p-5">
         {title && (
           <h3 className="mb-2 text-sm font-medium text-muted-foreground">
             {title}

@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card } from "@/components/ui/card";
 import { TrendingUp, TrendingDown, Minus, Users, Eye, Activity, Clock, UserCheck } from "lucide-react";
 import {
   getVisitorsOverviewWithCompare,
@@ -108,7 +108,7 @@ export async function KpiCardWidget({
   return (
     <Card
       className={cn(
-        "relative h-full overflow-hidden border-border/60",
+        "relative flex h-full flex-col overflow-hidden border-border/60",
         config.accent && "border-accent/40"
       )}
     >
@@ -118,55 +118,56 @@ export async function KpiCardWidget({
           className="absolute inset-x-0 top-0 h-0.5 bg-accent"
         />
       )}
-      <CardHeader className="pb-2">
-        <div className="flex items-center justify-between">
-          <CardTitle className="flex items-center gap-2 text-sm font-medium text-muted-foreground">
-            <span
-              aria-hidden
-              className={cn(
-                "flex h-7 w-7 items-center justify-center rounded-md",
-                config.accent ? "bg-accent/10 text-accent-text" : "bg-muted text-muted-foreground"
-              )}
-            >
-              <Icon className="h-4 w-4" />
-            </span>
-            <span>{displayTitle}</span>
-            {metricDef && <MetricInfo metric={metricDef} size="sm" />}
-          </CardTitle>
-        </div>
-      </CardHeader>
-      <CardContent>
-        <div className="flex items-end justify-between gap-3">
-          <div className="min-w-0">
-            <div className="text-3xl font-bold tabular-nums text-foreground">
-              {value}
-            </div>
-            {deltaForMetric && ctx.compareRange ? (
-              <div className="mt-1 inline-flex items-center gap-1 text-xs font-medium tabular-nums">
-                <span
-                  className={cn(
-                    "inline-flex items-center gap-0.5",
-                    isPositive === true && "text-success",
-                    isPositive === false && "text-destructive",
-                    isPositive === null && "text-muted-foreground"
-                  )}
-                >
-                  {trendKind === "up" && <TrendingUp className="h-3 w-3" />}
-                  {trendKind === "down" && <TrendingDown className="h-3 w-3" />}
-                  {trendKind === "flat" && <Minus className="h-3 w-3" />}
-                  {formatPercent(deltaForMetric.pct)}
-                </span>
-              </div>
-            ) : null}
-          </div>
-
-          {sparklineData.length > 0 && (
-            <div className="shrink-0 opacity-80">
-              <SparklineClient data={sparklineData} />
-            </div>
+      {/* Kopfzeile: Icon + Titel */}
+      <div className="flex shrink-0 items-center gap-2 px-4 pb-1 pt-4">
+        <span
+          aria-hidden
+          className={cn(
+            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
+            config.accent
+              ? "bg-accent/10 text-accent-text"
+              : "bg-muted text-muted-foreground"
           )}
+        >
+          <Icon className="h-4 w-4" />
+        </span>
+        <h3 className="flex min-w-0 items-center gap-1.5 text-sm font-medium text-muted-foreground">
+          <span className="truncate">{displayTitle}</span>
+          {metricDef && <MetricInfo metric={metricDef} size="sm" />}
+        </h3>
+      </div>
+
+      {/* Wert + Trend + Sparkline */}
+      <div className="flex flex-1 items-end justify-between gap-3 px-4 pb-4 pt-1">
+        <div className="min-w-0">
+          <div className="text-[1.75rem] font-bold leading-tight tabular-nums text-foreground">
+            {value}
+          </div>
+          {deltaForMetric && ctx.compareRange ? (
+            <div className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium tabular-nums">
+              <span
+                className={cn(
+                  "inline-flex items-center gap-0.5 rounded px-1 py-0.5",
+                  isPositive === true && "bg-success/10 text-success",
+                  isPositive === false && "bg-destructive/10 text-destructive",
+                  isPositive === null && "bg-muted text-muted-foreground"
+                )}
+              >
+                {trendKind === "up" && <TrendingUp className="h-3 w-3" />}
+                {trendKind === "down" && <TrendingDown className="h-3 w-3" />}
+                {trendKind === "flat" && <Minus className="h-3 w-3" />}
+                {formatPercent(deltaForMetric.pct)}
+              </span>
+            </div>
+          ) : null}
         </div>
-      </CardContent>
+
+        {sparklineData.length > 0 && (
+          <div className="shrink-0 opacity-90">
+            <SparklineClient data={sparklineData} />
+          </div>
+        )}
+      </div>
     </Card>
   );
 }

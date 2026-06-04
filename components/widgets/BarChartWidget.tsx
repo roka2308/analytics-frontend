@@ -1,11 +1,11 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { BarChart3 } from "lucide-react";
 import {
   getBreakdownForRange,
   type BreakdownSource,
 } from "@/lib/matomo/transforms";
 import { getMetricDefinition } from "@/lib/metrics/registry";
-import { MetricInfo } from "@/components/dashboard/MetricInfo";
 import { BarListClient } from "@/components/charts/BarListClient";
+import { WidgetCard } from "./WidgetCard";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface BarChartConfig {
@@ -38,22 +38,19 @@ export async function BarChartWidget({
   const data = rows.map((r) => ({ name: r.label, value: r.visits }));
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-          <span>{displayTitle}</span>
-          {def && <MetricInfo metric={def} size="md" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {data.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Keine Daten für diesen Zeitraum.
-          </p>
-        ) : (
-          <BarListClient data={data} />
-        )}
-      </CardContent>
-    </Card>
+    <WidgetCard
+      title={displayTitle}
+      icon={<BarChart3 className="h-4 w-4" />}
+      metricDef={def}
+      scroll
+    >
+      {data.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Keine Daten für diesen Zeitraum.
+        </p>
+      ) : (
+        <BarListClient data={data} />
+      )}
+    </WidgetCard>
   );
 }

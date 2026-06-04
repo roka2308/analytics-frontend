@@ -11,7 +11,7 @@ interface Props {
 export function VisitorTrendChart({ data, hasCompare }: Props) {
   if (data.length === 0) {
     return (
-      <div className="flex h-52 items-center justify-center text-sm text-muted-foreground">
+      <div className="flex h-full min-h-[8rem] items-center justify-center text-sm text-muted-foreground">
         Keine Daten verfügbar
       </div>
     );
@@ -27,12 +27,13 @@ export function VisitorTrendChart({ data, hasCompare }: Props) {
       index="date"
       categories={categories}
       colors={colors}
-      className="h-52"
+      className="h-full min-h-[8rem] w-full"
       showAnimation
       showLegend={hasCompare}
-      showGridLines
+      showGridLines={false}
       curveType="monotone"
-      yAxisWidth={36}
+      yAxisWidth={40}
+      startEndOnly={data.length > 14}
     />
   );
 }

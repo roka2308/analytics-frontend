@@ -1,4 +1,4 @@
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { AlignLeft } from "lucide-react";
 import {
   Table,
   TableBody,
@@ -12,14 +12,13 @@ import {
   type BreakdownSource,
 } from "@/lib/matomo/transforms";
 import { getMetricDefinition } from "@/lib/metrics/registry";
-import { MetricInfo } from "@/components/dashboard/MetricInfo";
 import { InlineBar } from "@/components/charts/InlineBar";
+import { WidgetCard } from "./WidgetCard";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface BreakdownConfig {
   source: BreakdownSource;
   limit?: number;
-  /** Metrik-ID fuer Info-Tooltip (optional) */
   metricRefId?: string;
 }
 
@@ -66,59 +65,58 @@ export async function BreakdownWidget({
   const maxVisits = rows.reduce((m, r) => Math.max(m, r.visits), 0);
 
   return (
-    <Card className="h-full">
-      <CardHeader>
-        <CardTitle className="flex items-center gap-1.5 text-sm font-medium text-foreground">
-          <span>{displayTitle}</span>
-          {def && <MetricInfo metric={def} size="md" />}
-        </CardTitle>
-      </CardHeader>
-      <CardContent>
-        {error ? (
-          <p className="text-sm text-muted-foreground">
-            Daten konnten nicht geladen werden.
-          </p>
-        ) : rows.length === 0 ? (
-          <p className="text-sm text-muted-foreground">
-            Keine Daten für diesen Zeitraum.
-          </p>
-        ) : (
-          <Table>
-            <TableHeader>
-              <TableRow>
-                <TableHead>{sourceLabel}</TableHead>
-                <TableHead className="w-40">Besuche</TableHead>
-                <TableHead className="text-right w-16">Anteil</TableHead>
-              </TableRow>
-            </TableHeader>
-            <TableBody>
-              {rows.map((r, i) => {
-                const pct = total > 0 ? (r.visits / total) * 100 : 0;
-                return (
-                  <TableRow key={i}>
-                    <TableCell className="max-w-xs truncate text-sm text-foreground">
-                      {r.label}
-                    </TableCell>
-                    <TableCell>
-                      <div className="flex items-center gap-2">
-                        <span className="w-12 shrink-0 text-right text-sm tabular-nums text-foreground">
-                          {r.visits.toLocaleString("de-DE")}
-                        </span>
-                        <div className="min-w-0 flex-1">
-                          <InlineBar fraction={maxVisits ? r.visits / maxVisits : 0} />
-                        </div>
+    <WidgetCard
+      title={displayTitle}
+      icon={<AlignLeft className="h-4 w-4" />}
+      metricDef={def}
+      scroll
+    >
+      {error ? (
+        <p className="text-sm text-muted-foreground">
+          Daten konnten nicht geladen werden.
+        </p>
+      ) : rows.length === 0 ? (
+        <p className="text-sm text-muted-foreground">
+          Keine Daten für diesen Zeitraum.
+        </p>
+      ) : (
+        <Table>
+          <TableHeader>
+            <TableRow>
+              <TableHead className="h-8">{sourceLabel}</TableHead>
+              <TableHead className="h-8 w-40">Besuche</TableHead>
+              <TableHead className="h-8 w-14 text-right">Anteil</TableHead>
+            </TableRow>
+          </TableHeader>
+          <TableBody>
+            {rows.map((r, i) => {
+              const pct = total > 0 ? (r.visits / total) * 100 : 0;
+              return (
+                <TableRow key={i}>
+                  <TableCell className="max-w-xs truncate py-2 text-sm text-foreground">
+                    {r.label}
+                  </TableCell>
+                  <TableCell className="py-2">
+                    <div className="flex items-center gap-2">
+                      <span className="w-12 shrink-0 text-right text-sm tabular-nums text-foreground">
+                        {r.visits.toLocaleString("de-DE")}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <InlineBar
+                          fraction={maxVisits ? r.visits / maxVisits : 0}
+                        />
                       </div>
-                    </TableCell>
-                    <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
-                      {pct.toFixed(0)} %
-                    </TableCell>
-                  </TableRow>
-                );
-              })}
-            </TableBody>
-          </Table>
-        )}
-      </CardContent>
-    </Card>
+                    </div>
+                  </TableCell>
+                  <TableCell className="py-2 text-right text-sm tabular-nums text-muted-foreground">
+                    {pct.toFixed(0)} %
+                  </TableCell>
+                </TableRow>
+              );
+            })}
+          </TableBody>
+        </Table>
+      )}
+    </WidgetCard>
   );
 }

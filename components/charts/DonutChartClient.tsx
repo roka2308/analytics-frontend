@@ -21,13 +21,13 @@ export function DonutChartClient({ data }: Props) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
 
   return (
-    <div className="flex items-center gap-5">
+    <div className="flex w-full items-center gap-5">
       <DonutChart
         data={data}
         category="value"
         index="name"
         colors={COLORS}
-        className="h-36 w-36 shrink-0"
+        className="h-32 w-32 shrink-0"
         valueFormatter={(v) => v.toLocaleString("de-DE")}
         showAnimation
         showLabel={false}
