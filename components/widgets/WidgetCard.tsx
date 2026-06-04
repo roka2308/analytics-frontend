@@ -8,8 +8,6 @@ interface Props {
   title: string;
   icon?: ReactNode;
   metricDef?: MetricDefinition | null;
-  /** Magenta-Stripe oben zur Hervorhebung */
-  accent?: boolean;
   /** Content scrollt bei Ueberlauf (fuer Tabellen) */
   scroll?: boolean;
   /** Content vertikal zentrieren (fuer Donut etc.) */
@@ -28,7 +26,6 @@ export function WidgetCard({
   title,
   icon,
   metricDef,
-  accent,
   scroll,
   center,
   children,
@@ -36,25 +33,13 @@ export function WidgetCard({
 }: Props) {
   return (
     <Card
-      className={cn(
-        "relative flex h-full flex-col overflow-hidden",
-        accent && "border-accent/40",
-        className
-      )}
+      className={cn("relative flex h-full flex-col overflow-hidden", className)}
     >
-      {accent && (
-        <span aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-accent" />
-      )}
       <div className="flex shrink-0 items-center gap-2 px-4 pb-2 pt-4">
         {icon && (
           <span
             aria-hidden
-            className={cn(
-              "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-              accent
-                ? "bg-accent/10 text-accent-text"
-                : "bg-muted text-muted-foreground"
-            )}
+            className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent-text"
           >
             {icon}
           </span>

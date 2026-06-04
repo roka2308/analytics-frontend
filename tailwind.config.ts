@@ -8,6 +8,20 @@ const config: Config = {
     "./app/**/*.{js,ts,jsx,tsx,mdx}",
     "./node_modules/@tremor/**/*.{js,ts,jsx,tsx}",
   ],
+  // Tremor setzt Farb-Utility-Klassen zur Laufzeit. Ohne Safelist purged
+  // Tailwind sie weg -> Diagramme erscheinen grau. Wir safelisten die
+  // Palette, die unsere Charts nutzen.
+  safelist: [
+    {
+      pattern:
+        /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|emerald|green|red|cyan|indigo)-(300|400|500|600|700|800|900)$/,
+    },
+    {
+      pattern:
+        /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|emerald|green|red|cyan|indigo)-(50|100|200)$/,
+      variants: ["hover"],
+    },
+  ],
   theme: {
     extend: {
       colors: {
@@ -32,7 +46,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--muted))",
           foreground: "hsl(var(--muted-foreground))",
         },
-        // Akzent = Magenta (zwei Varianten fuer WCAG-konformen Einsatz)
         accent: {
           DEFAULT: "hsl(var(--accent))",
           foreground: "hsl(var(--accent-foreground))",
@@ -47,7 +60,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--card))",
           foreground: "hsl(var(--card-foreground))",
         },
-        // Status
         success: {
           DEFAULT: "hsl(var(--success))",
           foreground: "hsl(var(--success-foreground))",
@@ -56,7 +68,6 @@ const config: Config = {
           DEFAULT: "hsl(var(--warning))",
           foreground: "hsl(var(--warning-foreground))",
         },
-        // Chart-Palette
         chart: {
           "1": "hsl(var(--chart-1))",
           "2": "hsl(var(--chart-2))",
@@ -64,11 +75,81 @@ const config: Config = {
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
         },
+
+        // ── Tremor-Farbtokens, an unsere CSS-Variablen gebunden ──
+        // Da unsere Variablen bei .dark automatisch umschalten, koennen
+        // tremor und dark-tremor dieselben Variablen nutzen -> Achsen,
+        // Gitter und Beschriftungen folgen Light/Dark.
+        tremor: {
+          brand: {
+            faint: "hsl(var(--accent) / 0.12)",
+            muted: "hsl(var(--accent) / 0.3)",
+            subtle: "hsl(var(--accent) / 0.6)",
+            DEFAULT: "hsl(var(--accent))",
+            emphasis: "hsl(var(--accent-text))",
+            inverted: "hsl(var(--accent-foreground))",
+          },
+          background: {
+            muted: "hsl(var(--muted))",
+            subtle: "hsl(var(--muted))",
+            DEFAULT: "hsl(var(--card))",
+            emphasis: "hsl(var(--foreground))",
+          },
+          border: { DEFAULT: "hsl(var(--border))" },
+          ring: { DEFAULT: "hsl(var(--border))" },
+          content: {
+            subtle: "hsl(var(--muted-foreground))",
+            DEFAULT: "hsl(var(--muted-foreground))",
+            emphasis: "hsl(var(--foreground))",
+            strong: "hsl(var(--foreground))",
+            inverted: "hsl(var(--background))",
+          },
+        },
+        "dark-tremor": {
+          brand: {
+            faint: "hsl(var(--accent) / 0.12)",
+            muted: "hsl(var(--accent) / 0.3)",
+            subtle: "hsl(var(--accent) / 0.6)",
+            DEFAULT: "hsl(var(--accent))",
+            emphasis: "hsl(var(--accent-text))",
+            inverted: "hsl(var(--accent-foreground))",
+          },
+          background: {
+            muted: "hsl(var(--muted))",
+            subtle: "hsl(var(--muted))",
+            DEFAULT: "hsl(var(--card))",
+            emphasis: "hsl(var(--foreground))",
+          },
+          border: { DEFAULT: "hsl(var(--border))" },
+          ring: { DEFAULT: "hsl(var(--border))" },
+          content: {
+            subtle: "hsl(var(--muted-foreground))",
+            DEFAULT: "hsl(var(--muted-foreground))",
+            emphasis: "hsl(var(--foreground))",
+            strong: "hsl(var(--foreground))",
+            inverted: "hsl(var(--background))",
+          },
+        },
+      },
+      boxShadow: {
+        "tremor-input": "0 1px 2px 0 rgb(0 0 0 / 0.05)",
+        "tremor-card": "0 1px 3px 0 rgb(0 0 0 / 0.06)",
+        "tremor-dropdown":
+          "0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1)",
       },
       borderRadius: {
         lg: "var(--radius)",
         md: "calc(var(--radius) - 2px)",
         sm: "calc(var(--radius) - 4px)",
+        "tremor-small": "0.375rem",
+        "tremor-default": "0.5rem",
+        "tremor-full": "9999px",
+      },
+      fontSize: {
+        "tremor-label": ["0.75rem", { lineHeight: "1rem" }],
+        "tremor-default": ["0.875rem", { lineHeight: "1.25rem" }],
+        "tremor-title": ["1.125rem", { lineHeight: "1.75rem" }],
+        "tremor-metric": ["1.875rem", { lineHeight: "2.25rem" }],
       },
       keyframes: {
         "accordion-down": {

@@ -106,28 +106,12 @@ export async function KpiCardWidget({
   }));
 
   return (
-    <Card
-      className={cn(
-        "relative flex h-full flex-col overflow-hidden border-border/60",
-        config.accent && "border-accent/40"
-      )}
-    >
-      {config.accent && (
-        <span
-          aria-hidden
-          className="absolute inset-x-0 top-0 h-0.5 bg-accent"
-        />
-      )}
+    <Card className="relative flex h-full flex-col overflow-hidden">
       {/* Kopfzeile: Icon + Titel */}
       <div className="flex shrink-0 items-center gap-2 px-4 pb-1 pt-4">
         <span
           aria-hidden
-          className={cn(
-            "flex h-7 w-7 shrink-0 items-center justify-center rounded-md",
-            config.accent
-              ? "bg-accent/10 text-accent-text"
-              : "bg-muted text-muted-foreground"
-          )}
+          className="flex h-7 w-7 shrink-0 items-center justify-center rounded-md bg-accent/10 text-accent-text"
         >
           <Icon className="h-4 w-4" />
         </span>
