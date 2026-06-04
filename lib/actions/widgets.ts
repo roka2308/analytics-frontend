@@ -78,6 +78,21 @@ export async function updateWidgetLayoutAction(
   return { ok: true };
 }
 
+/**
+ * Bulk-Speicherung mehrerer Widget-Layouts auf einmal.
+ * Wird vom In-Place-Grid-Editor nach Drag/Resize aufgerufen (debounced).
+ */
+export async function saveWidgetLayoutsAction(
+  items: { id: string; layout: WidgetLayout }[]
+): Promise<ActionResult> {
+  await requireAdmin();
+  for (const it of items) {
+    await updateWidgetLayout(it.id, it.layout);
+  }
+  revalidatePath("/projekte", "layout");
+  return { ok: true };
+}
+
 export async function reorderWidgetsAction(
   items: { id: string; position: number }[]
 ): Promise<ActionResult> {

@@ -1,0 +1,31 @@
+@import "react-grid-layout/css/styles.css";
+@import "react-resizable/css/styles.css";
+
+/* Theme-aware Overrides fuer den In-Place-Grid-Editor */
+
+.rgl-edit .react-grid-item.react-grid-placeholder {
+  background: hsl(var(--accent) / 0.18);
+  border: 1px dashed hsl(var(--accent) / 0.5);
+  border-radius: var(--radius);
+  opacity: 1;
+}
+
+.rgl-edit .react-grid-item.react-draggable-dragging {
+  z-index: 30;
+  cursor: grabbing;
+}
+
+.rgl-edit .react-grid-item > .react-resizable-handle {
+  /* dezenter Resize-Griff unten rechts */
+  width: 18px;
+  height: 18px;
+}
+
+.rgl-edit .react-grid-item > .react-resizable-handle::after {
+  border-right-color: hsl(var(--muted-foreground) / 0.6);
+  border-bottom-color: hsl(var(--muted-foreground) / 0.6);
+  width: 7px;
+  height: 7px;
+  right: 4px;
+  bottom: 4px;
+}

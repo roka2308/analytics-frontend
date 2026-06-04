@@ -19,7 +19,7 @@ interface Props {
   initialTitle: string | null;
   initialConfig: Record<string, unknown>;
   schema: WidgetConfigField[];
-  onSaved?: () => void;
+  onSaved?: (data: { title: string | null; config: Record<string, unknown> }) => void;
 }
 
 /**
@@ -56,7 +56,7 @@ export function WidgetConfigForm({
       if (!r.ok) setError(r.error ?? "Unbekannter Fehler");
       else {
         setSuccess("Gespeichert.");
-        onSaved?.();
+        onSaved?.({ title: title.trim() || null, config: values });
       }
     });
   };

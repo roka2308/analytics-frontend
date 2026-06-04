@@ -1,18 +1,17 @@
 import Link from "next/link";
 import { notFound } from "next/navigation";
-import { ArrowLeft } from "lucide-react";
+import { ArrowLeft, Monitor } from "lucide-react";
 import { requireAdmin } from "@/lib/auth/requireUser";
 import {
   getDashboardBySlug,
   getOrgBySlug,
   getWidgetsForDashboard,
   listDashboardsForOrg,
-  listSectionsForDashboard,
   getVisibleProjectsForSession,
 } from "@/lib/db/queries";
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
-import { DashboardEditor } from "@/components/editor/DashboardEditor";
+import { DashboardGridEditor } from "@/components/editor/DashboardGridEditor";
 
 export const dynamic = "force-dynamic";
 
@@ -29,9 +28,8 @@ export default async function DashboardEditPage({ params }: PageProps) {
   const dashboard = await getDashboardBySlug(project.id, params.slug);
   if (!dashboard) notFound();
 
-  const [widgets, sections, allDashboards, allProjects] = await Promise.all([
+  const [widgets, allDashboards, allProjects] = await Promise.all([
     getWidgetsForDashboard(dashboard.id),
-    listSectionsForDashboard(dashboard.id),
     listDashboardsForOrg(project.id),
     getVisibleProjectsForSession(session),
   ]);
@@ -49,36 +47,55 @@ export default async function DashboardEditPage({ params }: PageProps) {
       currentDashboardSlug={dashboard.slug}
     >
       <Topbar
-        title={`${dashboard.name} – Bearbeiten`}
-        subtitle={<span>Widgets, Abschnitte und Konfiguration anpassen.</span>}
+        title={`${dashboard.name} bearbeiten`}
+        subtitle={
+          <span>Widgets per Drag &amp; Drop anordnen und Größe ändern.</span>
+        }
         right={
           <Link
             href={`/projekte/${project.slug}/dashboards/${dashboard.slug}`}
             className="inline-flex items-center gap-1.5 rounded-md border border-border bg-card px-3 py-1.5 text-sm text-muted-foreground transition-colors hover:bg-muted hover:text-foreground"
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Zurück zum Dashboard
+            Zurück
           </Link>
         }
       />
-      <main className="px-6 py-6">
-        <div className="mx-auto max-w-4xl">
-          <DashboardEditor
+
+      {/* Mobile-Hinweis: Bearbeiten nur am Desktop */}
+      <div className="px-4 py-10 md:hidden">
+        <div className="mx-auto max-w-sm rounded-xl border border-border bg-card p-6 text-center">
+          <div className="mx-auto mb-3 flex h-12 w-12 items-center justify-center rounded-full bg-muted text-muted-foreground">
+            <Monitor className="h-6 w-6" />
+          </div>
+          <p className="font-medium text-foreground">Bearbeiten am Desktop</p>
+          <p className="mt-2 text-sm text-muted-foreground">
+            Das Anordnen von Widgets per Drag &amp; Drop funktioniert am besten am
+            Computer. Bitte öffne diese Seite an einem größeren Bildschirm.
+          </p>
+          <Link
+            href={`/projekte/${project.slug}/dashboards/${dashboard.slug}`}
+            className="mt-5 inline-flex items-center gap-1.5 rounded-md bg-accent px-4 py-2 text-sm font-medium text-accent-foreground transition-colors hover:bg-accent-hover"
+          >
+            <ArrowLeft className="h-3.5 w-3.5" />
+            Zurück zum Dashboard
+          </Link>
+        </div>
+      </div>
+
+      {/* Desktop-Editor */}
+      <main className="hidden px-6 py-6 md:block">
+        <div className="mx-auto max-w-7xl">
+          <DashboardGridEditor
             dashboardId={dashboard.id}
-            dashboardName={dashboard.name}
-            widgets={widgets.map((w) => ({
+            projectSlug={project.slug}
+            dashboardSlug={dashboard.slug}
+            initialWidgets={widgets.map((w) => ({
               id: w.id,
-              sectionId: w.sectionId,
               type: w.type,
               title: w.title,
               config: w.config,
-              position: w.position,
-            }))}
-            sections={sections.map((s) => ({
-              id: s.id,
-              title: s.title,
-              description: s.description,
-              position: s.position,
+              layout: w.layout,
             }))}
           />
         </div>
