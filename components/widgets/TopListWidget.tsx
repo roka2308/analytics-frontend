@@ -11,6 +11,7 @@ import { getTopPagesForRange } from "@/lib/matomo/transforms";
 import type { WidgetProps } from "@/lib/widgets/types";
 import { getMetricDefinition } from "@/lib/metrics/registry";
 import { MetricInfo } from "@/components/dashboard/MetricInfo";
+import { InlineBar } from "@/components/charts/InlineBar";
 
 export interface TopListConfig {
   source: "pages";
@@ -39,6 +40,7 @@ export async function TopListWidget({
 
   const displayTitle = title ?? "Top-Seiten";
   const def = getMetricDefinition("top-pages");
+  const maxVisits = rows.reduce((m, r) => Math.max(m, r.visits), 0);
 
   return (
     <Card className="h-full">
@@ -61,10 +63,10 @@ export async function TopListWidget({
           <Table>
             <TableHeader>
               <TableRow>
-                <TableHead className="w-12 text-center">#</TableHead>
+                <TableHead className="w-8 text-center">#</TableHead>
                 <TableHead>Seite</TableHead>
-                <TableHead className="text-right w-28">Besuche</TableHead>
-                <TableHead className="text-right w-36">Seitenaufrufe</TableHead>
+                <TableHead className="w-40">Besuche</TableHead>
+                <TableHead className="text-right w-28">Aufrufe</TableHead>
               </TableRow>
             </TableHeader>
             <TableBody>
@@ -73,13 +75,20 @@ export async function TopListWidget({
                   <TableCell className="text-center text-xs font-mono text-muted-foreground tabular-nums">
                     {i + 1}
                   </TableCell>
-                  <TableCell className="font-mono text-xs text-foreground truncate max-w-xs">
+                  <TableCell className="max-w-xs truncate font-mono text-xs text-foreground">
                     {r.label}
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
-                    {r.visits.toLocaleString("de-DE")}
+                  <TableCell>
+                    <div className="flex items-center gap-2">
+                      <span className="w-14 shrink-0 text-right text-sm tabular-nums text-foreground">
+                        {r.visits.toLocaleString("de-DE")}
+                      </span>
+                      <div className="min-w-0 flex-1">
+                        <InlineBar fraction={maxVisits ? r.visits / maxVisits : 0} />
+                      </div>
+                    </div>
                   </TableCell>
-                  <TableCell className="text-right tabular-nums">
+                  <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
                     {r.pageviews.toLocaleString("de-DE")}
                   </TableCell>
                 </TableRow>

@@ -13,6 +13,7 @@ import {
 } from "@/lib/matomo/transforms";
 import { getMetricDefinition } from "@/lib/metrics/registry";
 import { MetricInfo } from "@/components/dashboard/MetricInfo";
+import { InlineBar } from "@/components/charts/InlineBar";
 import type { WidgetProps } from "@/lib/widgets/types";
 
 export interface BreakdownConfig {
@@ -62,6 +63,7 @@ export async function BreakdownWidget({
     : null;
 
   const total = rows.reduce((sum, r) => sum + r.visits, 0);
+  const maxVisits = rows.reduce((m, r) => Math.max(m, r.visits), 0);
 
   return (
     <Card className="h-full">
@@ -85,7 +87,7 @@ export async function BreakdownWidget({
             <TableHeader>
               <TableRow>
                 <TableHead>{sourceLabel}</TableHead>
-                <TableHead className="text-right w-24">Besuche</TableHead>
+                <TableHead className="w-40">Besuche</TableHead>
                 <TableHead className="text-right w-16">Anteil</TableHead>
               </TableRow>
             </TableHeader>
@@ -94,14 +96,21 @@ export async function BreakdownWidget({
                 const pct = total > 0 ? (r.visits / total) * 100 : 0;
                 return (
                   <TableRow key={i}>
-                    <TableCell className="text-sm text-foreground truncate max-w-xs">
+                    <TableCell className="max-w-xs truncate text-sm text-foreground">
                       {r.label}
                     </TableCell>
-                    <TableCell className="text-right tabular-nums">
-                      {r.visits.toLocaleString("de-DE")}
+                    <TableCell>
+                      <div className="flex items-center gap-2">
+                        <span className="w-12 shrink-0 text-right text-sm tabular-nums text-foreground">
+                          {r.visits.toLocaleString("de-DE")}
+                        </span>
+                        <div className="min-w-0 flex-1">
+                          <InlineBar fraction={maxVisits ? r.visits / maxVisits : 0} />
+                        </div>
+                      </div>
                     </TableCell>
-                    <TableCell className="text-right tabular-nums text-muted-foreground">
-                      {pct.toFixed(1).replace(".", ",")} %
+                    <TableCell className="text-right text-sm tabular-nums text-muted-foreground">
+                      {pct.toFixed(0)} %
                     </TableCell>
                   </TableRow>
                 );

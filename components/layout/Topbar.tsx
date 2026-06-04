@@ -9,16 +9,17 @@ interface Props {
 /**
  * Topbar fuer das App-Shell-Layout.
  *
- * Links: Titel + optionaler Subtitle (Site, Zeitraum, etc.)
- * Rechts: Custom-Elemente (z.B. DateRangePicker, Edit-Button)
- *         + Theme-Toggle
+ * Desktop: einzeilig, Theme-Toggle rechts.
+ * Mobile: gestapelt (Titel oben, Actions darunter). Der Theme-Toggle
+ *         liegt auf Mobile schon in der Sidebar-Mobile-Navbar und wird
+ *         hier ausgeblendet.
  */
 export function Topbar({ title, subtitle, right }: Props) {
   return (
-    <header className="sticky top-0 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
-      <div className="flex h-16 items-center justify-between gap-4 px-6">
+    <header className="sticky top-14 z-10 border-b border-border bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60 md:top-0">
+      <div className="flex flex-col gap-3 px-4 py-3 sm:px-6 md:h-16 md:flex-row md:items-center md:justify-between md:gap-4 md:py-0">
         <div className="min-w-0">
-          <h1 className="truncate text-xl font-semibold text-foreground">
+          <h1 className="truncate text-lg font-semibold tracking-tight text-foreground sm:text-xl">
             {title}
           </h1>
           {subtitle && (
@@ -27,9 +28,11 @@ export function Topbar({ title, subtitle, right }: Props) {
             </div>
           )}
         </div>
-        <div className="flex shrink-0 items-center gap-2">
+        <div className="flex shrink-0 flex-wrap items-center gap-2">
           {right}
-          <ThemeToggle />
+          <span className="hidden md:inline-flex">
+            <ThemeToggle />
+          </span>
         </div>
       </div>
     </header>

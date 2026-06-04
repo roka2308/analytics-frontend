@@ -16,7 +16,7 @@
 @layer base {
   :root {
     /* Layout */
-    --radius: 0.5rem;
+    --radius: 0.75rem;
 
     /* Background / Foreground */
     --background: 0 0% 100%;

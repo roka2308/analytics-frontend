@@ -10,6 +10,22 @@ interface Props {
   ctx: WidgetRenderContext;
 }
 
+// Literale Klassen, damit Tailwind sie garantiert generiert (kein arbitrary value).
+const MD_COLSPAN: Record<number, string> = {
+  1: "md:col-span-1",
+  2: "md:col-span-2",
+  3: "md:col-span-3",
+  4: "md:col-span-4",
+  5: "md:col-span-5",
+  6: "md:col-span-6",
+  7: "md:col-span-7",
+  8: "md:col-span-8",
+  9: "md:col-span-9",
+  10: "md:col-span-10",
+  11: "md:col-span-11",
+  12: "md:col-span-12",
+};
+
 /**
  * Rendert eine Liste von Widgets in einem 12-Spalten-CSS-Grid.
  * Jedes Widget bestimmt ueber widget.layout.w die eigene Breite.
@@ -37,19 +53,18 @@ export function DashboardRenderer({ widgets, ctx }: Props) {
   });
 
   return (
-    <div className="grid grid-cols-12 gap-4 auto-rows-min">
+    <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 md:grid-cols-12 md:auto-rows-min">
       {sorted.map((widget) => {
         const def = getWidgetDefinition(widget.type);
         const colSpan = Math.max(1, Math.min(12, widget.layout.w));
+        // Mobile: volle Breite. Tablet: schmale Widgets (<=4) nebeneinander.
+        // Desktop (md+): exakter Span im 12er-Grid.
+        const tabletSpan = colSpan <= 4 ? "sm:col-span-1" : "sm:col-span-2";
+        const mdSpan = MD_COLSPAN[colSpan] ?? "md:col-span-12";
 
         if (!def) {
-          // Unbekannter Widget-Typ – defensiv darstellen, Dashboard nicht crashen lassen
           return (
-            <div
-              key={widget.id}
-              className={`col-span-12 sm:col-span-${colSpan}`}
-              style={{ gridColumn: `span ${colSpan} / span ${colSpan}` }}
-            >
+            <div key={widget.id} className={`${tabletSpan} ${mdSpan}`}>
               <Card className="border-warning/40">
                 <CardContent className="p-6">
                   <p className="text-sm text-warning">
@@ -63,11 +78,7 @@ export function DashboardRenderer({ widgets, ctx }: Props) {
 
         const WidgetComponent = def.component;
         return (
-          <div
-            key={widget.id}
-            style={{ gridColumn: `span ${colSpan} / span ${colSpan}` }}
-            className="col-span-12"
-          >
+          <div key={widget.id} className={`${tabletSpan} ${mdSpan}`}>
             <Suspense
               fallback={
                 <Card>

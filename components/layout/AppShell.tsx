@@ -1,4 +1,5 @@
-import { Sidebar, type SidebarProject, type SidebarDashboard } from "./Sidebar";
+import { Sidebar } from "./Sidebar";
+import type { SidebarProject, SidebarDashboard } from "./SidebarNav";
 
 interface Props {
   projects: SidebarProject[];
