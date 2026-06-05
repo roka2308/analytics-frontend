@@ -13,100 +13,103 @@
  * damit wir Alpha-Kanaele via "hsl(var(--xy) / 0.5)" nutzen koennen.
  */
 
+/*
+ * Farb- und Layout-Tokens auf Basis des Telekom Scale Design Systems
+ * (telekom/scale, MPL-2.0). Magenta #E20074 als Primaer, Telekom-Grauskala,
+ * BLAUER Fokus-Ring (#3D8CFF), funktionale Farben (Erfolg/Fehler/Warnung).
+ */
 @layer base {
   :root {
-    /* Layout */
-    --radius: 0.75rem;
+    /* Layout – Scale-Radien sind knackig (max 12px). Karten ~8px. */
+    --radius: 0.5rem;
 
-    /* Background / Foreground */
+    /* Background / Foreground – Scale: weiss / grey90 (#191919) */
     --background: 0 0% 100%;
-    --foreground: 222.2 47% 11%;
+    --foreground: 0 0% 10%;
 
-    /* Karten und Popovers */
     --card: 0 0% 100%;
-    --card-foreground: 222.2 47% 11%;
+    --card-foreground: 0 0% 10%;
     --popover: 0 0% 100%;
-    --popover-foreground: 222.2 47% 11%;
+    --popover-foreground: 0 0% 10%;
 
-    /* Sekundaerflaechen */
-    --muted: 210 40% 96%;
-    --muted-foreground: 215 16% 47%;
-    --secondary: 210 40% 96%;
-    --secondary-foreground: 222.2 47% 11%;
+    /* Sekundaerflaechen – grey0 (#F2F2F2) / grey60 (#666666) */
+    --muted: 0 0% 95%;
+    --muted-foreground: 0 0% 40%;
+    --secondary: 0 0% 95%;
+    --secondary-foreground: 0 0% 10%;
 
-    /* Borders, Inputs, Ringe */
-    --border: 214 32% 91%;
-    --input: 214 32% 91%;
-    --ring: 222.2 47% 11%;
+    /* Borders/Inputs – grey10 (#E5E5E5) / grey20 (#CCCCCC) */
+    --border: 0 0% 90%;
+    --input: 0 0% 80%;
+    /* Fokus = Telekom-Blau (#3D8CFF) – Magenta bleibt Aktionen vorbehalten */
+    --ring: 216 100% 62%;
 
-    /* Primaer (neutral dunkel, fuer Standard-Buttons) */
-    --primary: 222.2 47% 11%;
-    --primary-foreground: 210 40% 98%;
+    /* Primaer (neutrales Dunkel fuer Standard-Buttons) */
+    --primary: 0 0% 10%;
+    --primary-foreground: 0 0% 98%;
 
-    /* Akzent (Magenta) – ZWEI Toene fuer Accessibility:
-     *  --accent: lebhaftes Magenta fuer Icons, Borders, Buttons (>=3:1)
-     *  --accent-text: dunkleres Magenta, WCAG AA fuer Body-Text (>=4.5:1) */
-    --accent: 330 78% 50%;            /* ~#E0008A – kraeftig, sichtbar */
-    --accent-foreground: 0 0% 100%;   /* weisse Schrift auf Magenta */
-    --accent-text: 330 78% 37%;       /* ~#A8005F – dunkler, gut lesbar */
-    --accent-hover: 330 78% 45%;      /* etwas dunkler fuer Hover */
+    /* Akzent = Telekom-Magenta #E20074, Active #CB0068 fuer Text */
+    --accent: 329 100% 44%;           /* #E20074 */
+    --accent-foreground: 0 0% 100%;
+    --accent-text: 329 100% 40%;      /* #CB0068 – WCAG-tauglich auf Weiss */
+    --accent-hover: 329 100% 40%;     /* #CB0068 (Active) */
 
-    /* Status-Farben (semantisch) */
-    --success: 142 71% 35%;
+    /* Funktionale Farben aus Scale */
+    --success: 136 66% 27%;           /* #187431 */
     --success-foreground: 0 0% 100%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 222.2 47% 11%;
-    --destructive: 0 72% 51%;
+    --warning: 17 72% 56%;            /* #DF6D3F */
+    --warning-foreground: 0 0% 100%;
+    --destructive: 350 69% 51%;       /* #D82A48 */
     --destructive-foreground: 0 0% 100%;
 
-    /* Chart-Palette (5 Farben, harmonisch, Magenta-zentriert) */
-    --chart-1: 330 78% 50%;   /* Magenta */
-    --chart-2: 210 90% 55%;   /* Blau */
-    --chart-3: 142 71% 45%;   /* Gruen */
-    --chart-4: 38 92% 55%;    /* Orange */
-    --chart-5: 263 70% 60%;   /* Violett */
+    /* Chart-Palette aus Scale-Funktionsfarben */
+    --chart-1: 329 100% 44%;  /* Magenta #E20074 */
+    --chart-2: 216 100% 62%;  /* Blau #3D8CFF */
+    --chart-3: 185 69% 43%;   /* Teal #22ADB9 */
+    --chart-4: 120 52% 41%;   /* Gruen #32A032 */
+    --chart-5: 17 72% 56%;    /* Orange #DF6D3F */
   }
 
   .dark {
-    --background: 222.2 47% 6%;        /* sehr dunkles Slate, nicht 100% schwarz */
-    --foreground: 210 40% 98%;
+    /* Dunkle Variante auf Basis der Scale-Grauskala (invertiert) */
+    --background: 0 0% 9%;
+    --foreground: 0 0% 95%;
 
-    --card: 222.2 47% 9%;
-    --card-foreground: 210 40% 98%;
-    --popover: 222.2 47% 9%;
-    --popover-foreground: 210 40% 98%;
+    --card: 0 0% 12%;
+    --card-foreground: 0 0% 95%;
+    --popover: 0 0% 12%;
+    --popover-foreground: 0 0% 95%;
 
-    --muted: 217 33% 17%;
-    --muted-foreground: 215 20% 65%;
-    --secondary: 217 33% 17%;
-    --secondary-foreground: 210 40% 98%;
+    --muted: 0 0% 17%;
+    --muted-foreground: 0 0% 64%;
+    --secondary: 0 0% 17%;
+    --secondary-foreground: 0 0% 95%;
 
-    --border: 217 33% 22%;
-    --input: 217 33% 22%;
-    --ring: 212 27% 84%;
+    --border: 0 0% 22%;
+    --input: 0 0% 22%;
+    --ring: 216 100% 62%;
 
-    --primary: 210 40% 98%;
-    --primary-foreground: 222.2 47% 11%;
+    --primary: 0 0% 95%;
+    --primary-foreground: 0 0% 10%;
 
-    /* Magenta im Dark Mode: heller fuer Kontrast auf dunklem Grund */
-    --accent: 330 90% 65%;             /* ~#F559A2 – heller im Dark */
-    --accent-foreground: 222.2 47% 11%;
-    --accent-text: 330 90% 72%;        /* ~#F985B6 – noch heller fuer Text */
-    --accent-hover: 330 90% 58%;
+    /* Magenta heller fuer dunklen Grund */
+    --accent: 329 100% 52%;
+    --accent-foreground: 0 0% 100%;
+    --accent-text: 329 100% 72%;
+    --accent-hover: 329 100% 58%;
 
-    --success: 142 65% 50%;
-    --success-foreground: 222.2 47% 11%;
-    --warning: 38 90% 60%;
-    --warning-foreground: 222.2 47% 11%;
-    --destructive: 0 70% 60%;
-    --destructive-foreground: 210 40% 98%;
+    --success: 136 50% 45%;
+    --success-foreground: 0 0% 100%;
+    --warning: 17 80% 60%;
+    --warning-foreground: 0 0% 10%;
+    --destructive: 350 75% 62%;
+    --destructive-foreground: 0 0% 100%;
 
-    /* Chart-Palette im Dark Mode etwas heller / saturiert */
-    --chart-1: 330 90% 65%;
-    --chart-2: 210 90% 65%;
-    --chart-3: 142 65% 55%;
-    --chart-4: 38 90% 60%;
-    --chart-5: 263 80% 70%;
+    --chart-1: 329 100% 60%;
+    --chart-2: 216 100% 68%;
+    --chart-3: 185 65% 55%;
+    --chart-4: 120 50% 52%;
+    --chart-5: 17 80% 62%;
   }
 }
 
@@ -116,14 +119,23 @@
   }
   body {
     @apply bg-background text-foreground;
-    /* Etwas weichere Schrift-Antialiasing-Defaults */
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }
 
-  /* WCAG: sichtbarer Fokus-Ring fuer Tastatur-Nutzer */
+  /*
+   * Telekom-typische Typografie: Ueberschriften sind extrabold (800),
+   * eng gesetzt. Wir markieren prominente Titel mit .heading-display,
+   * statt globale h1..h6 zu erzwingen (App nutzt utility-Klassen).
+   */
+  .heading-display {
+    font-weight: 800;
+    letter-spacing: -0.01em;
+  }
+
+  /* Fokus-Ring in Telekom-Blau fuer Tastatur-Nutzer (Scale-Konvention) */
   *:focus-visible {
-    outline: 2px solid hsl(var(--accent));
+    outline: 2px solid hsl(var(--ring));
     outline-offset: 2px;
   }
 }

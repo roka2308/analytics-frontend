@@ -6,15 +6,15 @@ interface Props {
   data: { name: string; value: number }[];
 }
 
-const COLORS = ["pink", "slate", "blue", "violet", "amber", "emerald"];
-// Tailwind-Klassen passend zur Tremor-Palette fuer die Legenden-Punkte
+// Scale-Funktionsfarben: Magenta, Blau, Teal, Gruen, Orange, Violett
+const COLORS = ["pink", "blue", "cyan", "green", "orange", "violet"];
 const DOT_CLASSES = [
   "bg-pink-500",
-  "bg-slate-400",
   "bg-blue-500",
+  "bg-cyan-500",
+  "bg-green-500",
+  "bg-orange-500",
   "bg-violet-500",
-  "bg-amber-500",
-  "bg-emerald-500",
 ];
 
 export function DonutChartClient({ data }: Props) {

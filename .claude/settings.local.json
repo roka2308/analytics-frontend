@@ -11,7 +11,11 @@
       "PowerShell(node --version; npm --version; \\(Get-Command node\\).Source)",
       "PowerShell($env:PATH -split ';' | Where-Object { $_ -match 'node|npm' })",
       "PowerShell(Get-ChildItem \"C:\\\\Program Files\\\\nodejs\" -ErrorAction SilentlyContinue | Select-Object Name; Get-ChildItem \"C:\\\\Program Files \\(x86\\)\\\\nodejs\" -ErrorAction SilentlyContinue | Select-Object Name; Test-Path \"$env:APPDATA\\\\npm\\\\node.exe\"; Test-Path \"C:\\\\Users\\\\Robert\\\\AppData\\\\Roaming\\\\nvm\")",
-      "PowerShell(ls \"C:\\\\Program Files\\\\\")"
+      "PowerShell(ls \"C:\\\\Program Files\\\\\")",
+      "Bash(gh api *)",
+      "Bash(python -c \"import sys,json; print\\(json.load\\(sys.stdin\\).get\\('name'\\)\\)\")",
+      "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(i['path']\\) for i in d.get\\('items',[]\\)]\")",
+      "Bash(curl -s \"https://raw.githubusercontent.com/telekom/scale/main/packages/design-tokens/src/telekom/tokens.js\")"
     ]
   }
 }

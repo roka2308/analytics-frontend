@@ -14,11 +14,11 @@ const config: Config = {
   safelist: [
     {
       pattern:
-        /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|emerald|green|red|cyan|indigo)-(300|400|500|600|700|800|900)$/,
+        /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|orange|teal|emerald|green|red|cyan|indigo)-(300|400|500|600|700|800|900)$/,
     },
     {
       pattern:
-        /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|emerald|green|red|cyan|indigo)-(50|100|200)$/,
+        /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|orange|teal|emerald|green|red|cyan|indigo)-(50|100|200)$/,
       variants: ["hover"],
     },
   ],
