@@ -15,7 +15,11 @@
       "Bash(gh api *)",
       "Bash(python -c \"import sys,json; print\\(json.load\\(sys.stdin\\).get\\('name'\\)\\)\")",
       "Bash(python -c \"import sys,json; d=json.load\\(sys.stdin\\); [print\\(i['path']\\) for i in d.get\\('items',[]\\)]\")",
-      "Bash(curl -s \"https://raw.githubusercontent.com/telekom/scale/main/packages/design-tokens/src/telekom/tokens.js\")"
+      "Bash(curl -s \"https://raw.githubusercontent.com/telekom/scale/main/packages/design-tokens/src/telekom/tokens.js\")",
+      "Bash(cd /tmp)",
+      "Bash(curl -s \"https://raw.githubusercontent.com/telekom/scale/main/packages/design-tokens-suite/dist/telekom/web/tokens.css\")",
+      "Bash(curl -s \"https://unpkg.com/@telekom/design-tokens-suite/dist/telekom/web/tokens.css\")",
+      "WebSearch"
     ]
   }
 }
