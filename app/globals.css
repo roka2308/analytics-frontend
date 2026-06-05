@@ -3,6 +3,47 @@
 @tailwind utilities;
 
 /*
+ * TeleNeoWeb – Marken-Schrift der Telekom (Scale Design System).
+ * Die Dateien sind proprietaer und NICHT im Repo. Sobald die .woff2-Dateien
+ * unter /public/fonts/ liegen, aktivieren sich diese Regeln automatisch.
+ * Bis dahin greift der Fallback (Inter) ohne Fehler.
+ *
+ * Erwartete Dateien (siehe public/fonts/README.md):
+ *   TeleNeoWeb-Regular.woff2    (400)
+ *   TeleNeoWeb-Medium.woff2     (500)
+ *   TeleNeoWeb-Bold.woff2       (700)
+ *   TeleNeoWeb-ExtraBold.woff2  (800)
+ */
+@font-face {
+  font-family: "TeleNeoWeb";
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url("/fonts/TeleNeoWeb-Regular.woff2") format("woff2");
+}
+@font-face {
+  font-family: "TeleNeoWeb";
+  font-style: normal;
+  font-weight: 500;
+  font-display: swap;
+  src: url("/fonts/TeleNeoWeb-Medium.woff2") format("woff2");
+}
+@font-face {
+  font-family: "TeleNeoWeb";
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url("/fonts/TeleNeoWeb-Bold.woff2") format("woff2");
+}
+@font-face {
+  font-family: "TeleNeoWeb";
+  font-style: normal;
+  font-weight: 800;
+  font-display: swap;
+  src: url("/fonts/TeleNeoWeb-ExtraBold.woff2") format("woff2");
+}
+
+/*
  * Theme-System:
  * - Alle Komponenten nutzen ausschliesslich diese CSS-Variablen,
  *   NIE hardcoded Tailwind-Farben wie "slate-900" oder "white".
@@ -119,6 +160,9 @@
   }
   body {
     @apply bg-background text-foreground;
+    /* TeleNeoWeb zuerst, dann Inter (Fallback), dann System-Sans */
+    font-family: "TeleNeoWeb", var(--font-inter), system-ui, -apple-system,
+      "Segoe UI", sans-serif;
     -webkit-font-smoothing: antialiased;
     -moz-osx-font-smoothing: grayscale;
   }

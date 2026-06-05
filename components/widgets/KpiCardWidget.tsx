@@ -122,9 +122,9 @@ export async function KpiCardWidget({
       </div>
 
       {/* Wert + Trend + Sparkline */}
-      <div className="flex flex-1 items-end justify-between gap-3 px-4 pb-4 pt-1">
+      <div className="flex flex-1 items-end justify-between gap-4 px-4 pb-4 pt-1">
         <div className="min-w-0">
-          <div className="heading-display text-[1.75rem] leading-tight tabular-nums text-foreground">
+          <div className="truncate text-2xl font-bold leading-tight tabular-nums text-foreground">
             {value}
           </div>
           {deltaForMetric && ctx.compareRange ? (

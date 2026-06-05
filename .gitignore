@@ -3,6 +3,12 @@ node_modules/
 .pnp
 .pnp.js
 
+# Proprietaere Marken-Schrift (TeleNeoWeb) – nicht committen
+/public/fonts/*.woff2
+/public/fonts/*.woff
+/public/fonts/*.ttf
+/public/fonts/*.otf
+
 # Next.js
 .next/
 out/

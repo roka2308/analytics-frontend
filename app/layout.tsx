@@ -4,7 +4,10 @@ import { SessionProvider } from "@/components/providers/SessionProvider";
 import { ThemeProvider } from "@/components/providers/ThemeProvider";
 import "./globals.css";
 
-const inter = Inter({ subsets: ["latin"] });
+// Inter als Fallback-Schrift unter einer CSS-Variable. Die eigentliche
+// Marken-Schrift TeleNeoWeb wird per @font-face in globals.css geladen
+// und hat in der font-family-Kette Vorrang (sobald die Dateien vorliegen).
+const inter = Inter({ subsets: ["latin"], variable: "--font-inter" });
 
 export const metadata: Metadata = {
   title: {
@@ -38,8 +41,8 @@ export default function RootLayout({
   children: React.ReactNode;
 }) {
   return (
-    <html lang="de" suppressHydrationWarning>
-      <body className={inter.className}>
+    <html lang="de" className={inter.variable} suppressHydrationWarning>
+      <body>
         <ThemeProvider>
           <SessionProvider>{children}</SessionProvider>
         </ThemeProvider>

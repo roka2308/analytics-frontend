@@ -18,7 +18,7 @@ export function SparklineClient({ data }: Props) {
       categories={["value"]}
       index="date"
       colors={["pink"]}
-      className="h-10 w-24"
+      className="h-8 w-20"
     />
   );
 }
