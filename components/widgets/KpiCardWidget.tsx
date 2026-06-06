@@ -121,33 +121,31 @@ export async function KpiCardWidget({
         </h3>
       </div>
 
-      {/* Wert + Trend + Sparkline */}
-      <div className="flex flex-1 items-end justify-between gap-4 px-4 pb-4 pt-1">
-        <div className="min-w-0">
-          <div className="truncate text-2xl font-bold leading-tight tabular-nums text-foreground">
+      {/* Wert + Trend oben, Sparkline volle Breite darunter */}
+      <div className="flex flex-1 flex-col px-4 pb-4 pt-1">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
+          <span className="text-2xl font-bold leading-tight tabular-nums text-foreground">
             {value}
-          </div>
+          </span>
           {deltaForMetric && ctx.compareRange ? (
-            <div className="mt-1.5 inline-flex items-center gap-1 text-xs font-medium tabular-nums">
-              <span
-                className={cn(
-                  "inline-flex items-center gap-0.5 rounded px-1 py-0.5",
-                  isPositive === true && "bg-success/10 text-success",
-                  isPositive === false && "bg-destructive/10 text-destructive",
-                  isPositive === null && "bg-muted text-muted-foreground"
-                )}
-              >
-                {trendKind === "up" && <TrendingUp className="h-3 w-3" />}
-                {trendKind === "down" && <TrendingDown className="h-3 w-3" />}
-                {trendKind === "flat" && <Minus className="h-3 w-3" />}
-                {formatPercent(deltaForMetric.pct)}
-              </span>
-            </div>
+            <span
+              className={cn(
+                "inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-xs font-medium tabular-nums",
+                isPositive === true && "bg-success/10 text-success",
+                isPositive === false && "bg-destructive/10 text-destructive",
+                isPositive === null && "bg-muted text-muted-foreground"
+              )}
+            >
+              {trendKind === "up" && <TrendingUp className="h-3 w-3" />}
+              {trendKind === "down" && <TrendingDown className="h-3 w-3" />}
+              {trendKind === "flat" && <Minus className="h-3 w-3" />}
+              {formatPercent(deltaForMetric.pct)}
+            </span>
           ) : null}
         </div>
 
         {sparklineData.length > 0 && (
-          <div className="shrink-0 opacity-90">
+          <div className="mt-2 flex flex-1 items-end">
             <SparklineClient data={sparklineData} />
           </div>
         )}
