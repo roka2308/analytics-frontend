@@ -1,7 +1,9 @@
 "use client";
 
+import { useId } from "react";
 import {
-  LineChart,
+  AreaChart,
+  Area,
   Line,
   XAxis,
   YAxis,
@@ -19,6 +21,7 @@ interface Props {
 
 export function VisitorTrendChart({ data, hasCompare }: Props) {
   const c = useChartColors();
+  const gradientId = useId();
 
   if (data.length === 0) {
     return (
@@ -30,7 +33,13 @@ export function VisitorTrendChart({ data, hasCompare }: Props) {
 
   return (
     <ResponsiveContainer width="100%" height="100%" minHeight={140}>
-      <LineChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+      <AreaChart data={data} margin={{ top: 8, right: 8, bottom: 0, left: -8 }}>
+        <defs>
+          <linearGradient id={gradientId} x1="0" y1="0" x2="0" y2="1">
+            <stop offset="0%" stopColor={c.accent} stopOpacity={0.22} />
+            <stop offset="100%" stopColor={c.accent} stopOpacity={0} />
+          </linearGradient>
+        </defs>
         <CartesianGrid stroke={c.grid} strokeDasharray="3 3" vertical={false} />
         <XAxis
           dataKey="date"
@@ -68,16 +77,17 @@ export function VisitorTrendChart({ data, hasCompare }: Props) {
             isAnimationActive
           />
         )}
-        <Line
+        <Area
           type="linear"
           dataKey="Besuche"
           stroke={c.accent}
           strokeWidth={2}
+          fill={`url(#${gradientId})`}
           dot={{ r: 3, fill: c.accent, strokeWidth: 0 }}
           activeDot={{ r: 5 }}
           isAnimationActive
         />
-      </LineChart>
+      </AreaChart>
     </ResponsiveContainer>
   );
 }
