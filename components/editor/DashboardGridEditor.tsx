@@ -246,6 +246,7 @@ export function DashboardGridEditor({
         </div>
       ) : (
         <div className={cn("rgl-edit", selected && "lg:pr-[340px]")}>
+          <div className="editor-grid-bg">
           <ResponsiveGridLayout
             className="layout"
             layouts={{ lg: layout, md: layout, sm: layout }}
@@ -317,6 +318,7 @@ export function DashboardGridEditor({
               );
             })}
           </ResponsiveGridLayout>
+          </div>
         </div>
       )}
 
