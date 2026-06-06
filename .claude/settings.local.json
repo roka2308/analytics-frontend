@@ -20,7 +20,8 @@
       "Bash(curl -s \"https://raw.githubusercontent.com/telekom/scale/main/packages/design-tokens-suite/dist/telekom/web/tokens.css\")",
       "Bash(curl -s \"https://unpkg.com/@telekom/design-tokens-suite/dist/telekom/web/tokens.css\")",
       "WebSearch",
-      "Bash(npm view *)"
+      "Bash(npm view *)",
+      "Bash(npm install *)"
     ]
   }
 }
