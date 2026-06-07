@@ -48,3 +48,6 @@ Thumbs.db
 # TypeScript
 *.tsbuildinfo
 next-env.d.ts
+
+# Lokale DB-Backups (enthalten Nutzerdaten/Hashes – niemals committen)
+backups/
