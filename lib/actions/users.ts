@@ -86,6 +86,42 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   return { ok: true };
 }
 
+/**
+ * Legt einen Nutzer an und ordnet ihn direkt einem Kunden zu
+ * (Customer-Scope-Grant). Kein Heim-Projekt -> Zugriff allein ueber Grants.
+ */
+export async function createCustomerUserAction(
+  customerId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+
+  const email = (formData.get("email") as string | null)?.trim() ?? "";
+  const password = (formData.get("password") as string | null) ?? "";
+  const name = (formData.get("name") as string | null)?.trim() || null;
+  const role = parseRole(formData.get("role"));
+
+  const emailErr = validateEmail(email);
+  if (emailErr) return { ok: false, error: emailErr };
+  const pwErr = validatePassword(password);
+  if (pwErr) return { ok: false, error: pwErr };
+  if (!customerId) return { ok: false, error: "Kunde fehlt." };
+
+  try {
+    const user = await createUser({ email, password, name, role, organizationId: null });
+    if (user) {
+      const { grantAccess } = await import("@/lib/db/queries");
+      await grantAccess(user.id, "customer", customerId, null);
+    }
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
+  }
+
+  revalidatePath("/kunden");
+  revalidatePath("/zugriffe");
+  return { ok: true };
+}
+
 export async function reassignUserOrgAction(
   userId: string,
   organizationId: string

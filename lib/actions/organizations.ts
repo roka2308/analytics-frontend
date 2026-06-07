@@ -28,16 +28,17 @@ export async function createOrgAction(formData: FormData): Promise<ActionResult>
   await requireAdmin();
 
   const name = ((formData.get("name") as string | null) ?? "").trim();
+  const customerId = (formData.get("customerId") as string | null) || undefined;
   const err = validateName(name);
   if (err) return { ok: false, error: err };
 
   const existing = await listOrganizations();
   if (existing.some((o) => o.name.toLowerCase() === name.toLowerCase())) {
-    return { ok: false, error: `Eine Organisation namens "${name}" existiert bereits.` };
+    return { ok: false, error: `Ein Projekt namens "${name}" existiert bereits.` };
   }
 
-  await createOrganization(name);
-  revalidatePath("/settings");
+  await createOrganization(name, customerId);
+  revalidatePath("/kunden");
   revalidatePath("/dashboard");
   return { ok: true };
 }

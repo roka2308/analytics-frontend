@@ -64,7 +64,7 @@ export function DashboardPicker({ dashboards, currentSlug }: Props) {
         )}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings#dashboards" className="text-muted-foreground">
+          <Link href="/kunden" className="text-muted-foreground">
             Dashboards verwalten…
           </Link>
         </DropdownMenuItem>

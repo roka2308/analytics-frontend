@@ -1,125 +1,101 @@
-import Link from "next/link";
 import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/requireUser";
 import {
   getCustomerBySlug,
   listOrganizationsForCustomer,
-  countDataSourcesInOrg,
-  countUsersInOrg,
-  getVisibleProjectsForSession,
+  listDashboardsForOrg,
+  listDataSourcesForOrg,
+  listGrantsForUser,
 } from "@/lib/db/queries";
+import { listUsers } from "@/lib/auth/users";
 import { hslToHex } from "@/lib/branding";
-import { AppShell } from "@/components/layout/AppShell";
-import { Topbar } from "@/components/layout/Topbar";
 import { CustomerBrandingForm } from "@/components/settings/CustomerBrandingForm";
-import {
-  Card,
-  CardContent,
-  CardDescription,
-  CardHeader,
-  CardTitle,
-} from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { ProjectsManager, type ProjectVM } from "@/components/settings/ProjectsManager";
+import { CustomerUsersManager } from "@/components/settings/CustomerUsersManager";
 
 export const dynamic = "force-dynamic";
 
-export default async function KundeOverviewPage({
+export default async function KundeDetailPage({
   params,
 }: {
   params: { customerSlug: string };
 }) {
-  const session = await requireAdmin();
+  await requireAdmin();
 
   const customer = await getCustomerBySlug(params.customerSlug);
   if (!customer) notFound();
 
   const orgs = await listOrganizationsForCustomer(customer.id);
-  const projects = await Promise.all(
-    orgs.map(async (o) => ({
-      id: o.id,
-      name: o.name,
-      slug: o.slug,
-      dataSourceCount: await countDataSourcesInOrg(o.id),
-      userCount: await countUsersInOrg(o.id),
-    })),
+  const projects: ProjectVM[] = await Promise.all(
+    orgs.map(async (o) => {
+      const [dashboards, dataSources] = await Promise.all([
+        listDashboardsForOrg(o.id),
+        listDataSourcesForOrg(o.id),
+      ]);
+      return {
+        id: o.id,
+        name: o.name,
+        slug: o.slug,
+        dashboards: dashboards.map((d) => ({ id: d.id, name: d.name, slug: d.slug })),
+        dataSources: dataSources.map((ds) => ({
+          id: ds.id,
+          label: ds.label,
+          matomoSiteId: ds.matomoSiteId,
+        })),
+      };
+    }),
   );
 
-  const headerProjects = await getVisibleProjectsForSession(session);
+  // Nutzer dieses Kunden: organizationId in einem Projekt ODER Grant auf den
+  // Kunden / eines seiner Projekte.
+  const projectIds = new Set(orgs.map((o) => o.id));
+  const allUsers = await listUsers();
+  const customerUsers = [];
+  for (const u of allUsers) {
+    let belongs = u.organizationId ? projectIds.has(u.organizationId) : false;
+    if (!belongs) {
+      const grants = await listGrantsForUser(u.id);
+      belongs = grants.some(
+        (g) =>
+          (g.scopeType === "customer" && g.scopeId === customer.id) ||
+          (g.scopeType === "project" && projectIds.has(g.scopeId)),
+      );
+    }
+    if (belongs) {
+      customerUsers.push({ id: u.id, email: u.email, name: u.name, role: u.role });
+    }
+  }
 
   return (
-    <AppShell
-      projects={headerProjects.map((p) => ({ slug: p.slug, name: p.name }))}
-      dashboards={[]}
-    >
-      <Topbar
-        title={customer.name}
-        subtitle={
-          <span>
-            <Link href="/kunden" className="hover:text-accent-text">
-              Kunden
-            </Link>{" "}
-            / {customer.name}
-          </span>
-        }
-      />
-      <main className="px-6 py-6">
-        <div className="mx-auto max-w-3xl space-y-10">
-          <section className="space-y-3">
-            <h2 className="text-lg font-medium text-foreground">Projekte</h2>
-            <Card>
-              <CardHeader>
-                <CardTitle>Projekte dieses Kunden</CardTitle>
-                <CardDescription>
-                  Jedes Projekt bündelt Datenquellen und Dashboards. Verwaltung der
-                  Projekte erfolgt aktuell in den Einstellungen.
-                </CardDescription>
-              </CardHeader>
-              <CardContent>
-                {projects.length === 0 ? (
-                  <p className="text-sm text-muted-foreground">
-                    Noch keine Projekte. Lege Projekte in den{" "}
-                    <Link href="/settings" className="text-accent-text hover:underline">
-                      Einstellungen
-                    </Link>{" "}
-                    an.
-                  </p>
-                ) : (
-                  <div className="divide-y divide-border">
-                    {projects.map((p) => (
-                      <div key={p.id} className="flex items-center justify-between py-3">
-                        <div className="min-w-0 flex-1">
-                          <p className="text-sm font-medium text-foreground">{p.name}</p>
-                          <p className="text-xs text-muted-foreground">
-                            {p.dataSourceCount} Datenquelle(n) · {p.userCount} Nutzer ·
-                            /projekte/{p.slug}
-                          </p>
-                        </div>
-                        <Button size="sm" variant="ghost" asChild>
-                          <Link href={`/projekte/${p.slug}`}>Öffnen</Link>
-                        </Button>
-                      </div>
-                    ))}
-                  </div>
-                )}
-              </CardContent>
-            </Card>
-          </section>
+    <div className="space-y-10 p-6">
+      <div>
+        <h1 className="heading-display text-2xl text-foreground">{customer.name}</h1>
+        <p className="text-sm text-muted-foreground">/kunden/{customer.slug}</p>
+      </div>
 
-          <section className="space-y-3">
-            <h2 className="text-lg font-medium text-foreground">Branding</h2>
-            <CustomerBrandingForm
-              customer={{
-                id: customer.id,
-                name: customer.name,
-                brandingLogoBase64: customer.brandingLogoBase64 ?? null,
-                brandingAccentHex: customer.brandingAccentHsl
-                  ? hslToHex(customer.brandingAccentHsl)
-                  : null,
-              }}
-            />
-          </section>
-        </div>
-      </main>
-    </AppShell>
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium text-foreground">Projekte</h2>
+        <ProjectsManager customerId={customer.id} projects={projects} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium text-foreground">Nutzer</h2>
+        <CustomerUsersManager customerId={customer.id} users={customerUsers} />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium text-foreground">Branding</h2>
+        <CustomerBrandingForm
+          customer={{
+            id: customer.id,
+            name: customer.name,
+            brandingLogoBase64: customer.brandingLogoBase64 ?? null,
+            brandingAccentHex: customer.brandingAccentHsl
+              ? hslToHex(customer.brandingAccentHsl)
+              : null,
+          }}
+        />
+      </section>
+    </div>
   );
 }

@@ -5,7 +5,6 @@ import { usePathname, useParams } from "next/navigation";
 import { useSession, signOut } from "next-auth/react";
 import {
   LayoutDashboard,
-  Settings,
   BarChart3,
   Briefcase,
   Building2,
@@ -229,28 +228,6 @@ export function SidebarNav({
               </Link>
             </li>
           )}
-          <li>
-            <Link
-              href="/settings"
-              onClick={onNavigate}
-              className={cn(
-                "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
-                pathname?.startsWith("/settings")
-                  ? "bg-accent/10 font-medium text-accent-text"
-                  : "text-foreground hover:bg-muted"
-              )}
-            >
-              <Settings
-                className={cn(
-                  "h-4 w-4 shrink-0 transition-colors",
-                  pathname?.startsWith("/settings")
-                    ? "text-accent-text"
-                    : "text-muted-foreground group-hover:text-foreground"
-                )}
-              />
-              Einstellungen
-            </Link>
-          </li>
         </ul>
       </nav>
 
@@ -276,8 +253,8 @@ export function SidebarNav({
             <DropdownMenuLabel>Konto</DropdownMenuLabel>
             <DropdownMenuSeparator />
             <DropdownMenuItem asChild>
-              <Link href="/settings" onClick={onNavigate}>
-                Einstellungen
+              <Link href="/konto" onClick={onNavigate}>
+                Mein Konto
               </Link>
             </DropdownMenuItem>
             <DropdownMenuSeparator />

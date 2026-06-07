@@ -79,10 +79,10 @@ export function Header({
             </Link>
           )}
           <Link
-            href="/settings"
+            href="/kunden"
             className="rounded-md px-3 py-1.5 text-sm text-muted-foreground hover:bg-muted hover:text-foreground transition-colors"
           >
-            Einstellungen
+            Verwaltung
           </Link>
           <div className="ml-1 flex items-center gap-1 border-l border-border pl-2">
             <ThemeToggle />

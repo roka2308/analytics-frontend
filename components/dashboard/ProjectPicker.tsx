@@ -69,7 +69,7 @@ export function ProjectPicker({ projects, currentSlug }: Props) {
         ))}
         <DropdownMenuSeparator />
         <DropdownMenuItem asChild>
-          <Link href="/settings" className="text-muted-foreground">
+          <Link href="/kunden" className="text-muted-foreground">
             Projekte verwalten…
           </Link>
         </DropdownMenuItem>

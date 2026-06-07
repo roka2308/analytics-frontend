@@ -1,7 +1,8 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
-import { requireAdmin } from "@/lib/auth/requireUser";
+import { requireAdmin, requireUser } from "@/lib/auth/requireUser";
+import { canEditProject } from "@/lib/auth/permissions";
 import {
   createDashboard,
   createWidget,
@@ -102,6 +103,39 @@ export async function createDashboardAction(formData: FormData): Promise<ActionR
   }
   revalidatePath("/settings");
   revalidatePath("/dashboards");
+  return { ok: true, data: { slug } };
+}
+
+/** Legt ein Dashboard in einem BESTIMMTEN Projekt an (Kunden-Verwaltung). */
+export async function createDashboardInProjectAction(
+  organizationId: string,
+  name: string,
+): Promise<ActionResult> {
+  const session = await requireUser();
+  if (!(await canEditProject(session.user, organizationId))) {
+    return { ok: false, error: "Keine Berechtigung für dieses Projekt." };
+  }
+  const trimmed = name.trim();
+  const nameErr = validateName(trimmed);
+  if (nameErr) return { ok: false, error: nameErr };
+
+  const existing = await listDashboardsForOrg(organizationId);
+  const base = slugify(trimmed) || "dashboard";
+  let slug = base;
+  let i = 2;
+  while (existing.some((d) => d.slug === slug)) {
+    slug = `${base}-${i}`;
+    i++;
+  }
+  await createDashboard({
+    organizationId,
+    slug,
+    name: trimmed,
+    description: null,
+    isDefault: existing.length === 0,
+    position: existing.length,
+  });
+  revalidatePath("/kunden");
   return { ok: true, data: { slug } };
 }
 
