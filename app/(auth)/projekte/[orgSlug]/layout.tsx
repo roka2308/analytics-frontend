@@ -1,5 +1,5 @@
 import { notFound } from "next/navigation";
-import { getOrgBySlug } from "@/lib/db/queries";
+import { getOrgBySlug, resolveOrgBranding } from "@/lib/db/queries";
 import { ProjectThemeStyle } from "@/components/providers/ProjectThemeStyle";
 
 /**
@@ -20,8 +20,11 @@ export default async function ProjectLayout({
   const project = await getOrgBySlug(params.orgSlug);
   if (!project) notFound();
 
+  // Projekt-Override hat Vorrang, sonst Kunde-Default (Branding-Vererbung)
+  const branding = await resolveOrgBranding(project.id);
+
   return (
-    <ProjectThemeStyle accentHsl={project.brandingAccentHsl}>
+    <ProjectThemeStyle accentHsl={branding.accentHsl}>
       {children}
     </ProjectThemeStyle>
   );

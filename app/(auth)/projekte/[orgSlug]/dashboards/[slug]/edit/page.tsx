@@ -8,6 +8,7 @@ import {
   getWidgetsForDashboard,
   listDashboardsForOrg,
   getVisibleProjectsForSession,
+  resolveOrgBranding,
 } from "@/lib/db/queries";
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
@@ -28,17 +29,18 @@ export default async function DashboardEditPage({ params }: PageProps) {
   const dashboard = await getDashboardBySlug(project.id, params.slug);
   if (!dashboard) notFound();
 
-  const [widgets, allDashboards, allProjects] = await Promise.all([
+  const [widgets, allDashboards, allProjects, branding] = await Promise.all([
     getWidgetsForDashboard(dashboard.id),
     listDashboardsForOrg(project.id),
     getVisibleProjectsForSession(session),
+    resolveOrgBranding(project.id),
   ]);
 
   return (
     <AppShell
       projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
       currentProjectSlug={project.slug}
-      currentProjectLogo={project.brandingLogoBase64}
+      currentProjectLogo={branding.logoBase64}
       dashboards={allDashboards.map((d) => ({
         slug: d.slug,
         name: d.name,

@@ -16,6 +16,7 @@ import {
   getVisibleProjectsForSession,
   getWidgetsForDashboard,
   listDashboardsForOrg,
+  resolveOrgBranding,
 } from "@/lib/db/queries";
 import { ensureSeedDashboard } from "@/lib/widgets/seed";
 import { resolveDateRange, computeCompareRange } from "@/lib/dateRange";
@@ -64,6 +65,7 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
   // Header-Daten
   const allProjects = await getVisibleProjectsForSession(session);
   const allDashboards = await listDashboardsForOrg(project.id);
+  const branding = await resolveOrgBranding(project.id);
 
   // Sites des Projekts
   const sites = await getProjectSitesForSession(project.id, session);
@@ -73,7 +75,7 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
       <AppShell
         projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
         currentProjectSlug={project.slug}
-        currentProjectLogo={project.brandingLogoBase64}
+        currentProjectLogo={branding.logoBase64}
         dashboards={allDashboards.map((d) => ({
           slug: d.slug,
           name: d.name,
@@ -130,7 +132,7 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
     <AppShell
       projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
       currentProjectSlug={project.slug}
-      currentProjectLogo={project.brandingLogoBase64}
+      currentProjectLogo={branding.logoBase64}
       dashboards={allDashboards.map((d) => ({
         slug: d.slug,
         name: d.name,

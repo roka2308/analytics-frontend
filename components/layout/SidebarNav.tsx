@@ -9,6 +9,7 @@ import {
   BarChart3,
   Briefcase,
   Building2,
+  KeyRound,
   ChevronDown,
   LogOut,
 } from "lucide-react";
@@ -201,6 +202,30 @@ export function SidebarNav({
                   )}
                 />
                 Kunden
+              </Link>
+            </li>
+          )}
+          {isAdmin && (
+            <li>
+              <Link
+                href="/zugriffe"
+                onClick={onNavigate}
+                className={cn(
+                  "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                  pathname?.startsWith("/zugriffe")
+                    ? "bg-accent/10 font-medium text-accent-text"
+                    : "text-foreground hover:bg-muted",
+                )}
+              >
+                <KeyRound
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    pathname?.startsWith("/zugriffe")
+                      ? "text-accent-text"
+                      : "text-muted-foreground group-hover:text-foreground",
+                  )}
+                />
+                Zugriffsrechte
               </Link>
             </li>
           )}
