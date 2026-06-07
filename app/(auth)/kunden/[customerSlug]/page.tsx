@@ -10,6 +10,7 @@ import {
 import { listUsers } from "@/lib/auth/users";
 import { hslToHex } from "@/lib/branding";
 import { CustomerBrandingForm } from "@/components/settings/CustomerBrandingForm";
+import { CustomerHeaderActions } from "@/components/settings/CustomerHeaderActions";
 import { ProjectBrandingForm } from "@/components/settings/ProjectBrandingForm";
 import { ProjectsManager, type ProjectVM } from "@/components/settings/ProjectsManager";
 import { CustomerUsersManager } from "@/components/settings/CustomerUsersManager";
@@ -70,10 +71,7 @@ export default async function KundeDetailPage({
 
   return (
     <div className="space-y-10 p-6">
-      <div>
-        <h1 className="heading-display text-2xl text-foreground">{customer.name}</h1>
-        <p className="text-sm text-muted-foreground">/kunden/{customer.slug}</p>
-      </div>
+      <CustomerHeaderActions id={customer.id} name={customer.name} slug={customer.slug} />
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium text-foreground">Projekte</h2>

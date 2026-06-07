@@ -73,3 +73,21 @@ Nicht „alles auf einmal" migrieren.
 - `lib/data/datasource.ts` – Interface, Formate, Registry (der Vertrag)
 - `lib/data/sql-datasource.ts` – SQL-Anbindung (Startgerüst)
 - `docs/sql-views.md` – Katalog der 5 SQL-Views (Felder, Granularität)
+
+## Entwicklungs-Leitlinien (verbindlich für jede KI-Arbeit)
+
+Diese Prinzipien gelten projektweit – auch wenn der Prompt sie nicht wiederholt:
+
+1. **Think Big.** Über den Prompt hinausdenken und nach eigenem Wissen + Best
+   Practice sinnvoll erweitern. Der Auftraggeber gibt bewusst nicht jedes Detail
+   vor; fehlende Aspekte eigenständig, sauber und zukunftssicher ergänzen.
+2. **Mobile is the Future.** Jede Ansicht/Komponente muss auf Mobilgeräten
+   funktionieren und gut aussehen (responsive, Touch-tauglich). Mobile beim Bauen
+   sofort mitdenken, nicht nachträglich.
+3. **Innovation is king.** Ziel ist ein Produkt, das besser ist als die Konkurrenz.
+   Innovative, durchdachte Lösungen bevorzugen statt Minimal-Umsetzung.
+4. **No idea is wrong.** Proaktiv Ideen und Features vorschlagen; Vorschläge sind
+   ausdrücklich erwünscht.
+
+Querschnitt bleibt: Sicherheit immer mitdenken; in kleinen, gebauten (Build grün)
+und committeten Schritten arbeiten; Code übergabefähig dokumentieren.

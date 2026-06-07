@@ -9,7 +9,6 @@ import {
   listCustomers,
   renameCustomer,
   setCustomerBranding,
-  countOrgsInCustomer,
 } from "@/lib/db/queries";
 import { DEFAULT_ACCENT_HEX, hexToHsl, validateLogoDataUrl } from "@/lib/branding";
 
@@ -65,17 +64,10 @@ export async function deleteCustomerAction(customerId: string): Promise<ActionRe
   const customer = await getCustomerById(customerId);
   if (!customer) return { ok: false, error: "Kunde nicht gefunden." };
 
-  const orgCount = await countOrgsInCustomer(customerId);
-  if (orgCount > 0) {
-    return {
-      ok: false,
-      error: `Dieser Kunde hat noch ${orgCount} Projekt(e). Bitte zuerst zuordnen oder löschen.`,
-    };
-  }
-
+  // Loescht den Kunden inkl. ALLER Projekte, Dashboards, Datenquellen und Grants
+  // (manuelles Cascade in deleteCustomer).
   await deleteCustomer(customerId);
   revalidatePath("/kunden");
-  revalidatePath("/settings");
   return { ok: true };
 }
 

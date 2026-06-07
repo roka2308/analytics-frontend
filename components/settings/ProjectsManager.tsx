@@ -4,8 +4,12 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, ExternalLink, Pencil } from "lucide-react";
-import { createOrgAction, deleteOrgAction } from "@/lib/actions/organizations";
-import { createDashboardInProjectAction, deleteDashboardAction } from "@/lib/actions/dashboards";
+import { createOrgAction, deleteOrgAction, renameOrgAction } from "@/lib/actions/organizations";
+import {
+  createDashboardInProjectAction,
+  deleteDashboardAction,
+  renameDashboardAction,
+} from "@/lib/actions/dashboards";
 import { addDataSourceAction, removeDataSourceAction } from "@/lib/actions/dataSources";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
@@ -28,6 +32,8 @@ export function ProjectsManager({
 }) {
   const router = useRouter();
   const [newProject, setNewProject] = useState("");
+  const [editProjId, setEditProjId] = useState<string | null>(null);
+  const [editProjName, setEditProjName] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -76,20 +82,64 @@ export function ProjectsManager({
       ) : (
         projects.map((p) => (
           <Card key={p.id}>
-            <CardHeader className="flex-row items-center justify-between space-y-0">
-              <CardTitle className="text-base">{p.name}</CardTitle>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                disabled={isPending}
-                onClick={() => {
-                  if (confirm(`Projekt "${p.name}" löschen? (inkl. Dashboards & Datenquellen)`))
-                    run(() => deleteOrgAction(p.id));
-                }}
-              >
-                <Trash2 className="h-4 w-4" />
-              </Button>
+            <CardHeader className="flex-row items-center justify-between gap-2 space-y-0">
+              {editProjId === p.id ? (
+                <div className="flex flex-1 flex-wrap items-center gap-2">
+                  <Input
+                    value={editProjName}
+                    onChange={(e) => setEditProjName(e.target.value)}
+                    className="h-8 max-w-xs"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    disabled={isPending || !editProjName.trim()}
+                    onClick={() =>
+                      run(async () => {
+                        const r = await renameOrgAction(p.id, editProjName);
+                        if (r.ok) setEditProjId(null);
+                        return r;
+                      })
+                    }
+                  >
+                    Speichern
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditProjId(null)}>
+                    Abbrechen
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <CardTitle className="text-base">{p.name}</CardTitle>
+                  <div className="flex shrink-0 gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isPending}
+                      onClick={() => {
+                        setEditProjId(p.id);
+                        setEditProjName(p.name);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={isPending}
+                      onClick={() => {
+                        if (
+                          confirm(`Projekt "${p.name}" löschen? (inkl. Dashboards & Datenquellen)`)
+                        )
+                          run(() => deleteOrgAction(p.id));
+                      }}
+                    >
+                      <Trash2 className="h-4 w-4" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </CardHeader>
             <CardContent className="space-y-5">
               <DashboardsBlock project={p} isPending={isPending} run={run} />
@@ -112,6 +162,8 @@ function DashboardsBlock({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>) => void;
 }) {
   const [name, setName] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -122,32 +174,75 @@ function DashboardsBlock({
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border">
           {project.dashboards.map((d) => (
-            <li key={d.id} className="flex items-center justify-between px-3 py-2">
-              <span className="truncate text-sm text-foreground">{d.name}</span>
-              <div className="flex items-center gap-1">
-                <Button size="sm" variant="ghost" asChild>
-                  <Link href={`/projekte/${project.slug}/dashboards/${d.slug}`}>
-                    <ExternalLink className="mr-1 h-3.5 w-3.5" /> Öffnen
-                  </Link>
-                </Button>
-                <Button size="sm" variant="ghost" asChild>
-                  <Link href={`/projekte/${project.slug}/dashboards/${d.slug}/edit`}>
-                    <Pencil className="mr-1 h-3.5 w-3.5" /> Bearbeiten
-                  </Link>
-                </Button>
-                <Button
-                  size="sm"
-                  variant="ghost"
-                  className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                  disabled={isPending}
-                  onClick={() => {
-                    if (confirm(`Dashboard "${d.name}" löschen?`))
-                      run(() => deleteDashboardAction(d.id));
-                  }}
-                >
-                  <Trash2 className="h-3.5 w-3.5" />
-                </Button>
-              </div>
+            <li
+              key={d.id}
+              className="flex flex-wrap items-center justify-between gap-2 px-3 py-2"
+            >
+              {editId === d.id ? (
+                <div className="flex flex-1 flex-wrap items-center gap-2">
+                  <Input
+                    value={editName}
+                    onChange={(e) => setEditName(e.target.value)}
+                    className="h-8 max-w-xs"
+                    autoFocus
+                  />
+                  <Button
+                    size="sm"
+                    disabled={isPending || !editName.trim()}
+                    onClick={() =>
+                      run(async () => {
+                        const r = await renameDashboardAction(d.id, editName, null);
+                        if (r.ok) setEditId(null);
+                        return r;
+                      })
+                    }
+                  >
+                    Speichern
+                  </Button>
+                  <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>
+                    Abbrechen
+                  </Button>
+                </div>
+              ) : (
+                <>
+                  <span className="truncate text-sm text-foreground">{d.name}</span>
+                  <div className="flex items-center gap-1">
+                    <Button size="sm" variant="ghost" asChild>
+                      <Link href={`/projekte/${project.slug}/dashboards/${d.slug}`}>
+                        <ExternalLink className="mr-1 h-3.5 w-3.5" /> Öffnen
+                      </Link>
+                    </Button>
+                    <Button size="sm" variant="ghost" asChild>
+                      <Link href={`/projekte/${project.slug}/dashboards/${d.slug}/edit`}>
+                        <Pencil className="mr-1 h-3.5 w-3.5" /> Editor
+                      </Link>
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isPending}
+                      onClick={() => {
+                        setEditId(d.id);
+                        setEditName(d.name);
+                      }}
+                    >
+                      Umbenennen
+                    </Button>
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                      disabled={isPending}
+                      onClick={() => {
+                        if (confirm(`Dashboard "${d.name}" löschen?`))
+                          run(() => deleteDashboardAction(d.id));
+                      }}
+                    >
+                      <Trash2 className="h-3.5 w-3.5" />
+                    </Button>
+                  </div>
+                </>
+              )}
             </li>
           ))}
         </ul>

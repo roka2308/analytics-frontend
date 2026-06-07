@@ -3,8 +3,6 @@
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/requireUser";
 import {
-  countSitesInOrg,
-  countUsersInOrg,
   createOrganization,
   deleteOrganization,
   getOrgById,
@@ -63,26 +61,13 @@ export async function deleteOrgAction(orgId: string): Promise<ActionResult> {
   await requireAdmin();
 
   const org = await getOrgById(orgId);
-  if (!org) return { ok: false, error: "Organisation nicht gefunden." };
+  if (!org) return { ok: false, error: "Projekt nicht gefunden." };
 
-  const userCount = await countUsersInOrg(orgId);
-  if (userCount > 0) {
-    return {
-      ok: false,
-      error: `Diese Organisation hat noch ${userCount} Nutzer. Bitte weise sie zuerst einer anderen Org zu oder lösche sie.`,
-    };
-  }
-
-  const siteCount = await countSitesInOrg(orgId);
-  if (siteCount > 0) {
-    return {
-      ok: false,
-      error: `Diese Organisation hat noch ${siteCount} Website(s). Bitte entferne sie zuerst aus der Site-Verwaltung.`,
-    };
-  }
-
+  // Loescht das Projekt inkl. aller Dashboards, Datenquellen und Projekt-Grants
+  // (manuelles Cascade in deleteOrganization). Zugeordnete Nutzer verlieren ihr
+  // Heim-Projekt, bleiben aber bestehen.
   await deleteOrganization(orgId);
-  revalidatePath("/settings");
+  revalidatePath("/kunden");
   revalidatePath("/dashboard");
   return { ok: true };
 }

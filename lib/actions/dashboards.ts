@@ -7,6 +7,7 @@ import {
   createDashboard,
   createWidget,
   deleteDashboard,
+  getDashboardById,
   getDashboardBySlug,
   getOrCreateDefaultOrg,
   listDashboardsForOrg,
@@ -155,29 +156,24 @@ export async function renameDashboardAction(
 }
 
 export async function deleteDashboardAction(dashboardId: string): Promise<ActionResult> {
-  await requireAdmin();
-  const orgId = await adminOrgId();
-  const all = await listDashboardsForOrg(orgId);
-  if (all.length <= 1) {
-    return {
-      ok: false,
-      error: "Das letzte Dashboard kann nicht gelöscht werden. Lege erst ein anderes an.",
-    };
+  const session = await requireUser();
+  const dash = await getDashboardById(dashboardId);
+  if (!dash) return { ok: false, error: "Dashboard nicht gefunden." };
+  if (!(await canEditProject(session.user, dash.organizationId))) {
+    return { ok: false, error: "Keine Berechtigung für dieses Projekt." };
   }
-  const target = all.find((d) => d.id === dashboardId);
-  if (!target) return { ok: false, error: "Dashboard nicht gefunden." };
 
   await deleteDashboard(dashboardId);
 
-  // Wenn wir das Default geloescht haben, einem anderen den Default-Status geben
-  if (target.isDefault) {
-    const remaining = all.filter((d) => d.id !== dashboardId);
+  // War es das Default-Dashboard, ein verbleibendes zum Default machen.
+  if (dash.isDefault) {
+    const remaining = await listDashboardsForOrg(dash.organizationId);
     if (remaining.length > 0) {
-      await setDefaultDashboard(orgId, remaining[0].id);
+      await setDefaultDashboard(dash.organizationId, remaining[0].id);
     }
   }
 
-  revalidatePath("/settings");
+  revalidatePath("/kunden");
   revalidatePath("/dashboards");
   return { ok: true };
 }

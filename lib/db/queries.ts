@@ -9,6 +9,7 @@ import {
   dashboards,
   dashboardWidgets,
   dashboardSections,
+  dashboardShareTokens,
 } from "./schema";
 import { eq, asc, count, and } from "drizzle-orm";
 
@@ -103,6 +104,17 @@ export async function renameOrganization(id: string, name: string) {
 }
 
 export async function deleteOrganization(id: string) {
+  // Manuelles Cascade: erst alle Dashboards (inkl. deren Kinder) des Projekts,
+  // dann Datenquellen, Projekt-Grants; Nutzer verlieren ihr Heim-Projekt.
+  const projectDashboards = await listDashboardsForOrg(id);
+  for (const d of projectDashboards) {
+    await deleteDashboard(d.id);
+  }
+  await db.delete(dataSources).where(eq(dataSources.organizationId, id));
+  await db
+    .delete(accessGrants)
+    .where(and(eq(accessGrants.scopeType, "project"), eq(accessGrants.scopeId, id)));
+  await db.update(users).set({ organizationId: null }).where(eq(users.organizationId, id));
   await db.delete(organizations).where(eq(organizations.id, id));
 }
 
@@ -497,6 +509,14 @@ export async function renameDashboard(dashboardId: string, name: string, descrip
 }
 
 export async function deleteDashboard(dashboardId: string) {
+  // Manuelles Cascade (FK-Enforcement bei libsql/Turso nicht garantiert):
+  // Widgets, Sections, Share-Tokens und Dashboard-Grants zuerst entfernen.
+  await db.delete(dashboardWidgets).where(eq(dashboardWidgets.dashboardId, dashboardId));
+  await db.delete(dashboardSections).where(eq(dashboardSections.dashboardId, dashboardId));
+  await db.delete(dashboardShareTokens).where(eq(dashboardShareTokens.dashboardId, dashboardId));
+  await db
+    .delete(accessGrants)
+    .where(and(eq(accessGrants.scopeType, "dashboard"), eq(accessGrants.scopeId, dashboardId)));
   await db.delete(dashboards).where(eq(dashboards.id, dashboardId));
 }
 
@@ -735,6 +755,15 @@ export async function renameCustomer(id: string, name: string) {
 }
 
 export async function deleteCustomer(id: string) {
+  // Manuelles Cascade: alle Projekte des Kunden (inkl. deren Inhalte) und
+  // Kunden-Grants entfernen, dann den Kunden.
+  const orgs = await listOrganizationsForCustomer(id);
+  for (const o of orgs) {
+    await deleteOrganization(o.id);
+  }
+  await db
+    .delete(accessGrants)
+    .where(and(eq(accessGrants.scopeType, "customer"), eq(accessGrants.scopeId, id)));
   await db.delete(customers).where(eq(customers.id, id));
 }
 
