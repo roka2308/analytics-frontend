@@ -10,6 +10,7 @@ import {
 import { listUsers } from "@/lib/auth/users";
 import { hslToHex } from "@/lib/branding";
 import { CustomerBrandingForm } from "@/components/settings/CustomerBrandingForm";
+import { ProjectBrandingForm } from "@/components/settings/ProjectBrandingForm";
 import { ProjectsManager, type ProjectVM } from "@/components/settings/ProjectsManager";
 import { CustomerUsersManager } from "@/components/settings/CustomerUsersManager";
 
@@ -39,6 +40,7 @@ export default async function KundeDetailPage({
         dashboards: dashboards.map((d) => ({ id: d.id, name: d.name, slug: d.slug })),
         dataSources: dataSources.map((ds) => ({
           id: ds.id,
+          type: ds.type,
           label: ds.label,
           matomoSiteId: ds.matomoSiteId,
         })),
@@ -84,7 +86,7 @@ export default async function KundeDetailPage({
       </section>
 
       <section className="space-y-3">
-        <h2 className="text-lg font-medium text-foreground">Branding</h2>
+        <h2 className="text-lg font-medium text-foreground">Branding (Kunde-Default)</h2>
         <CustomerBrandingForm
           customer={{
             id: customer.id,
@@ -94,6 +96,22 @@ export default async function KundeDetailPage({
               ? hslToHex(customer.brandingAccentHsl)
               : null,
           }}
+        />
+      </section>
+
+      <section className="space-y-3">
+        <h2 className="text-lg font-medium text-foreground">Projekt-Branding (Override)</h2>
+        <p className="text-sm text-muted-foreground">
+          Optionaler Override pro Projekt. Leer = das Projekt erbt das Kunde-Default-Branding.
+        </p>
+        <ProjectBrandingForm
+          projects={orgs.map((o) => ({
+            id: o.id,
+            name: o.name,
+            slug: o.slug,
+            brandingLogoBase64: o.brandingLogoBase64 ?? null,
+            brandingAccentHex: o.brandingAccentHsl ? hslToHex(o.brandingAccentHsl) : null,
+          }))}
         />
       </section>
     </div>

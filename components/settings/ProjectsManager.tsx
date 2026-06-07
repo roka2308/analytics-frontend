@@ -16,7 +16,7 @@ export interface ProjectVM {
   name: string;
   slug: string;
   dashboards: { id: string; name: string; slug: string }[];
-  dataSources: { id: string; label: string; matomoSiteId: number | null }[];
+  dataSources: { id: string; type: string; label: string; matomoSiteId: number | null }[];
 }
 
 export function ProjectsManager({
@@ -196,29 +196,39 @@ function DataSourcesBlock({
   isPending: boolean;
   run: (fn: () => Promise<{ ok: boolean; error?: string }>) => void;
 }) {
+  const [type, setType] = useState<"matomo" | "sql">("matomo");
   const [label, setLabel] = useState("");
   const [siteId, setSiteId] = useState("");
+  const [config, setConfig] = useState("");
+
+  const canAdd =
+    !!label.trim() && (type === "matomo" ? !!siteId.trim() : true);
 
   const add = () => {
     const fd = new FormData();
     fd.set("organizationId", project.id);
-    fd.set("type", "matomo");
+    fd.set("type", type);
     fd.set("label", label);
-    fd.set("matomoSiteId", siteId);
+    if (type === "matomo") fd.set("matomoSiteId", siteId);
+    else fd.set("config", config);
     run(async () => {
       const r = await addDataSourceAction(fd);
       if (r.ok) {
         setLabel("");
         setSiteId("");
+        setConfig("");
       }
       return r;
     });
   };
 
+  const selectClass =
+    "h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
-        Datenquellen (Matomo)
+        Datenquellen
       </p>
       {project.dataSources.length === 0 ? (
         <p className="text-sm text-muted-foreground">Noch keine Datenquellen.</p>
@@ -227,6 +237,9 @@ function DataSourcesBlock({
           {project.dataSources.map((ds) => (
             <li key={ds.id} className="flex items-center justify-between px-3 py-2">
               <span className="truncate text-sm text-foreground">
+                <span className="mr-2 rounded bg-muted px-1.5 py-0.5 text-xs uppercase text-muted-foreground">
+                  {ds.type}
+                </span>
                 {ds.label}
                 {ds.matomoSiteId != null && (
                   <span className="ml-2 font-mono text-xs text-muted-foreground">
@@ -250,26 +263,38 @@ function DataSourcesBlock({
           ))}
         </ul>
       )}
-      <div className="flex items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2">
+        <select
+          value={type}
+          onChange={(e) => setType(e.target.value as "matomo" | "sql")}
+          className={selectClass}
+        >
+          <option value="matomo">Matomo</option>
+          <option value="sql">SQL</option>
+        </select>
         <Input
           value={label}
           onChange={(e) => setLabel(e.target.value)}
           placeholder="Bezeichnung"
-          className="h-9"
+          className="h-9 flex-1"
         />
-        <Input
-          value={siteId}
-          onChange={(e) => setSiteId(e.target.value)}
-          placeholder="Matomo-Site-ID"
-          className="h-9 w-36"
-          inputMode="numeric"
-        />
-        <Button
-          size="sm"
-          variant="outline"
-          disabled={isPending || !label.trim() || !siteId.trim()}
-          onClick={add}
-        >
+        {type === "matomo" ? (
+          <Input
+            value={siteId}
+            onChange={(e) => setSiteId(e.target.value)}
+            placeholder="Matomo-Site-ID"
+            className="h-9 w-36"
+            inputMode="numeric"
+          />
+        ) : (
+          <Input
+            value={config}
+            onChange={(e) => setConfig(e.target.value)}
+            placeholder="Config (JSON, optional)"
+            className="h-9 w-56"
+          />
+        )}
+        <Button size="sm" variant="outline" disabled={isPending || !canAdd} onClick={add}>
           <Plus className="mr-1 h-3.5 w-3.5" /> Quelle
         </Button>
       </div>
