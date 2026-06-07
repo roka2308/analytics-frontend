@@ -8,6 +8,7 @@ import {
   Settings,
   BarChart3,
   Briefcase,
+  Building2,
   ChevronDown,
   LogOut,
 } from "lucide-react";
@@ -57,7 +58,9 @@ export function SidebarNav({
 
   const currentProject = projects.find((p) => p.slug === currentProjectSlug);
   const userName = session?.user?.name ?? session?.user?.email ?? "Nutzer";
-  const userRole = session?.user?.role === "admin" ? "Admin" : "Viewer";
+  const role = session?.user?.role;
+  const isAdmin = role === "admin";
+  const userRole = role === "admin" ? "Admin" : role === "creator" ? "Creator" : "Viewer";
 
   return (
     <div className="flex h-full flex-col">
@@ -177,6 +180,30 @@ export function SidebarNav({
           Verwaltung
         </p>
         <ul className="space-y-0.5">
+          {isAdmin && (
+            <li>
+              <Link
+                href="/kunden"
+                onClick={onNavigate}
+                className={cn(
+                  "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                  pathname?.startsWith("/kunden")
+                    ? "bg-accent/10 font-medium text-accent-text"
+                    : "text-foreground hover:bg-muted",
+                )}
+              >
+                <Building2
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    pathname?.startsWith("/kunden")
+                      ? "text-accent-text"
+                      : "text-muted-foreground group-hover:text-foreground",
+                  )}
+                />
+                Kunden
+              </Link>
+            </li>
+          )}
           <li>
             <Link
               href="/settings"
