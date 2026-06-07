@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail, verifyPassword } from "./users";
+import { getUserByEmail, getUserById, verifyPassword } from "./users";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -41,10 +41,21 @@ export const authOptions: NextAuthOptions = {
   callbacks: {
     async jwt({ token, user }) {
       if (user) {
+        // Beim Login: Werte aus dem authorize()-Ergebnis uebernehmen.
         token.id = user.id;
         token.email = user.email;
         token.role = user.role;
         token.organizationId = user.organizationId;
+      } else if (token.id) {
+        // Bei jedem weiteren Request: Rolle/Org frisch aus der DB lesen, damit
+        // Rollenaenderungen (z.B. Hochstufung zum Admin) SOFORT greifen, ohne
+        // dass sich der Nutzer neu anmelden muss. So sehen Admins immer alles.
+        const fresh = await getUserById(token.id as string);
+        if (fresh) {
+          token.email = fresh.email;
+          token.role = fresh.role;
+          token.organizationId = fresh.organizationId;
+        }
       }
       return token;
     },
