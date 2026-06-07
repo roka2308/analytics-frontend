@@ -96,7 +96,7 @@ export async function deleteOrganization(id: string) {
  * - Viewer: nur das eigene Projekt
  */
 export async function getVisibleProjectsForSession(session: {
-  user: { role: "admin" | "viewer"; organizationId: string | null };
+  user: { role: "admin" | "creator" | "viewer"; organizationId: string | null };
 }) {
   if (session.user.role === "admin") {
     return listOrganizations();
@@ -214,7 +214,7 @@ export async function removeSite(siteId: string) {
  * - Viewer: nur Sites seiner zugewiesenen Organisation
  */
 export async function getVisibleSitesForSession(session: {
-  user: { role: "admin" | "viewer"; organizationId: string | null };
+  user: { role: "admin" | "creator" | "viewer"; organizationId: string | null };
 }): Promise<SiteWithOrg[]> {
   if (session.user.role === "admin") {
     return getAllSitesWithOrg();

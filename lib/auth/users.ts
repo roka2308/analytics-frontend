@@ -42,7 +42,7 @@ export interface CreateUserInput {
   email: string;
   password: string;
   name?: string | null;
-  role: "admin" | "viewer";
+  role: "admin" | "creator" | "viewer";
   organizationId?: string | null;
 }
 

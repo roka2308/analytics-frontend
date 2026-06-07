@@ -28,7 +28,7 @@ interface UserRow {
   id: string;
   email: string;
   name: string | null;
-  role: "admin" | "viewer";
+  role: "admin" | "creator" | "viewer";
   organizationId: string | null;
   orgName: string;
 }
@@ -47,7 +47,7 @@ interface Props {
 export function UserList({ users, orgs, currentUserId }: Props) {
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
-  const [role, setRole] = useState<"admin" | "viewer">("viewer");
+  const [role, setRole] = useState<"admin" | "creator" | "viewer">("viewer");
   const [selectedOrg, setSelectedOrg] = useState<string>(orgs[0]?.id ?? "");
   const [isPending, startTransition] = useTransition();
 
@@ -208,12 +208,13 @@ export function UserList({ users, orgs, currentUserId }: Props) {
                 </div>
                 <div className="space-y-1.5 sm:col-span-2">
                   <Label htmlFor="user-role">Rolle</Label>
-                  <Select value={role} onValueChange={(v) => setRole(v as "admin" | "viewer")}>
+                  <Select value={role} onValueChange={(v) => setRole(v as "admin" | "creator" | "viewer")}>
                     <SelectTrigger id="user-role">
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="viewer">Viewer (sieht nur Sites der eigenen Org)</SelectItem>
+                      <SelectItem value="viewer">Viewer (liest freigegebene Dashboards)</SelectItem>
+                      <SelectItem value="creator">Creator (erstellt &amp; bearbeitet Dashboards)</SelectItem>
                       <SelectItem value="admin">Admin (sieht und verwaltet alles)</SelectItem>
                     </SelectContent>
                   </Select>

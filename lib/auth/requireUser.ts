@@ -60,7 +60,7 @@ export async function assertProjectAccess(projectOrgId: string): Promise<void> {
 export async function getProjectSitesForSession(
   projectOrgId: string,
   session: {
-    user: { role: "admin" | "viewer"; organizationId: string | null };
+    user: { role: "admin" | "creator" | "viewer"; organizationId: string | null };
   }
 ) {
   if (session.user.role === "viewer" && session.user.organizationId !== projectOrgId) {
