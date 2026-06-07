@@ -2,6 +2,7 @@ import { getServerSession } from "next-auth";
 import { authOptions } from "./config";
 import { redirect } from "next/navigation";
 import { getSiteByMatomoId, getSitesForOrg } from "@/lib/db/queries";
+import { canViewProject } from "./permissions";
 
 export async function requireUser() {
   const session = await getServerSession(authOptions);
@@ -29,10 +30,8 @@ export async function assertProjectSiteAccess(
 ): Promise<void> {
   const session = await requireUser();
 
-  if (session.user.role === "viewer") {
-    if (session.user.organizationId !== projectOrgId) {
-      redirect("/settings?error=no-access");
-    }
+  if (!(await canViewProject(session.user, projectOrgId))) {
+    redirect("/settings?error=no-access");
   }
 
   const site = await getSiteByMatomoId(projectOrgId, matomoSiteId);
@@ -47,8 +46,7 @@ export async function assertProjectSiteAccess(
  */
 export async function assertProjectAccess(projectOrgId: string): Promise<void> {
   const session = await requireUser();
-  if (session.user.role === "admin") return;
-  if (session.user.organizationId !== projectOrgId) {
+  if (!(await canViewProject(session.user, projectOrgId))) {
     redirect("/settings?error=no-access");
   }
 }

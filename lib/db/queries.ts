@@ -1,8 +1,11 @@
 import "server-only";
 import { db } from "./index";
 import {
+  customers,
   organizations,
   matomoSites,
+  dataSources,
+  accessGrants,
   users,
   dashboards,
   dashboardWidgets,
@@ -69,17 +72,31 @@ export async function getOrCreateDefaultOrg() {
 
   const id = crypto.randomUUID();
   const slug = await ensureUniqueOrgSlug(slugify(DEFAULT_ORG_NAME));
-  await db.insert(organizations).values({ id, name: DEFAULT_ORG_NAME, slug });
+  const customer = await getOrCreateDefaultCustomer();
+  await db.insert(organizations).values({ id, name: DEFAULT_ORG_NAME, slug, customerId: customer.id });
   const [created] = await db.select().from(organizations).where(eq(organizations.id, id));
   return created;
 }
 
-export async function createOrganization(name: string) {
+export async function createOrganization(name: string, customerId?: string) {
   const id = crypto.randomUUID();
   const slug = await ensureUniqueOrgSlug(slugify(name));
-  await db.insert(organizations).values({ id, name, slug });
+  const cid = customerId ?? (await getOrCreateDefaultCustomer()).id;
+  await db.insert(organizations).values({ id, name, slug, customerId: cid });
   const [created] = await db.select().from(organizations).where(eq(organizations.id, id));
   return created;
+}
+
+export async function listOrganizationsForCustomer(customerId: string) {
+  return db
+    .select()
+    .from(organizations)
+    .where(eq(organizations.customerId, customerId))
+    .orderBy(asc(organizations.name));
+}
+
+export async function setOrganizationCustomer(orgId: string, customerId: string) {
+  await db.update(organizations).set({ customerId }).where(eq(organizations.id, orgId));
 }
 
 export async function renameOrganization(id: string, name: string) {
@@ -363,6 +380,25 @@ export async function getDashboardBySlug(
   };
 }
 
+export async function getDashboardById(id: string): Promise<DashboardRow | null> {
+  const rows = await db.select().from(dashboards).where(eq(dashboards.id, id)).limit(1);
+  if (rows.length === 0) return null;
+  const r = rows[0];
+  return {
+    id: r.id,
+    organizationId: r.organizationId,
+    slug: r.slug,
+    name: r.name,
+    description: r.description,
+    isDefault: r.isDefault,
+    position: r.position,
+    defaultRangePreset: r.defaultRangePreset,
+    defaultRangeFrom: r.defaultRangeFrom,
+    defaultRangeTo: r.defaultRangeTo,
+    defaultCompareMode: r.defaultCompareMode,
+  };
+}
+
 export async function getDefaultDashboardForOrg(orgId: string): Promise<DashboardRow | null> {
   const list = await listDashboardsForOrg(orgId);
   return list.find((d) => d.isDefault) ?? list[0] ?? null;
@@ -605,4 +641,262 @@ export async function getWidgetById(widgetId: string): Promise<DashboardWidgetRo
     .limit(1);
   if (rows.length === 0) return null;
   return parseWidget(rows[0]);
+}
+
+// ──────────────────────────────────────────────────────────────
+// Customers (Kunde) – oberste Ebene (Stufe 2)
+// ──────────────────────────────────────────────────────────────
+
+const DEFAULT_CUSTOMER_ID = "cust_default";
+const DEFAULT_CUSTOMER_NAME = "Standard-Kunde";
+
+async function ensureUniqueCustomerSlug(baseSlug: string): Promise<string> {
+  let slug = baseSlug || "kunde";
+  let counter = 2;
+  while (true) {
+    const existing = await db
+      .select({ id: customers.id })
+      .from(customers)
+      .where(eq(customers.slug, slug))
+      .limit(1);
+    if (existing.length === 0) return slug;
+    slug = `${baseSlug}-${counter}`;
+    counter++;
+  }
+}
+
+export async function listCustomers() {
+  return db.select().from(customers).orderBy(asc(customers.name));
+}
+
+export async function getCustomerById(id: string) {
+  const rows = await db.select().from(customers).where(eq(customers.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getCustomerBySlug(slug: string) {
+  const rows = await db.select().from(customers).where(eq(customers.slug, slug)).limit(1);
+  return rows[0] ?? null;
+}
+
+export async function getOrCreateDefaultCustomer() {
+  const existing = await getCustomerById(DEFAULT_CUSTOMER_ID);
+  if (existing) return existing;
+  // Falls schon irgendein Kunde existiert, nimm den ersten
+  const any = await db.select().from(customers).limit(1);
+  if (any.length > 0) return any[0];
+  await db.insert(customers).values({
+    id: DEFAULT_CUSTOMER_ID,
+    name: DEFAULT_CUSTOMER_NAME,
+    slug: "standard-kunde",
+  });
+  return (await getCustomerById(DEFAULT_CUSTOMER_ID))!;
+}
+
+export async function createCustomer(name: string) {
+  const id = crypto.randomUUID();
+  const slug = await ensureUniqueCustomerSlug(slugify(name));
+  await db.insert(customers).values({ id, name, slug });
+  return (await getCustomerById(id))!;
+}
+
+export async function renameCustomer(id: string, name: string) {
+  await db.update(customers).set({ name }).where(eq(customers.id, id));
+}
+
+export async function deleteCustomer(id: string) {
+  await db.delete(customers).where(eq(customers.id, id));
+}
+
+export async function setCustomerBranding(
+  id: string,
+  logoBase64: string | null,
+  accentHsl: string | null,
+) {
+  await db
+    .update(customers)
+    .set({ brandingLogoBase64: logoBase64, brandingAccentHsl: accentHsl })
+    .where(eq(customers.id, id));
+}
+
+export async function countOrgsInCustomer(customerId: string): Promise<number> {
+  const r = await db
+    .select({ value: count() })
+    .from(organizations)
+    .where(eq(organizations.customerId, customerId));
+  return r[0]?.value ?? 0;
+}
+
+/**
+ * Branding-Auflösung: Projekt-Override hat Vorrang, sonst Kunde-Default.
+ * Eine null-Spalte des Projekts erbt vom Kunden.
+ */
+export interface ResolvedBranding {
+  logoBase64: string | null;
+  accentHsl: string | null;
+}
+
+export async function resolveOrgBranding(orgId: string): Promise<ResolvedBranding> {
+  const org = await getOrgById(orgId);
+  if (!org) return { logoBase64: null, accentHsl: null };
+  const customer = org.customerId ? await getCustomerById(org.customerId) : null;
+  return {
+    logoBase64: org.brandingLogoBase64 ?? customer?.brandingLogoBase64 ?? null,
+    accentHsl: org.brandingAccentHsl ?? customer?.brandingAccentHsl ?? null,
+  };
+}
+
+// ──────────────────────────────────────────────────────────────
+// Data Sources (Datenquelle) – verallgemeinert matomo_sites (Stufe 2)
+// ──────────────────────────────────────────────────────────────
+
+export interface DataSourceRow {
+  id: string;
+  organizationId: string;
+  type: string;
+  label: string;
+  matomoSiteId: number | null;
+  config: string | null;
+  createdAt: Date;
+}
+
+export async function listDataSourcesForOrg(orgId: string): Promise<DataSourceRow[]> {
+  return db
+    .select()
+    .from(dataSources)
+    .where(eq(dataSources.organizationId, orgId))
+    .orderBy(asc(dataSources.createdAt));
+}
+
+export async function getDataSourceById(id: string): Promise<DataSourceRow | null> {
+  const rows = await db.select().from(dataSources).where(eq(dataSources.id, id)).limit(1);
+  return rows[0] ?? null;
+}
+
+export interface CreateDataSourceInput {
+  organizationId: string;
+  type?: string;
+  label: string;
+  matomoSiteId?: number | null;
+  config?: string | null;
+}
+
+export async function createDataSource(input: CreateDataSourceInput): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.insert(dataSources).values({
+    id,
+    organizationId: input.organizationId,
+    type: input.type ?? "matomo",
+    label: input.label,
+    matomoSiteId: input.matomoSiteId ?? null,
+    config: input.config ?? null,
+  });
+  return id;
+}
+
+export async function updateDataSource(
+  id: string,
+  fields: { label?: string; matomoSiteId?: number | null; config?: string | null },
+) {
+  await db.update(dataSources).set(fields).where(eq(dataSources.id, id));
+}
+
+export async function deleteDataSource(id: string) {
+  await db.delete(dataSources).where(eq(dataSources.id, id));
+}
+
+export async function countDataSourcesInOrg(orgId: string): Promise<number> {
+  const r = await db
+    .select({ value: count() })
+    .from(dataSources)
+    .where(eq(dataSources.organizationId, orgId));
+  return r[0]?.value ?? 0;
+}
+
+// ──────────────────────────────────────────────────────────────
+// Access Grants (datengetriebenes Rechtemodell, Stufe 2)
+// ──────────────────────────────────────────────────────────────
+
+export type GrantRole = "admin" | "creator" | "viewer";
+export type GrantScopeType = "customer" | "project" | "dashboard";
+
+export interface AccessGrantRow {
+  id: string;
+  userId: string;
+  scopeType: GrantScopeType;
+  scopeId: string;
+  role: GrantRole | null;
+}
+
+function parseGrant(raw: typeof accessGrants.$inferSelect): AccessGrantRow {
+  return {
+    id: raw.id,
+    userId: raw.userId,
+    scopeType: raw.scopeType as GrantScopeType,
+    scopeId: raw.scopeId,
+    role: (raw.role as GrantRole | null) ?? null,
+  };
+}
+
+export async function listGrantsForUser(userId: string): Promise<AccessGrantRow[]> {
+  const rows = await db.select().from(accessGrants).where(eq(accessGrants.userId, userId));
+  return rows.map(parseGrant);
+}
+
+export async function listGrantsForScope(
+  scopeType: GrantScopeType,
+  scopeId: string,
+): Promise<AccessGrantRow[]> {
+  const rows = await db
+    .select()
+    .from(accessGrants)
+    .where(and(eq(accessGrants.scopeType, scopeType), eq(accessGrants.scopeId, scopeId)));
+  return rows.map(parseGrant);
+}
+
+/** Upsert: legt einen Grant an oder aktualisiert dessen Rolle. */
+export async function grantAccess(
+  userId: string,
+  scopeType: GrantScopeType,
+  scopeId: string,
+  role: GrantRole | null,
+) {
+  const existing = await db
+    .select()
+    .from(accessGrants)
+    .where(
+      and(
+        eq(accessGrants.userId, userId),
+        eq(accessGrants.scopeType, scopeType),
+        eq(accessGrants.scopeId, scopeId),
+      ),
+    )
+    .limit(1);
+  if (existing.length > 0) {
+    await db.update(accessGrants).set({ role }).where(eq(accessGrants.id, existing[0].id));
+    return existing[0].id;
+  }
+  const id = crypto.randomUUID();
+  await db.insert(accessGrants).values({ id, userId, scopeType, scopeId, role });
+  return id;
+}
+
+export async function revokeAccess(grantId: string) {
+  await db.delete(accessGrants).where(eq(accessGrants.id, grantId));
+}
+
+export async function revokeAccessByScope(
+  userId: string,
+  scopeType: GrantScopeType,
+  scopeId: string,
+) {
+  await db
+    .delete(accessGrants)
+    .where(
+      and(
+        eq(accessGrants.userId, userId),
+        eq(accessGrants.scopeType, scopeType),
+        eq(accessGrants.scopeId, scopeId),
+      ),
+    );
 }
