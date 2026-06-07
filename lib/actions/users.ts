@@ -28,6 +28,10 @@ function validateEmail(email: string): string | null {
   return null;
 }
 
+function parseRole(v: unknown): "admin" | "creator" | "viewer" {
+  return v === "admin" ? "admin" : v === "creator" ? "creator" : "viewer";
+}
+
 /**
  * Wird von der /setup-Seite aufgerufen.
  * Funktioniert NUR, solange es noch keinen einzigen Nutzer in der DB gibt.
@@ -62,14 +66,15 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   const email = (formData.get("email") as string | null)?.trim() ?? "";
   const password = (formData.get("password") as string | null) ?? "";
   const name = (formData.get("name") as string | null)?.trim() || null;
-  const role = (formData.get("role") as string | null) === "admin" ? "admin" : "viewer";
+  const role = parseRole(formData.get("role"));
+  // Projekt ist optional: ein eingeschraenkter Viewer kann ohne Heim-Projekt
+  // angelegt und spaeter gezielt auf einzelne Dashboards berechtigt werden.
   const organizationId = (formData.get("organizationId") as string | null) || null;
 
   const emailErr = validateEmail(email);
   if (emailErr) return { ok: false, error: emailErr };
   const pwErr = validatePassword(password);
   if (pwErr) return { ok: false, error: pwErr };
-  if (!organizationId) return { ok: false, error: "Bitte eine Organisation auswählen." };
 
   try {
     await createUser({ email, password, name, role, organizationId });
@@ -102,6 +107,49 @@ export async function deleteUserAction(userId: string): Promise<ActionResult> {
     return { ok: false, error: "Du kannst dein eigenes Konto nicht löschen." };
   }
   await deleteUser(userId);
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function setUserRoleAction(
+  userId: string,
+  role: "admin" | "creator" | "viewer",
+): Promise<ActionResult> {
+  const session = await requireAdmin();
+  if (session.user.id === userId && role !== "admin") {
+    return { ok: false, error: "Du kannst dir nicht selbst die Admin-Rolle entziehen." };
+  }
+  const { setUserRole } = await import("@/lib/auth/users");
+  await setUserRole(userId, parseRole(role));
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+/**
+ * Erteilt einem Nutzer Zugriff auf einen Scope (Kunde/Projekt/Dashboard) mit
+ * optionaler Rolle (null = globale Rolle des Nutzers gilt im Scope).
+ */
+export async function grantAccessAction(input: {
+  userId: string;
+  scopeType: "customer" | "project" | "dashboard";
+  scopeId: string;
+  role?: "admin" | "creator" | "viewer" | null;
+}): Promise<ActionResult> {
+  await requireAdmin();
+  if (!input.userId || !input.scopeId) {
+    return { ok: false, error: "Nutzer und Ziel sind erforderlich." };
+  }
+  const { grantAccess } = await import("@/lib/db/queries");
+  await grantAccess(input.userId, input.scopeType, input.scopeId, input.role ?? null);
+  revalidatePath("/settings");
+  return { ok: true };
+}
+
+export async function revokeGrantAction(grantId: string): Promise<ActionResult> {
+  await requireAdmin();
+  if (!grantId) return { ok: false, error: "Grant-ID fehlt." };
+  const { revokeAccess } = await import("@/lib/db/queries");
+  await revokeAccess(grantId);
   revalidatePath("/settings");
   return { ok: true };
 }

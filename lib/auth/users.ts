@@ -53,10 +53,13 @@ export async function createUser(input: CreateUserInput) {
     throw new Error("Eine Nutzerin/ein Nutzer mit dieser E-Mail existiert bereits.");
   }
 
-  // Wenn keine Org angegeben wurde, in die Default-Org packen
-  // (für den Bootstrap-Fall des ersten Admins)
+  // Nur wenn GAR KEINE Org angegeben wurde (undefined, z.B. Bootstrap des
+  // ersten Admins), in die Default-Org packen. Explizites null bleibt null
+  // (eingeschraenkter Viewer, der nur ueber Grants Zugriff bekommt).
   const organizationId =
-    input.organizationId ?? (await getOrCreateDefaultOrg()).id;
+    input.organizationId === undefined
+      ? (await getOrCreateDefaultOrg()).id
+      : input.organizationId;
   const passwordHash = await hashPassword(input.password);
 
   await db.insert(users).values({
@@ -72,6 +75,13 @@ export async function createUser(input: CreateUserInput) {
 
 export async function updateUserOrg(userId: string, organizationId: string | null) {
   await db.update(users).set({ organizationId }).where(eq(users.id, userId));
+}
+
+export async function setUserRole(
+  userId: string,
+  role: "admin" | "creator" | "viewer",
+) {
+  await db.update(users).set({ role }).where(eq(users.id, userId));
 }
 
 export async function deleteUser(id: string) {
