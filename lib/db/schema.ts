@@ -104,19 +104,8 @@ export const accessGrants = sqliteTable(
   }),
 );
 
-export const matomoSites = sqliteTable("matomo_sites", {
-  id: text("id")
-    .primaryKey()
-    .$defaultFn(() => crypto.randomUUID()),
-  organizationId: text("organization_id")
-    .notNull()
-    .references(() => organizations.id, { onDelete: "cascade" }),
-  matomoSiteId: integer("matomo_site_id").notNull(),
-  label: text("label").notNull(),
-  createdAt: integer("created_at", { mode: "timestamp" })
-    .notNull()
-    .default(sql`(unixepoch())`),
-});
+// HINWEIS: Die frühere Tabelle `matomo_sites` wurde in Stufe 5 durch
+// `data_sources` (type=matomo) abgelöst und per Migration 0010 entfernt.
 
 export const cacheEntries = sqliteTable(
   "cache_entries",
