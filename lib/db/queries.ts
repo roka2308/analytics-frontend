@@ -3,7 +3,6 @@ import { db } from "./index";
 import {
   customers,
   organizations,
-  matomoSites,
   dataSources,
   accessGrants,
   users,
@@ -134,44 +133,73 @@ export async function countUsersInOrg(orgId: string): Promise<number> {
 export async function countSitesInOrg(orgId: string): Promise<number> {
   const result = await db
     .select({ value: count() })
-    .from(matomoSites)
-    .where(eq(matomoSites.organizationId, orgId));
+    .from(dataSources)
+    .where(and(eq(dataSources.organizationId, orgId), eq(dataSources.type, "matomo")));
   return result[0]?.value ?? 0;
 }
 
 // ──────────────────────────────────────────────────────────────
-// Sites
+// Sites  (Stufe 5: lesen jetzt aus data_sources(type=matomo);
+//          die alte matomo_sites-Tabelle ist toter Schatten bis Cleanup.)
+//          Rueckgabe-Form bleibt {id, matomoSiteId, label, organizationId,
+//          createdAt} -> alle Renderer/Selector/Guards laufen unveraendert.
 // ──────────────────────────────────────────────────────────────
 
+interface SiteShape {
+  id: string;
+  matomoSiteId: number;
+  label: string;
+  organizationId: string;
+  createdAt: Date;
+}
+
+function toSiteShape(r: {
+  id: string;
+  matomoSiteId: number | null;
+  label: string;
+  organizationId: string;
+  createdAt: Date;
+}): SiteShape {
+  return {
+    id: r.id,
+    matomoSiteId: Number(r.matomoSiteId),
+    label: r.label,
+    organizationId: r.organizationId,
+    createdAt: r.createdAt,
+  };
+}
+
 /**
- * Auto-Seed beim allerersten Start: Wenn noch keine Site existiert
- * und DEFAULT_MATOMO_SITE_ID in .env gesetzt ist, wird sie der Default-Org
- * zugeordnet.
+ * Auto-Seed beim allerersten Start: Wenn noch keine Matomo-Datenquelle
+ * existiert und DEFAULT_MATOMO_SITE_ID in .env gesetzt ist, wird sie der
+ * Org zugeordnet.
  */
 export async function ensureSeedSite(orgId: string) {
   const existing = await db
-    .select()
-    .from(matomoSites)
-    .where(eq(matomoSites.organizationId, orgId))
+    .select({ id: dataSources.id })
+    .from(dataSources)
+    .where(and(eq(dataSources.organizationId, orgId), eq(dataSources.type, "matomo")))
     .limit(1);
   if (existing.length > 0) return;
 
   const envSiteId = process.env.DEFAULT_MATOMO_SITE_ID;
   if (!envSiteId) return;
 
-  await db.insert(matomoSites).values({
+  await db.insert(dataSources).values({
     organizationId: orgId,
+    type: "matomo",
     matomoSiteId: parseInt(envSiteId, 10),
     label: "Hauptwebsite",
   });
 }
 
-export async function getSitesForOrg(orgId: string) {
-  return db
+export async function getSitesForOrg(orgId: string): Promise<SiteShape[]> {
+  const rows = await db
     .select()
-    .from(matomoSites)
-    .where(eq(matomoSites.organizationId, orgId))
-    .orderBy(asc(matomoSites.createdAt));
+    .from(dataSources)
+    .where(and(eq(dataSources.organizationId, orgId), eq(dataSources.type, "matomo")))
+    .orderBy(asc(dataSources.createdAt));
+  return rows.map(toSiteShape);
 }
 
 export interface SiteWithOrg {
@@ -186,43 +214,45 @@ export interface SiteWithOrg {
 export async function getAllSitesWithOrg(): Promise<SiteWithOrg[]> {
   const rows = await db
     .select({
-      id: matomoSites.id,
-      matomoSiteId: matomoSites.matomoSiteId,
-      label: matomoSites.label,
-      organizationId: matomoSites.organizationId,
+      id: dataSources.id,
+      matomoSiteId: dataSources.matomoSiteId,
+      label: dataSources.label,
+      organizationId: dataSources.organizationId,
       orgName: organizations.name,
-      createdAt: matomoSites.createdAt,
+      createdAt: dataSources.createdAt,
     })
-    .from(matomoSites)
-    .innerJoin(organizations, eq(matomoSites.organizationId, organizations.id))
-    .orderBy(asc(organizations.name), asc(matomoSites.createdAt));
-  return rows;
+    .from(dataSources)
+    .innerJoin(organizations, eq(dataSources.organizationId, organizations.id))
+    .where(eq(dataSources.type, "matomo"))
+    .orderBy(asc(organizations.name), asc(dataSources.createdAt));
+  return rows.map((r) => ({ ...r, matomoSiteId: Number(r.matomoSiteId) }));
 }
 
 export async function getSiteByMatomoId(orgId: string, matomoSiteId: number) {
-  const rows = await db
-    .select()
-    .from(matomoSites)
-    .where(eq(matomoSites.organizationId, orgId))
-    .limit(100);
-  return rows.find((r) => r.matomoSiteId === matomoSiteId) ?? null;
+  const sites = await getSitesForOrg(orgId);
+  return sites.find((r) => r.matomoSiteId === matomoSiteId) ?? null;
 }
 
 export async function findSiteByMatomoIdAnyOrg(matomoSiteId: number) {
-  const all = await db.select().from(matomoSites);
-  return all.find((r) => r.matomoSiteId === matomoSiteId) ?? null;
+  const all = await db
+    .select()
+    .from(dataSources)
+    .where(eq(dataSources.type, "matomo"));
+  const hit = all.find((r) => Number(r.matomoSiteId) === matomoSiteId);
+  return hit ? toSiteShape(hit) : null;
 }
 
 export async function addSite(orgId: string, matomoSiteId: number, label: string) {
-  await db.insert(matomoSites).values({
+  await db.insert(dataSources).values({
     organizationId: orgId,
+    type: "matomo",
     matomoSiteId,
     label,
   });
 }
 
 export async function removeSite(siteId: string) {
-  await db.delete(matomoSites).where(eq(matomoSites.id, siteId));
+  await db.delete(dataSources).where(eq(dataSources.id, siteId));
 }
 
 /**
