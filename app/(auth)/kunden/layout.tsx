@@ -6,6 +6,7 @@ import {
 } from "@/lib/db/queries";
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
+import { MasterDetailShell } from "@/components/layout/MasterDetailShell";
 import { CustomerSidebarList } from "@/components/settings/CustomerSidebarList";
 
 export const dynamic = "force-dynamic";
@@ -34,12 +35,9 @@ export default async function KundenLayout({
         title="Kunden"
         subtitle={<span>Kunden, Projekte, Datenquellen, Dashboards und Nutzer verwalten.</span>}
       />
-      <div className="flex min-h-[calc(100vh-8rem)]">
-        <aside className="w-72 shrink-0 border-r border-border">
-          <CustomerSidebarList customers={customers} />
-        </aside>
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+      <MasterDetailShell basePath="/kunden" backLabel="Alle Kunden" list={<CustomerSidebarList customers={customers} />}>
+        {children}
+      </MasterDetailShell>
     </AppShell>
   );
 }

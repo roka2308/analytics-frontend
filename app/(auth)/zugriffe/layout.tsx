@@ -3,6 +3,7 @@ import { getVisibleProjectsForSession } from "@/lib/db/queries";
 import { listUsers } from "@/lib/auth/users";
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
+import { MasterDetailShell } from "@/components/layout/MasterDetailShell";
 import { UserSidebarList } from "@/components/settings/UserSidebarList";
 
 export const dynamic = "force-dynamic";
@@ -24,14 +25,17 @@ export default async function ZugriffeLayout({
         title="Zugriffsrechte"
         subtitle={<span>Nutzer anlegen und gezielt auf Kunden, Projekte oder Dashboards berechtigen.</span>}
       />
-      <div className="flex min-h-[calc(100vh-8rem)]">
-        <aside className="w-72 shrink-0 border-r border-border">
+      <MasterDetailShell
+        basePath="/zugriffe"
+        backLabel="Alle Nutzer"
+        list={
           <UserSidebarList
             users={users.map((u) => ({ id: u.id, email: u.email, name: u.name, role: u.role }))}
           />
-        </aside>
-        <div className="min-w-0 flex-1">{children}</div>
-      </div>
+        }
+      >
+        {children}
+      </MasterDetailShell>
     </AppShell>
   );
 }
