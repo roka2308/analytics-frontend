@@ -6,6 +6,7 @@ import { Pencil, Trash2 } from "lucide-react";
 import { renameCustomerAction, deleteCustomerAction } from "@/lib/actions/customers";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DangerConfirm } from "./DangerConfirm";
 
 export function CustomerHeaderActions({
   id,
@@ -31,21 +32,6 @@ export function CustomerHeaderActions({
         setEditing(false);
         router.refresh();
       }
-    });
-  };
-
-  const remove = () => {
-    if (
-      !confirm(
-        `Kunde "${name}" wirklich löschen? Das entfernt ALLE Projekte, Dashboards und Datenquellen dieses Kunden unwiderruflich.`,
-      )
-    )
-      return;
-    setError(null);
-    startTransition(async () => {
-      const r = await deleteCustomerAction(id);
-      if (!r.ok) setError(r.error ?? "Fehler");
-      else router.push("/kunden");
     });
   };
 
@@ -89,15 +75,32 @@ export function CustomerHeaderActions({
           >
             <Pencil className="mr-1.5 h-3.5 w-3.5" /> Umbenennen
           </Button>
-          <Button
-            size="sm"
-            variant="outline"
-            className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-            disabled={isPending}
-            onClick={remove}
-          >
-            <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Löschen
-          </Button>
+          <DangerConfirm
+            word={name}
+            title={`Kunde „${name}" löschen`}
+            description={
+              <>
+                Das entfernt <b>alle</b> Projekte, Dashboards und Datenquellen dieses Kunden.
+                Wiederherstellung über den Papierkorb möglich.
+              </>
+            }
+            onConfirm={async () => {
+              const r = await deleteCustomerAction(id);
+              if (r.ok) router.push("/kunden");
+              return r;
+            }}
+            trigger={(open) => (
+              <Button
+                size="sm"
+                variant="outline"
+                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                disabled={isPending}
+                onClick={open}
+              >
+                <Trash2 className="mr-1.5 h-3.5 w-3.5" /> Löschen
+              </Button>
+            )}
+          />
         </div>
       )}
     </div>

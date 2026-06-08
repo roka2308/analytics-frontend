@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { DangerConfirm } from "./DangerConfirm";
 
 export interface ProjectVM {
   id: string;
@@ -156,20 +157,32 @@ export function ProjectsManager({
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      size="sm"
-                      variant="ghost"
-                      className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                      disabled={isPending}
-                      onClick={() => {
-                        if (
-                          confirm(`Projekt "${p.name}" löschen? (inkl. Dashboards & Datenquellen)`)
-                        )
-                          run(() => deleteOrgAction(p.id));
+                    <DangerConfirm
+                      word={p.name}
+                      title={`Projekt „${p.name}" löschen`}
+                      description={
+                        <>
+                          Das entfernt das Projekt inkl. aller Dashboards und Datenquellen.
+                          Wiederherstellung über den Papierkorb möglich.
+                        </>
+                      }
+                      onConfirm={async () => {
+                        const r = await deleteOrgAction(p.id);
+                        if (r.ok) router.refresh();
+                        return r;
                       }}
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
+                      trigger={(open) => (
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                          disabled={isPending}
+                          onClick={open}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    />
                   </div>
                 </>
               )}
