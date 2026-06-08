@@ -3,8 +3,8 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Plus } from "lucide-react";
-import { createUserAction } from "@/lib/actions/users";
+import { Plus, Copy, Check } from "lucide-react";
+import { createUserAction, inviteUserAction } from "@/lib/actions/users";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -25,8 +25,27 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
   const [pw, setPw] = useState("");
   const [query, setQuery] = useState("");
   const [roleFilter, setRoleFilter] = useState("");
+  const [inviteUrl, setInviteUrl] = useState<string | null>(null);
+  const [copied, setCopied] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const invite = (form: HTMLFormElement) => {
+    setError(null);
+    setInviteUrl(null);
+    const fd = new FormData(form);
+    startTransition(async () => {
+      const r = await inviteUserAction(fd);
+      if (!r.ok) setError(r.error ?? "Fehler");
+      else {
+        setInviteUrl(r.inviteUrl ?? null);
+        form.reset();
+        setPw("");
+        setAdding(false);
+        router.refresh();
+      }
+    });
+  };
 
   const filtered = users.filter((u) => {
     const q = query.trim().toLowerCase();
@@ -63,6 +82,48 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
         </Button>
       </div>
 
+      {inviteUrl && (
+        <div className="mx-3 mb-2 rounded-md border border-accent/30 bg-accent/5 p-2">
+          <p className="mb-1 text-xs font-medium text-foreground">
+            Einladungslink (kopieren & an den Nutzer senden):
+          </p>
+          <div className="flex items-center gap-1">
+            <input
+              readOnly
+              value={inviteUrl}
+              onFocus={(e) => e.currentTarget.select()}
+              className="min-w-0 flex-1 truncate rounded border border-input bg-background px-2 py-1 font-mono text-[11px] text-foreground"
+            />
+            <Button
+              size="sm"
+              variant="outline"
+              onClick={async () => {
+                try {
+                  await navigator.clipboard.writeText(inviteUrl);
+                  setCopied(true);
+                  setTimeout(() => setCopied(false), 1500);
+                } catch {
+                  /* ignore */
+                }
+              }}
+            >
+              {copied ? (
+                <Check className="h-3.5 w-3.5 text-success" />
+              ) : (
+                <Copy className="h-3.5 w-3.5" />
+              )}
+            </Button>
+          </div>
+          <button
+            type="button"
+            onClick={() => setInviteUrl(null)}
+            className="mt-1 text-[11px] text-muted-foreground hover:text-foreground"
+          >
+            Schließen
+          </button>
+        </div>
+      )}
+
       {adding && (
         <form
           onSubmit={(e) => {
@@ -92,9 +153,21 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
             </select>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
-          <div className="flex gap-2">
+          <div className="flex flex-wrap gap-2">
             <Button type="submit" size="sm" disabled={isPending}>
               {isPending ? "…" : "Anlegen"}
+            </Button>
+            <Button
+              type="button"
+              size="sm"
+              variant="outline"
+              disabled={isPending}
+              onClick={(e) => {
+                const form = (e.currentTarget as HTMLElement).closest("form");
+                if (form) invite(form as HTMLFormElement);
+              }}
+            >
+              Einladen
             </Button>
             <Button type="button" size="sm" variant="ghost" onClick={() => setAdding(false)}>
               Abbrechen

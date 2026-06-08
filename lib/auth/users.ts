@@ -1,5 +1,6 @@
 import "server-only";
 import bcrypt from "bcryptjs";
+import { randomBytes } from "crypto";
 import { db } from "@/lib/db";
 import { users, auditLog } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
@@ -71,6 +72,64 @@ export async function createUser(input: CreateUserInput) {
   });
 
   return getUserByEmail(email);
+}
+
+// ── Einladungs-Flow (Link) ───────────────────────────────────
+
+export interface InviteUserInput {
+  email: string;
+  name?: string | null;
+  role: "admin" | "creator" | "viewer";
+  organizationId?: string | null;
+}
+
+/**
+ * Legt einen eingeladenen Nutzer an: unbenutzbares Zufalls-Passwort + Invite-
+ * Token. Login ist gesperrt, bis der Nutzer ueber den Link sein Passwort setzt.
+ */
+export async function createInvitedUser(
+  input: InviteUserInput,
+): Promise<{ id: string; token: string }> {
+  const email = input.email.toLowerCase().trim();
+  const existing = await getUserByEmail(email);
+  if (existing) {
+    throw new Error("Eine Nutzerin/ein Nutzer mit dieser E-Mail existiert bereits.");
+  }
+  const id = crypto.randomUUID();
+  const token = randomBytes(32).toString("base64url");
+  const passwordHash = await hashPassword(randomBytes(24).toString("hex"));
+  const inviteExpiresAt = new Date(Date.now() + 7 * 24 * 60 * 60 * 1000); // 7 Tage
+  await db.insert(users).values({
+    id,
+    email,
+    passwordHash,
+    name: input.name ?? null,
+    role: input.role,
+    organizationId: input.organizationId ?? null,
+    inviteToken: token,
+    inviteExpiresAt,
+  });
+  return { id, token };
+}
+
+export async function getUserByInviteToken(token: string) {
+  const rows = await db.select().from(users).where(eq(users.inviteToken, token)).limit(1);
+  const u = rows[0];
+  if (!u) return null;
+  if (u.inviteExpiresAt && u.inviteExpiresAt.getTime() < Date.now()) return null;
+  return u;
+}
+
+/** Nutzer setzt sein Passwort ueber den Einladungslink -> Token entwerten. */
+export async function acceptInvite(token: string, newPassword: string): Promise<boolean> {
+  const u = await getUserByInviteToken(token);
+  if (!u) return false;
+  const passwordHash = await hashPassword(newPassword);
+  await db
+    .update(users)
+    .set({ passwordHash, inviteToken: null, inviteExpiresAt: null })
+    .where(eq(users.id, u.id));
+  return true;
 }
 
 export async function updateUserOrg(userId: string, organizationId: string | null) {

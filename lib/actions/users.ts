@@ -1,11 +1,14 @@
 "use server";
 
 import { revalidatePath } from "next/cache";
+import { headers } from "next/headers";
 import { requireUser, requireAdmin } from "@/lib/auth/requireUser";
 import { logAudit } from "@/lib/audit";
 import {
   countUsers,
   createUser,
+  createInvitedUser,
+  acceptInvite,
   deleteUser,
   changePassword as dbChangePassword,
   verifyPassword,
@@ -15,6 +18,15 @@ import {
 export interface ActionResult {
   ok: boolean;
   error?: string;
+  /** Bei Einladungen: der zu teilende Einladungslink. */
+  inviteUrl?: string;
+}
+
+function appBaseUrl(): string {
+  const h = headers();
+  const proto = h.get("x-forwarded-proto") ?? "https";
+  const host = h.get("host") ?? "localhost:3000";
+  return `${proto}://${host}`;
 }
 
 function validatePassword(password: string): string | null {
@@ -86,6 +98,71 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
   await logAudit({ action: "user.create", entityType: "user", summary: `Nutzer ${email} (${role}) angelegt` });
   revalidatePath("/settings");
   revalidatePath("/zugriffe");
+  return { ok: true };
+}
+
+/** Laedt einen Nutzer per Einladungslink ein (setzt Passwort selbst). */
+export async function inviteUserAction(formData: FormData): Promise<ActionResult> {
+  await requireAdmin();
+  const email = (formData.get("email") as string | null)?.trim() ?? "";
+  const name = (formData.get("name") as string | null)?.trim() || null;
+  const role = parseRole(formData.get("role"));
+  const emailErr = validateEmail(email);
+  if (emailErr) return { ok: false, error: emailErr };
+
+  try {
+    const { token } = await createInvitedUser({ email, name, role, organizationId: null });
+    await logAudit({
+      action: "user.invite",
+      entityType: "user",
+      summary: `Einladung für ${email} (${role}) erstellt`,
+    });
+    revalidatePath("/zugriffe");
+    return { ok: true, inviteUrl: `${appBaseUrl()}/einladung/${token}` };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
+  }
+}
+
+/** Eingeladenen Nutzer direkt einem Kunden zuordnen. */
+export async function inviteCustomerUserAction(
+  customerId: string,
+  formData: FormData,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const email = (formData.get("email") as string | null)?.trim() ?? "";
+  const name = (formData.get("name") as string | null)?.trim() || null;
+  const role = parseRole(formData.get("role"));
+  const emailErr = validateEmail(email);
+  if (emailErr) return { ok: false, error: emailErr };
+  if (!customerId) return { ok: false, error: "Kunde fehlt." };
+
+  try {
+    const { id, token } = await createInvitedUser({ email, name, role, organizationId: null });
+    const { grantAccess } = await import("@/lib/db/queries");
+    await grantAccess(id, "customer", customerId, null);
+    await logAudit({
+      action: "user.invite",
+      entityType: "user",
+      summary: `Einladung für ${email} (${role}) – Kunde zugeordnet`,
+    });
+    revalidatePath("/kunden");
+    revalidatePath("/zugriffe");
+    return { ok: true, inviteUrl: `${appBaseUrl()}/einladung/${token}` };
+  } catch (e) {
+    return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
+  }
+}
+
+/** Oeffentlich: Nutzer nimmt Einladung an und setzt sein Passwort. */
+export async function acceptInviteAction(
+  token: string,
+  newPassword: string,
+): Promise<ActionResult> {
+  const pwErr = validatePassword(newPassword);
+  if (pwErr) return { ok: false, error: pwErr };
+  const ok = await acceptInvite(token, newPassword);
+  if (!ok) return { ok: false, error: "Einladung ungültig oder abgelaufen." };
   return { ok: true };
 }
 

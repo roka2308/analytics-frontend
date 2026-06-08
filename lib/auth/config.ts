@@ -18,6 +18,9 @@ export const authOptions: NextAuthOptions = {
         const user = await getUserByEmail(email);
         if (!user) return null;
 
+        // Eingeladene Nutzer muessen erst ueber den Link ihr Passwort setzen.
+        if (user.inviteToken) return null;
+
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
 
