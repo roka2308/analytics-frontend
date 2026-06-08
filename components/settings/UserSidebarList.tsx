@@ -8,6 +8,7 @@ import { createUserAction } from "@/lib/actions/users";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PasswordField } from "./PasswordField";
 import { cn } from "@/lib/utils";
 
 interface UserVM {
@@ -21,6 +22,7 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [adding, setAdding] = useState(false);
+  const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -35,6 +37,7 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
       if (!r.ok) setError(r.error ?? "Fehler");
       else {
         form.reset();
+        setPw("");
         setAdding(false);
         router.refresh();
       }
@@ -67,8 +70,8 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
             <Input id="nu-name" name="name" type="text" className="h-9" />
           </div>
           <div className="space-y-1">
-            <Label htmlFor="nu-password" className="text-xs">Passwort</Label>
-            <Input id="nu-password" name="password" type="text" required className="h-9" />
+            <Label className="text-xs">Passwort</Label>
+            <PasswordField name="password" value={pw} onChange={setPw} />
           </div>
           <div className="space-y-1">
             <Label htmlFor="nu-role" className="text-xs">Rolle</Label>

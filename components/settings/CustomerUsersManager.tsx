@@ -8,6 +8,7 @@ import { createCustomerUserAction, deleteUserAction } from "@/lib/actions/users"
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { PasswordField } from "./PasswordField";
 
 interface UserVM {
   id: string;
@@ -25,6 +26,7 @@ export function CustomerUsersManager({
 }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
+  const [pw, setPw] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
@@ -39,6 +41,7 @@ export function CustomerUsersManager({
       if (!r.ok) setError(r.error ?? "Fehler");
       else {
         form.reset();
+        setPw("");
         setAdding(false);
         router.refresh();
       }
@@ -105,8 +108,8 @@ export function CustomerUsersManager({
               <Input id="cu-name" name="name" type="text" />
             </div>
             <div className="space-y-1.5">
-              <Label htmlFor="cu-password">Passwort</Label>
-              <Input id="cu-password" name="password" type="text" required />
+              <Label>Passwort</Label>
+              <PasswordField name="password" value={pw} onChange={setPw} />
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cu-role">Rolle</Label>

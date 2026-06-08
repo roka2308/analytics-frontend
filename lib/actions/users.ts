@@ -190,6 +190,21 @@ export async function revokeGrantAction(grantId: string): Promise<ActionResult> 
   return { ok: true };
 }
 
+/** Admin setzt das Passwort eines beliebigen Nutzers neu. */
+export async function resetUserPasswordAction(
+  userId: string,
+  newPassword: string,
+): Promise<ActionResult> {
+  await requireAdmin();
+  const pwErr = validatePassword(newPassword);
+  if (pwErr) return { ok: false, error: pwErr };
+  const user = await getUserById(userId);
+  if (!user) return { ok: false, error: "Nutzer nicht gefunden." };
+  await dbChangePassword(userId, newPassword);
+  revalidatePath("/zugriffe");
+  return { ok: true };
+}
+
 export async function changeOwnPasswordAction(formData: FormData): Promise<ActionResult> {
   const session = await requireUser();
 

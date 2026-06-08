@@ -8,7 +8,9 @@ import {
   revokeGrantAction,
   setUserRoleAction,
   deleteUserAction,
+  resetUserPasswordAction,
 } from "@/lib/actions/users";
+import { PasswordField } from "./PasswordField";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -51,6 +53,7 @@ export function UserAccessDetail({
 }) {
   const router = useRouter();
   const [role, setRole] = useState<Role>(user.role as Role);
+  const [newPw, setNewPw] = useState("");
   const [scopeType, setScopeType] = useState<ScopeType>("dashboard");
   const [scopeId, setScopeId] = useState("");
   const [grantRole, setGrantRole] = useState<Role | "">("");
@@ -214,6 +217,31 @@ export function UserAccessDetail({
             }
           >
             Zugriff erteilen
+          </Button>
+        </CardContent>
+      </Card>
+
+      <Card>
+        <CardHeader>
+          <CardTitle>Passwort zurücksetzen</CardTitle>
+          <CardDescription>
+            Setzt ein neues Passwort für diesen Nutzer. Generiere am besten ein
+            starkes Passwort und teile es dem Nutzer sicher mit.
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <PasswordField value={newPw} onChange={setNewPw} placeholder="Neues Passwort" />
+          <Button
+            disabled={isPending || newPw.length < 8}
+            onClick={() =>
+              run(async () => {
+                const r = await resetUserPasswordAction(user.id, newPw);
+                if (r.ok) setNewPw("");
+                return r;
+              }, "Passwort gesetzt.")
+            }
+          >
+            Passwort setzen
           </Button>
         </CardContent>
       </Card>
