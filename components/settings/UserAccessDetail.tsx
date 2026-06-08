@@ -44,10 +44,12 @@ const SCOPE_LABEL: Record<ScopeType, string> = {
 
 export function UserAccessDetail({
   user,
+  homeProjectName,
   targets,
   grants,
 }: {
   user: UserVM;
+  homeProjectName?: string | null;
   targets: { customer: Target[]; project: Target[]; dashboard: Target[] };
   grants: GrantView[];
 }) {
@@ -118,6 +120,20 @@ export function UserAccessDetail({
               Speichern
             </Button>
           </div>
+          <ul className="mt-4 space-y-1 text-xs text-muted-foreground">
+            <li>
+              <span className="font-medium text-foreground">Admin</span> – sieht und
+              verwaltet alles (alle Kunden, Projekte, Nutzer).
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Creator</span> – darf Dashboards
+              und Datenquellen in freigegebenen Bereichen erstellen/bearbeiten.
+            </li>
+            <li>
+              <span className="font-medium text-foreground">Viewer</span> – nur lesender
+              Zugriff auf freigegebene Bereiche/Dashboards.
+            </li>
+          </ul>
         </CardContent>
       </Card>
 
@@ -130,6 +146,13 @@ export function UserAccessDetail({
           </CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
+          {homeProjectName && (
+            <div className="rounded-md border border-border bg-muted/40 px-3 py-2 text-sm text-muted-foreground">
+              Impliziter Zugriff über das Heim-Projekt{" "}
+              <span className="font-medium text-foreground">{homeProjectName}</span> (aus der
+              Nutzer-Zuordnung, kein expliziter Grant).
+            </div>
+          )}
           {grants.length === 0 ? (
             <p className="text-sm text-muted-foreground">Keine expliziten Zugriffe.</p>
           ) : (

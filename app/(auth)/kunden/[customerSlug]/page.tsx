@@ -80,6 +80,20 @@ export default async function KundeDetailPage({
     <div className="space-y-10 p-6">
       <CustomerHeaderActions id={customer.id} name={customer.name} slug={customer.slug} />
 
+      <div className="grid grid-cols-2 gap-3 sm:grid-cols-4">
+        {[
+          { label: "Projekte", value: projects.length },
+          { label: "Dashboards", value: projects.reduce((a, p) => a + p.dashboards.length, 0) },
+          { label: "Datenquellen", value: projects.reduce((a, p) => a + p.dataSources.length, 0) },
+          { label: "Nutzer", value: customerUsers.length },
+        ].map((s) => (
+          <div key={s.label} className="rounded-lg border border-border bg-card px-4 py-3">
+            <p className="text-2xl font-semibold text-foreground">{s.value}</p>
+            <p className="text-xs text-muted-foreground">{s.label}</p>
+          </div>
+        ))}
+      </div>
+
       <section className="space-y-3">
         <h2 className="text-lg font-medium text-foreground">Projekte</h2>
         <ProjectsManager

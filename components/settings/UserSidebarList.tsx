@@ -23,8 +23,18 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [pw, setPw] = useState("");
+  const [query, setQuery] = useState("");
+  const [roleFilter, setRoleFilter] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const filtered = users.filter((u) => {
+    const q = query.trim().toLowerCase();
+    const matchQ =
+      !q || u.email.toLowerCase().includes(q) || (u.name ?? "").toLowerCase().includes(q);
+    const matchRole = !roleFilter || u.role === roleFilter;
+    return matchQ && matchRole;
+  });
 
   const selectClass =
     "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
@@ -93,12 +103,35 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
         </form>
       )}
 
+      {users.length > 5 && (
+        <div className="space-y-2 px-4 pb-2">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Nutzer suchen…"
+            className="h-8"
+          />
+          <select
+            value={roleFilter}
+            onChange={(e) => setRoleFilter(e.target.value)}
+            className="block h-8 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          >
+            <option value="">Alle Rollen</option>
+            <option value="admin">Admin</option>
+            <option value="creator">Creator</option>
+            <option value="viewer">Viewer</option>
+          </select>
+        </div>
+      )}
+
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
         {users.length === 0 ? (
           <p className="px-2 text-sm text-muted-foreground">Noch keine Nutzer.</p>
+        ) : filtered.length === 0 ? (
+          <p className="px-2 text-sm text-muted-foreground">Keine Treffer.</p>
         ) : (
           <ul className="space-y-0.5">
-            {users.map((u) => {
+            {filtered.map((u) => {
               const active = pathname === `/zugriffe/${u.id}`;
               return (
                 <li key={u.id}>

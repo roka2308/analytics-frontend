@@ -20,9 +20,14 @@ export function CustomerSidebarList({ customers }: { customers: Customer[] }) {
   const pathname = usePathname();
   const router = useRouter();
   const [name, setName] = useState("");
+  const [query, setQuery] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [adding, setAdding] = useState(false);
   const [isPending, startTransition] = useTransition();
+
+  const filtered = customers.filter((c) =>
+    c.name.toLowerCase().includes(query.trim().toLowerCase()),
+  );
 
   const handleCreate = () => {
     setError(null);
@@ -69,12 +74,25 @@ export function CustomerSidebarList({ customers }: { customers: Customer[] }) {
         </div>
       )}
 
+      {customers.length > 5 && (
+        <div className="px-4 pb-2">
+          <Input
+            value={query}
+            onChange={(e) => setQuery(e.target.value)}
+            placeholder="Kunde suchen…"
+            className="h-8"
+          />
+        </div>
+      )}
+
       <nav className="flex-1 overflow-y-auto px-2 pb-4">
         {customers.length === 0 ? (
           <p className="px-2 text-sm text-muted-foreground">Noch keine Kunden.</p>
+        ) : filtered.length === 0 ? (
+          <p className="px-2 text-sm text-muted-foreground">Keine Treffer.</p>
         ) : (
           <ul className="space-y-0.5">
-            {customers.map((c) => {
+            {filtered.map((c) => {
               const active = pathname === `/kunden/${c.slug}`;
               return (
                 <li key={c.id}>

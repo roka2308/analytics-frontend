@@ -54,9 +54,14 @@ export default async function UserDetailPage({
           : dashboardName.get(g.scopeId) ?? g.scopeId,
   }));
 
+  const homeProjectName = user.organizationId
+    ? projectName.get(user.organizationId) ?? null
+    : null;
+
   return (
     <UserAccessDetail
       user={{ id: user.id, email: user.email, name: user.name, role: user.role }}
+      homeProjectName={homeProjectName}
       targets={{
         customer: customers.map((c) => ({ id: c.id, name: c.name })),
         project: projects.map((p) => ({ id: p.id, name: p.name })),
