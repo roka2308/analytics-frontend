@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/requireUser";
+import { logAudit } from "@/lib/audit";
 import {
   createCustomer,
   deleteCustomer,
+  softDeleteCustomer,
+  restoreCustomer,
   getCustomerById,
   listCustomers,
   renameCustomer,
@@ -35,9 +38,14 @@ export async function createCustomerAction(formData: FormData): Promise<ActionRe
     return { ok: false, error: `Ein Kunde namens "${name}" existiert bereits.` };
   }
 
-  await createCustomer(name);
+  const created = await createCustomer(name);
+  await logAudit({
+    action: "customer.create",
+    entityType: "customer",
+    entityId: created.id,
+    summary: `Kunde „${name}" angelegt`,
+  });
   revalidatePath("/kunden");
-  revalidatePath("/settings");
   return { ok: true };
 }
 
@@ -64,10 +72,48 @@ export async function deleteCustomerAction(customerId: string): Promise<ActionRe
   const customer = await getCustomerById(customerId);
   if (!customer) return { ok: false, error: "Kunde nicht gefunden." };
 
-  // Loescht den Kunden inkl. ALLER Projekte, Dashboards, Datenquellen und Grants
-  // (manuelles Cascade in deleteCustomer).
-  await deleteCustomer(customerId);
+  // Soft-Delete: in den Papierkorb (inkl. Projekte/Dashboards). Wiederherstellbar.
+  await softDeleteCustomer(customerId);
+  await logAudit({
+    action: "customer.delete",
+    entityType: "customer",
+    entityId: customerId,
+    summary: `Kunde „${customer.name}" in den Papierkorb verschoben`,
+  });
   revalidatePath("/kunden");
+  revalidatePath("/papierkorb");
+  return { ok: true };
+}
+
+export async function restoreCustomerAction(customerId: string): Promise<ActionResult> {
+  await requireAdmin();
+  const customer = await getCustomerById(customerId);
+  if (!customer) return { ok: false, error: "Kunde nicht gefunden." };
+  await restoreCustomer(customerId);
+  await logAudit({
+    action: "customer.restore",
+    entityType: "customer",
+    entityId: customerId,
+    summary: `Kunde „${customer.name}" wiederhergestellt`,
+  });
+  revalidatePath("/kunden");
+  revalidatePath("/papierkorb");
+  return { ok: true };
+}
+
+/** Endgueltiges Loeschen (hartes Cascade) – aus dem Papierkorb. */
+export async function purgeCustomerAction(customerId: string): Promise<ActionResult> {
+  await requireAdmin();
+  const customer = await getCustomerById(customerId);
+  if (!customer) return { ok: false, error: "Kunde nicht gefunden." };
+  await deleteCustomer(customerId);
+  await logAudit({
+    action: "customer.purge",
+    entityType: "customer",
+    entityId: customerId,
+    summary: `Kunde „${customer.name}" endgültig gelöscht`,
+  });
+  revalidatePath("/papierkorb");
   return { ok: true };
 }
 

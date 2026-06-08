@@ -2,9 +2,12 @@
 
 import { revalidatePath } from "next/cache";
 import { requireAdmin } from "@/lib/auth/requireUser";
+import { logAudit } from "@/lib/audit";
 import {
   createOrganization,
   deleteOrganization,
+  softDeleteOrganization,
+  restoreOrganization,
   getOrgById,
   listOrganizations,
   renameOrganization,
@@ -77,11 +80,48 @@ export async function deleteOrgAction(orgId: string): Promise<ActionResult> {
   const org = await getOrgById(orgId);
   if (!org) return { ok: false, error: "Projekt nicht gefunden." };
 
-  // Loescht das Projekt inkl. aller Dashboards, Datenquellen und Projekt-Grants
-  // (manuelles Cascade in deleteOrganization). Zugeordnete Nutzer verlieren ihr
-  // Heim-Projekt, bleiben aber bestehen.
-  await deleteOrganization(orgId);
+  // Soft-Delete: Projekt (inkl. Dashboards) in den Papierkorb. Wiederherstellbar.
+  await softDeleteOrganization(orgId);
+  await logAudit({
+    action: "project.delete",
+    entityType: "project",
+    entityId: orgId,
+    summary: `Projekt „${org.name}" in den Papierkorb verschoben`,
+  });
   revalidatePath("/kunden");
+  revalidatePath("/papierkorb");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function restoreOrgAction(orgId: string): Promise<ActionResult> {
+  await requireAdmin();
+  const org = await getOrgById(orgId);
+  if (!org) return { ok: false, error: "Projekt nicht gefunden." };
+  await restoreOrganization(orgId);
+  await logAudit({
+    action: "project.restore",
+    entityType: "project",
+    entityId: orgId,
+    summary: `Projekt „${org.name}" wiederhergestellt`,
+  });
+  revalidatePath("/kunden");
+  revalidatePath("/papierkorb");
+  return { ok: true };
+}
+
+/** Endgueltiges Loeschen (hartes Cascade) – aus dem Papierkorb. */
+export async function purgeOrgAction(orgId: string): Promise<ActionResult> {
+  await requireAdmin();
+  const org = await getOrgById(orgId);
+  if (!org) return { ok: false, error: "Projekt nicht gefunden." };
+  await deleteOrganization(orgId);
+  await logAudit({
+    action: "project.purge",
+    entityType: "project",
+    entityId: orgId,
+    summary: `Projekt „${org.name}" endgültig gelöscht`,
+  });
+  revalidatePath("/papierkorb");
   return { ok: true };
 }

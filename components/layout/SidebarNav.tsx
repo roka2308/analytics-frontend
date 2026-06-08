@@ -10,6 +10,7 @@ import {
   Building2,
   KeyRound,
   ScrollText,
+  Trash2,
   ChevronDown,
   LogOut,
 } from "lucide-react";
@@ -250,6 +251,30 @@ export function SidebarNav({
                   )}
                 />
                 Protokoll
+              </Link>
+            </li>
+          )}
+          {isAdmin && (
+            <li>
+              <Link
+                href="/papierkorb"
+                onClick={onNavigate}
+                className={cn(
+                  "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                  pathname?.startsWith("/papierkorb")
+                    ? "bg-accent/10 font-medium text-accent-text"
+                    : "text-foreground hover:bg-muted",
+                )}
+              >
+                <Trash2
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    pathname?.startsWith("/papierkorb")
+                      ? "text-accent-text"
+                      : "text-muted-foreground group-hover:text-foreground",
+                  )}
+                />
+                Papierkorb
               </Link>
             </li>
           )}

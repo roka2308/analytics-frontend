@@ -11,7 +11,7 @@ import {
   dashboardSections,
   dashboardShareTokens,
 } from "./schema";
-import { eq, asc, count, and } from "drizzle-orm";
+import { eq, asc, count, and, isNull, isNotNull, desc } from "drizzle-orm";
 
 const DEFAULT_ORG_NAME = "Standard-Organisation";
 
@@ -49,7 +49,11 @@ async function ensureUniqueOrgSlug(baseSlug: string): Promise<string> {
 }
 
 export async function listOrganizations() {
-  return db.select().from(organizations).orderBy(asc(organizations.name));
+  return db
+    .select()
+    .from(organizations)
+    .where(isNull(organizations.deletedAt))
+    .orderBy(asc(organizations.name));
 }
 
 export async function getOrgById(id: string) {
@@ -61,7 +65,7 @@ export async function getOrgBySlug(slug: string) {
   const rows = await db
     .select()
     .from(organizations)
-    .where(eq(organizations.slug, slug))
+    .where(and(eq(organizations.slug, slug), isNull(organizations.deletedAt)))
     .limit(1);
   return rows[0] ?? null;
 }
@@ -91,7 +95,7 @@ export async function listOrganizationsForCustomer(customerId: string) {
   return db
     .select()
     .from(organizations)
-    .where(eq(organizations.customerId, customerId))
+    .where(and(eq(organizations.customerId, customerId), isNull(organizations.deletedAt)))
     .orderBy(asc(organizations.name));
 }
 
@@ -379,7 +383,7 @@ export async function listDashboardsForOrg(orgId: string): Promise<DashboardRow[
   const rows = await db
     .select()
     .from(dashboards)
-    .where(eq(dashboards.organizationId, orgId))
+    .where(and(eq(dashboards.organizationId, orgId), isNull(dashboards.deletedAt)))
     .orderBy(asc(dashboards.position), asc(dashboards.createdAt));
   return rows.map((r) => ({
     id: r.id,
@@ -403,7 +407,13 @@ export async function getDashboardBySlug(
   const rows = await db
     .select()
     .from(dashboards)
-    .where(and(eq(dashboards.organizationId, orgId), eq(dashboards.slug, slug)))
+    .where(
+      and(
+        eq(dashboards.organizationId, orgId),
+        eq(dashboards.slug, slug),
+        isNull(dashboards.deletedAt),
+      ),
+    )
     .limit(1);
   if (rows.length === 0) return null;
   const r = rows[0];
@@ -716,7 +726,11 @@ async function ensureUniqueCustomerSlug(baseSlug: string): Promise<string> {
 }
 
 export async function listCustomers() {
-  return db.select().from(customers).orderBy(asc(customers.name));
+  return db
+    .select()
+    .from(customers)
+    .where(isNull(customers.deletedAt))
+    .orderBy(asc(customers.name));
 }
 
 export async function getCustomerById(id: string) {
@@ -725,7 +739,11 @@ export async function getCustomerById(id: string) {
 }
 
 export async function getCustomerBySlug(slug: string) {
-  const rows = await db.select().from(customers).where(eq(customers.slug, slug)).limit(1);
+  const rows = await db
+    .select()
+    .from(customers)
+    .where(and(eq(customers.slug, slug), isNull(customers.deletedAt)))
+    .limit(1);
   return rows[0] ?? null;
 }
 
@@ -782,7 +800,7 @@ export async function countOrgsInCustomer(customerId: string): Promise<number> {
   const r = await db
     .select({ value: count() })
     .from(organizations)
-    .where(eq(organizations.customerId, customerId));
+    .where(and(eq(organizations.customerId, customerId), isNull(organizations.deletedAt)));
   return r[0]?.value ?? 0;
 }
 
@@ -958,4 +976,94 @@ export async function revokeAccessByScope(
         eq(accessGrants.scopeId, scopeId),
       ),
     );
+}
+
+// ──────────────────────────────────────────────────────────────
+// Soft-Delete / Papierkorb (Stufe: Verwaltung-Ausbau)
+// deletedAt gesetzt = im Papierkorb. Soft-Delete kaskadiert nach UNTEN
+// (Kunde -> Projekte -> Dashboards), damit nichts mehr in Listen auftaucht.
+// Restore macht die Kaskade rueckgaengig. Endgueltiges Loeschen = die harten
+// deleteX-Funktionen (manuelles Cascade).
+// ──────────────────────────────────────────────────────────────
+
+export async function softDeleteCustomer(id: string) {
+  const ts = new Date();
+  const orgs = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.customerId, id));
+  for (const o of orgs) {
+    await db.update(dashboards).set({ deletedAt: ts }).where(eq(dashboards.organizationId, o.id));
+  }
+  await db.update(organizations).set({ deletedAt: ts }).where(eq(organizations.customerId, id));
+  await db.update(customers).set({ deletedAt: ts }).where(eq(customers.id, id));
+}
+
+export async function restoreCustomer(id: string) {
+  const orgs = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(eq(organizations.customerId, id));
+  for (const o of orgs) {
+    await db.update(dashboards).set({ deletedAt: null }).where(eq(dashboards.organizationId, o.id));
+  }
+  await db.update(organizations).set({ deletedAt: null }).where(eq(organizations.customerId, id));
+  await db.update(customers).set({ deletedAt: null }).where(eq(customers.id, id));
+}
+
+export async function softDeleteOrganization(id: string) {
+  const ts = new Date();
+  await db.update(dashboards).set({ deletedAt: ts }).where(eq(dashboards.organizationId, id));
+  await db.update(organizations).set({ deletedAt: ts }).where(eq(organizations.id, id));
+}
+
+export async function restoreOrganization(id: string) {
+  await db.update(dashboards).set({ deletedAt: null }).where(eq(dashboards.organizationId, id));
+  await db.update(organizations).set({ deletedAt: null }).where(eq(organizations.id, id));
+}
+
+export async function softDeleteDashboard(id: string) {
+  await db.update(dashboards).set({ deletedAt: new Date() }).where(eq(dashboards.id, id));
+}
+
+export async function restoreDashboard(id: string) {
+  await db.update(dashboards).set({ deletedAt: null }).where(eq(dashboards.id, id));
+}
+
+export async function listDeletedCustomers() {
+  return db
+    .select()
+    .from(customers)
+    .where(isNotNull(customers.deletedAt))
+    .orderBy(desc(customers.deletedAt));
+}
+
+/** Geloeschte Projekte, deren Kunde NICHT ebenfalls geloescht ist (Top-Level). */
+export async function listDeletedOrganizations() {
+  const delCustomers = await db
+    .select({ id: customers.id })
+    .from(customers)
+    .where(isNotNull(customers.deletedAt));
+  const delCustomerIds = new Set(delCustomers.map((r) => r.id));
+  const rows = await db
+    .select()
+    .from(organizations)
+    .where(isNotNull(organizations.deletedAt))
+    .orderBy(desc(organizations.deletedAt));
+  return rows.filter((o) => !o.customerId || !delCustomerIds.has(o.customerId));
+}
+
+/** Geloeschte Dashboards, deren Projekt NICHT ebenfalls geloescht ist (Top-Level). */
+export async function listDeletedDashboards() {
+  const delOrgs = await db
+    .select({ id: organizations.id })
+    .from(organizations)
+    .where(isNotNull(organizations.deletedAt));
+  const delOrgIds = new Set(delOrgs.map((r) => r.id));
+  const rows = await db
+    .select()
+    .from(dashboards)
+    .where(isNotNull(dashboards.deletedAt))
+    .orderBy(desc(dashboards.deletedAt));
+  return rows.filter((d) => !delOrgIds.has(d.organizationId));
 }

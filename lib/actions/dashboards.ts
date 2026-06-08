@@ -17,6 +17,11 @@ import {
   type DashboardDefaultRange,
 } from "@/lib/db/queries";
 import { getTemplate } from "@/lib/widgets/templates";
+import { logAudit } from "@/lib/audit";
+import {
+  softDeleteDashboard,
+  restoreDashboard,
+} from "@/lib/db/queries";
 
 export interface ActionResult {
   ok: boolean;
@@ -163,7 +168,7 @@ export async function deleteDashboardAction(dashboardId: string): Promise<Action
     return { ok: false, error: "Keine Berechtigung für dieses Projekt." };
   }
 
-  await deleteDashboard(dashboardId);
+  await softDeleteDashboard(dashboardId);
 
   // War es das Default-Dashboard, ein verbleibendes zum Default machen.
   if (dash.isDefault) {
@@ -173,8 +178,53 @@ export async function deleteDashboardAction(dashboardId: string): Promise<Action
     }
   }
 
+  await logAudit({
+    action: "dashboard.delete",
+    entityType: "dashboard",
+    entityId: dashboardId,
+    summary: `Dashboard „${dash.name}" in den Papierkorb verschoben`,
+  });
   revalidatePath("/kunden");
+  revalidatePath("/papierkorb");
   revalidatePath("/dashboards");
+  return { ok: true };
+}
+
+export async function restoreDashboardAction(dashboardId: string): Promise<ActionResult> {
+  const session = await requireUser();
+  const dash = await getDashboardById(dashboardId);
+  if (!dash) return { ok: false, error: "Dashboard nicht gefunden." };
+  if (!(await canEditProject(session.user, dash.organizationId))) {
+    return { ok: false, error: "Keine Berechtigung für dieses Projekt." };
+  }
+  await restoreDashboard(dashboardId);
+  await logAudit({
+    action: "dashboard.restore",
+    entityType: "dashboard",
+    entityId: dashboardId,
+    summary: `Dashboard „${dash.name}" wiederhergestellt`,
+  });
+  revalidatePath("/kunden");
+  revalidatePath("/papierkorb");
+  return { ok: true };
+}
+
+/** Endgueltiges Loeschen (hartes Cascade) – aus dem Papierkorb. */
+export async function purgeDashboardAction(dashboardId: string): Promise<ActionResult> {
+  const session = await requireUser();
+  const dash = await getDashboardById(dashboardId);
+  if (!dash) return { ok: false, error: "Dashboard nicht gefunden." };
+  if (!(await canEditProject(session.user, dash.organizationId))) {
+    return { ok: false, error: "Keine Berechtigung für dieses Projekt." };
+  }
+  await deleteDashboard(dashboardId);
+  await logAudit({
+    action: "dashboard.purge",
+    entityType: "dashboard",
+    entityId: dashboardId,
+    summary: `Dashboard „${dash.name}" endgültig gelöscht`,
+  });
+  revalidatePath("/papierkorb");
   return { ok: true };
 }
 
