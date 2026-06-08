@@ -19,6 +19,8 @@ export const customers = sqliteTable("customers", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  // Soft-Delete: gesetzt = im Papierkorb (aus allen Listen ausgeblendet)
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
 });
 
 export const organizations = sqliteTable("organizations", {
@@ -42,6 +44,8 @@ export const organizations = sqliteTable("organizations", {
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  // Soft-Delete: gesetzt = im Papierkorb
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
 });
 
 /**
@@ -157,6 +161,8 @@ export const dashboards = sqliteTable("dashboards", {
   updatedAt: integer("updated_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),
+  // Soft-Delete: gesetzt = im Papierkorb
+  deletedAt: integer("deleted_at", { mode: "timestamp" }),
 });
 
 /**
@@ -257,6 +263,31 @@ export const users = sqliteTable("users", {
   organizationId: text("organization_id").references(() => organizations.id, {
     onDelete: "set null",
   }),
+  // Zeitpunkt des letzten erfolgreichen Logins (Audit)
+  lastLoginAt: integer("last_login_at", { mode: "timestamp" }),
+  // Einladungs-Flow: solange ein Token gesetzt ist, hat der Nutzer sein
+  // Passwort noch nicht selbst gesetzt (Login gesperrt, bis akzeptiert).
+  inviteToken: text("invite_token"),
+  inviteExpiresAt: integer("invite_expires_at", { mode: "timestamp" }),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
+/**
+ * Audit-Log – protokolliert sicherheitsrelevante/administrative Aktionen
+ * (anlegen/loeschen/wiederherstellen, Rollen-/Rechteaenderungen, Logins).
+ */
+export const auditLog = sqliteTable("audit_log", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  actorUserId: text("actor_user_id"),
+  actorEmail: text("actor_email"),
+  action: text("action").notNull(), // z.B. "customer.delete", "user.login"
+  entityType: text("entity_type"), // "customer" | "project" | "dashboard" | "user" | ...
+  entityId: text("entity_id"),
+  summary: text("summary"), // menschenlesbare Kurzbeschreibung
   createdAt: integer("created_at", { mode: "timestamp" })
     .notNull()
     .default(sql`(unixepoch())`),

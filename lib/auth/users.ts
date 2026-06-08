@@ -1,7 +1,7 @@
 import "server-only";
 import bcrypt from "bcryptjs";
 import { db } from "@/lib/db";
-import { users } from "@/lib/db/schema";
+import { users, auditLog } from "@/lib/db/schema";
 import { eq, asc } from "drizzle-orm";
 import { getOrCreateDefaultOrg } from "@/lib/db/queries";
 
@@ -91,4 +91,21 @@ export async function deleteUser(id: string) {
 export async function changePassword(userId: string, newPassword: string) {
   const passwordHash = await hashPassword(newPassword);
   await db.update(users).set({ passwordHash }).where(eq(users.id, userId));
+}
+
+/** Beim erfolgreichen Login: Zeitstempel setzen + Login protokollieren. */
+export async function recordLogin(userId: string, email: string) {
+  await db.update(users).set({ lastLoginAt: new Date() }).where(eq(users.id, userId));
+  try {
+    await db.insert(auditLog).values({
+      actorUserId: userId,
+      actorEmail: email,
+      action: "user.login",
+      entityType: "user",
+      entityId: userId,
+      summary: "Login",
+    });
+  } catch {
+    /* Audit-Fehler ignorieren */
+  }
 }

@@ -2,6 +2,7 @@
 
 import { revalidatePath } from "next/cache";
 import { requireUser, requireAdmin } from "@/lib/auth/requireUser";
+import { logAudit } from "@/lib/audit";
 import {
   countUsers,
   createUser,
@@ -82,7 +83,9 @@ export async function createUserAction(formData: FormData): Promise<ActionResult
     return { ok: false, error: e instanceof Error ? e.message : "Unbekannter Fehler" };
   }
 
+  await logAudit({ action: "user.create", entityType: "user", summary: `Nutzer ${email} (${role}) angelegt` });
   revalidatePath("/settings");
+  revalidatePath("/zugriffe");
   return { ok: true };
 }
 
@@ -143,7 +146,9 @@ export async function deleteUserAction(userId: string): Promise<ActionResult> {
     return { ok: false, error: "Du kannst dein eigenes Konto nicht löschen." };
   }
   await deleteUser(userId);
+  await logAudit({ action: "user.delete", entityType: "user", entityId: userId, summary: "Nutzer gelöscht" });
   revalidatePath("/settings");
+  revalidatePath("/zugriffe");
   return { ok: true };
 }
 
@@ -157,7 +162,9 @@ export async function setUserRoleAction(
   }
   const { setUserRole } = await import("@/lib/auth/users");
   await setUserRole(userId, parseRole(role));
+  await logAudit({ action: "user.role", entityType: "user", entityId: userId, summary: `Rolle geändert: ${role}` });
   revalidatePath("/settings");
+  revalidatePath("/zugriffe");
   return { ok: true };
 }
 
@@ -201,6 +208,7 @@ export async function resetUserPasswordAction(
   const user = await getUserById(userId);
   if (!user) return { ok: false, error: "Nutzer nicht gefunden." };
   await dbChangePassword(userId, newPassword);
+  await logAudit({ action: "user.password_reset", entityType: "user", entityId: userId, summary: `Passwort zurückgesetzt (${user.email})` });
   revalidatePath("/zugriffe");
   return { ok: true };
 }

@@ -58,10 +58,15 @@ export default async function UserDetailPage({
     ? projectName.get(user.organizationId) ?? null
     : null;
 
+  const fmt = (d: Date | null | undefined) =>
+    d ? new Date(d).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" }) : "–";
+
   return (
     <UserAccessDetail
       user={{ id: user.id, email: user.email, name: user.name, role: user.role }}
       homeProjectName={homeProjectName}
+      createdAtLabel={fmt(user.createdAt)}
+      lastLoginLabel={fmt(user.lastLoginAt)}
       targets={{
         customer: customers.map((c) => ({ id: c.id, name: c.name })),
         project: projects.map((p) => ({ id: p.id, name: p.name })),

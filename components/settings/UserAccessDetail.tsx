@@ -45,11 +45,15 @@ const SCOPE_LABEL: Record<ScopeType, string> = {
 export function UserAccessDetail({
   user,
   homeProjectName,
+  createdAtLabel,
+  lastLoginLabel,
   targets,
   grants,
 }: {
   user: UserVM;
   homeProjectName?: string | null;
+  createdAtLabel?: string;
+  lastLoginLabel?: string;
   targets: { customer: Target[]; project: Target[]; dashboard: Target[] };
   grants: GrantView[];
 }) {
@@ -84,6 +88,11 @@ export function UserAccessDetail({
       <div>
         <h1 className="heading-display text-2xl text-foreground">{user.name ?? user.email}</h1>
         <p className="text-sm text-muted-foreground">{user.email}</p>
+        {(createdAtLabel || lastLoginLabel) && (
+          <p className="mt-1 text-xs text-muted-foreground">
+            Angelegt: {createdAtLabel ?? "–"} · Zuletzt aktiv: {lastLoginLabel ?? "–"}
+          </p>
+        )}
       </div>
 
       {error && (

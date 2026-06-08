@@ -1,6 +1,6 @@
 import type { NextAuthOptions } from "next-auth";
 import CredentialsProvider from "next-auth/providers/credentials";
-import { getUserByEmail, getUserById, verifyPassword } from "./users";
+import { getUserByEmail, getUserById, verifyPassword, recordLogin } from "./users";
 
 export const authOptions: NextAuthOptions = {
   providers: [
@@ -20,6 +20,8 @@ export const authOptions: NextAuthOptions = {
 
         const ok = await verifyPassword(password, user.passwordHash);
         if (!ok) return null;
+
+        await recordLogin(user.id, user.email);
 
         return {
           id: user.id,
