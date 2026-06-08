@@ -4,7 +4,11 @@ import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
 import { Plus, Trash2, KeyRound } from "lucide-react";
-import { createCustomerUserAction, deleteUserAction } from "@/lib/actions/users";
+import {
+  createCustomerUserAction,
+  deleteUserAction,
+  grantAccessAction,
+} from "@/lib/actions/users";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -20,15 +24,39 @@ interface UserVM {
 export function CustomerUsersManager({
   customerId,
   users,
+  allUsers,
 }: {
   customerId: string;
   users: UserVM[];
+  allUsers: { id: string; email: string; name: string | null }[];
 }) {
   const router = useRouter();
   const [adding, setAdding] = useState(false);
   const [pw, setPw] = useState("");
+  const [assignId, setAssignId] = useState("");
   const [error, setError] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
+
+  const memberIds = new Set(users.map((u) => u.id));
+  const assignable = allUsers.filter((u) => !memberIds.has(u.id));
+
+  const assign = () => {
+    if (!assignId) return;
+    setError(null);
+    startTransition(async () => {
+      const r = await grantAccessAction({
+        userId: assignId,
+        scopeType: "customer",
+        scopeId: customerId,
+        role: null,
+      });
+      if (!r.ok) setError(r.error ?? "Fehler");
+      else {
+        setAssignId("");
+        router.refresh();
+      }
+    });
+  };
 
   const selectClass =
     "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
@@ -88,6 +116,26 @@ export function CustomerUsersManager({
             </li>
           ))}
         </ul>
+      )}
+
+      {assignable.length > 0 && (
+        <div className="flex flex-wrap items-end gap-2">
+          <select
+            value={assignId}
+            onChange={(e) => setAssignId(e.target.value)}
+            className={`${selectClass} flex-1`}
+          >
+            <option value="">Bestehenden Nutzer zuordnen…</option>
+            {assignable.map((u) => (
+              <option key={u.id} value={u.id}>
+                {u.name ? `${u.name} (${u.email})` : u.email}
+              </option>
+            ))}
+          </select>
+          <Button size="sm" variant="outline" disabled={isPending || !assignId} onClick={assign}>
+            Zuordnen
+          </Button>
+        </div>
       )}
 
       {adding ? (

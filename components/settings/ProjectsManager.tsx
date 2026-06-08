@@ -3,14 +3,24 @@
 import { useState, useTransition } from "react";
 import Link from "next/link";
 import { useRouter } from "next/navigation";
-import { Plus, Trash2, ExternalLink, Pencil } from "lucide-react";
-import { createOrgAction, deleteOrgAction, renameOrgAction } from "@/lib/actions/organizations";
+import { Plus, Trash2, ExternalLink, Pencil, Star } from "lucide-react";
+import {
+  createOrgAction,
+  deleteOrgAction,
+  renameOrgAction,
+  moveProjectToCustomerAction,
+} from "@/lib/actions/organizations";
 import {
   createDashboardInProjectAction,
   deleteDashboardAction,
   renameDashboardAction,
+  setDefaultDashboardAction,
 } from "@/lib/actions/dashboards";
-import { addDataSourceAction, removeDataSourceAction } from "@/lib/actions/dataSources";
+import {
+  addDataSourceAction,
+  removeDataSourceAction,
+  updateDataSourceAction,
+} from "@/lib/actions/dataSources";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
@@ -19,16 +29,18 @@ export interface ProjectVM {
   id: string;
   name: string;
   slug: string;
-  dashboards: { id: string; name: string; slug: string }[];
+  dashboards: { id: string; name: string; slug: string; isDefault: boolean }[];
   dataSources: { id: string; type: string; label: string; matomoSiteId: number | null }[];
 }
 
 export function ProjectsManager({
   customerId,
   projects,
+  customers,
 }: {
   customerId: string;
   projects: ProjectVM[];
+  customers: { id: string; name: string }[];
 }) {
   const router = useRouter();
   const [newProject, setNewProject] = useState("");
@@ -111,7 +123,28 @@ export function ProjectsManager({
               ) : (
                 <>
                   <CardTitle className="text-base">{p.name}</CardTitle>
-                  <div className="flex shrink-0 gap-1">
+                  <div className="flex flex-wrap items-center justify-end gap-1">
+                    {customers.length > 1 && (
+                      <select
+                        className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                        value=""
+                        disabled={isPending}
+                        title="Projekt zu anderem Kunden verschieben"
+                        onChange={(e) => {
+                          const cid = e.target.value;
+                          if (cid) run(() => moveProjectToCustomerAction(p.id, cid));
+                        }}
+                      >
+                        <option value="">Verschieben…</option>
+                        {customers
+                          .filter((c) => c.id !== customerId)
+                          .map((c) => (
+                            <option key={c.id} value={c.id}>
+                              → {c.name}
+                            </option>
+                          ))}
+                      </select>
+                    )}
                     <Button
                       size="sm"
                       variant="ghost"
@@ -205,8 +238,28 @@ function DashboardsBlock({
                 </div>
               ) : (
                 <>
-                  <span className="truncate text-sm text-foreground">{d.name}</span>
-                  <div className="flex items-center gap-1">
+                  <span className="flex min-w-0 items-center gap-1.5 truncate text-sm text-foreground">
+                    {d.name}
+                    {d.isDefault && (
+                      <span className="rounded bg-accent/10 px-1.5 py-0.5 text-[10px] font-medium uppercase text-accent-text">
+                        Standard
+                      </span>
+                    )}
+                  </span>
+                  <div className="flex flex-wrap items-center justify-end gap-1">
+                    <Button
+                      size="sm"
+                      variant="ghost"
+                      disabled={isPending || d.isDefault}
+                      title={d.isDefault ? "Standard-Dashboard" : "Als Standard setzen"}
+                      onClick={() => run(() => setDefaultDashboardAction(d.id))}
+                    >
+                      <Star
+                        className={
+                          "h-3.5 w-3.5 " + (d.isDefault ? "fill-accent text-accent" : "")
+                        }
+                      />
+                    </Button>
                     <Button size="sm" variant="ghost" asChild>
                       <Link href={`/projekte/${project.slug}/dashboards/${d.slug}`}>
                         <ExternalLink className="mr-1 h-3.5 w-3.5" /> Öffnen
@@ -295,6 +348,9 @@ function DataSourcesBlock({
   const [label, setLabel] = useState("");
   const [siteId, setSiteId] = useState("");
   const [config, setConfig] = useState("");
+  const [editId, setEditId] = useState<string | null>(null);
+  const [eLabel, setELabel] = useState("");
+  const [eSiteId, setESiteId] = useState("");
 
   const canAdd =
     !!label.trim() && (type === "matomo" ? !!siteId.trim() : true);
@@ -329,33 +385,88 @@ function DataSourcesBlock({
         <p className="text-sm text-muted-foreground">Noch keine Datenquellen.</p>
       ) : (
         <ul className="divide-y divide-border rounded-md border border-border">
-          {project.dataSources.map((ds) => (
-            <li key={ds.id} className="flex items-center justify-between px-3 py-2">
-              <span className="truncate text-sm text-foreground">
-                <span className="mr-2 rounded bg-muted px-1.5 py-0.5 text-xs uppercase text-muted-foreground">
-                  {ds.type}
-                </span>
-                {ds.label}
-                {ds.matomoSiteId != null && (
-                  <span className="ml-2 font-mono text-xs text-muted-foreground">
-                    Site #{ds.matomoSiteId}
-                  </span>
+          {project.dataSources.map((ds) =>
+            editId === ds.id ? (
+              <li key={ds.id} className="flex flex-wrap items-center gap-2 px-3 py-2">
+                <Input
+                  value={eLabel}
+                  onChange={(e) => setELabel(e.target.value)}
+                  placeholder="Bezeichnung"
+                  className="h-8 flex-1"
+                  autoFocus
+                />
+                {ds.type === "matomo" && (
+                  <Input
+                    value={eSiteId}
+                    onChange={(e) => setESiteId(e.target.value)}
+                    placeholder="Site-ID"
+                    className="h-8 w-28"
+                    inputMode="numeric"
+                  />
                 )}
-              </span>
-              <Button
-                size="sm"
-                variant="ghost"
-                className="text-destructive hover:bg-destructive/10 hover:text-destructive"
-                disabled={isPending}
-                onClick={() => {
-                  if (confirm(`Datenquelle "${ds.label}" entfernen?`))
-                    run(() => removeDataSourceAction(ds.id));
-                }}
-              >
-                <Trash2 className="h-3.5 w-3.5" />
-              </Button>
-            </li>
-          ))}
+                <Button
+                  size="sm"
+                  disabled={isPending || !eLabel.trim()}
+                  onClick={() =>
+                    run(async () => {
+                      const fields: { label: string; matomoSiteId?: number } = {
+                        label: eLabel.trim(),
+                      };
+                      if (ds.type === "matomo") fields.matomoSiteId = Number(eSiteId);
+                      const r = await updateDataSourceAction(ds.id, fields);
+                      if (r.ok) setEditId(null);
+                      return r;
+                    })
+                  }
+                >
+                  Speichern
+                </Button>
+                <Button size="sm" variant="ghost" onClick={() => setEditId(null)}>
+                  Abbrechen
+                </Button>
+              </li>
+            ) : (
+              <li key={ds.id} className="flex flex-wrap items-center justify-between gap-2 px-3 py-2">
+                <span className="min-w-0 truncate text-sm text-foreground">
+                  <span className="mr-2 rounded bg-muted px-1.5 py-0.5 text-xs uppercase text-muted-foreground">
+                    {ds.type}
+                  </span>
+                  {ds.label}
+                  {ds.matomoSiteId != null && (
+                    <span className="ml-2 font-mono text-xs text-muted-foreground">
+                      Site #{ds.matomoSiteId}
+                    </span>
+                  )}
+                </span>
+                <div className="flex items-center gap-1">
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    disabled={isPending}
+                    onClick={() => {
+                      setEditId(ds.id);
+                      setELabel(ds.label);
+                      setESiteId(ds.matomoSiteId != null ? String(ds.matomoSiteId) : "");
+                    }}
+                  >
+                    <Pencil className="h-3.5 w-3.5" />
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="ghost"
+                    className="text-destructive hover:bg-destructive/10 hover:text-destructive"
+                    disabled={isPending}
+                    onClick={() => {
+                      if (confirm(`Datenquelle "${ds.label}" entfernen?`))
+                        run(() => removeDataSourceAction(ds.id));
+                    }}
+                  >
+                    <Trash2 className="h-3.5 w-3.5" />
+                  </Button>
+                </div>
+              </li>
+            ),
+          )}
         </ul>
       )}
       <div className="flex flex-wrap items-end gap-2">

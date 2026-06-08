@@ -179,10 +179,14 @@ export async function deleteDashboardAction(dashboardId: string): Promise<Action
 }
 
 export async function setDefaultDashboardAction(dashboardId: string): Promise<ActionResult> {
-  await requireAdmin();
-  const orgId = await adminOrgId();
-  await setDefaultDashboard(orgId, dashboardId);
-  revalidatePath("/settings");
+  const session = await requireUser();
+  const dash = await getDashboardById(dashboardId);
+  if (!dash) return { ok: false, error: "Dashboard nicht gefunden." };
+  if (!(await canEditProject(session.user, dash.organizationId))) {
+    return { ok: false, error: "Keine Berechtigung für dieses Projekt." };
+  }
+  await setDefaultDashboard(dash.organizationId, dashboardId);
+  revalidatePath("/kunden");
   revalidatePath("/dashboards");
   return { ok: true };
 }

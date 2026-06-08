@@ -2,6 +2,7 @@ import { notFound } from "next/navigation";
 import { requireAdmin } from "@/lib/auth/requireUser";
 import {
   getCustomerBySlug,
+  listCustomers,
   listOrganizationsForCustomer,
   listDashboardsForOrg,
   listDataSourcesForOrg,
@@ -38,7 +39,12 @@ export default async function KundeDetailPage({
         id: o.id,
         name: o.name,
         slug: o.slug,
-        dashboards: dashboards.map((d) => ({ id: d.id, name: d.name, slug: d.slug })),
+        dashboards: dashboards.map((d) => ({
+          id: d.id,
+          name: d.name,
+          slug: d.slug,
+          isDefault: d.isDefault,
+        })),
         dataSources: dataSources.map((ds) => ({
           id: ds.id,
           type: ds.type,
@@ -53,6 +59,7 @@ export default async function KundeDetailPage({
   // Kunden / eines seiner Projekte.
   const projectIds = new Set(orgs.map((o) => o.id));
   const allUsers = await listUsers();
+  const allCustomers = await listCustomers();
   const customerUsers = [];
   for (const u of allUsers) {
     let belongs = u.organizationId ? projectIds.has(u.organizationId) : false;
@@ -75,12 +82,20 @@ export default async function KundeDetailPage({
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium text-foreground">Projekte</h2>
-        <ProjectsManager customerId={customer.id} projects={projects} />
+        <ProjectsManager
+          customerId={customer.id}
+          projects={projects}
+          customers={allCustomers.map((c) => ({ id: c.id, name: c.name }))}
+        />
       </section>
 
       <section className="space-y-3">
         <h2 className="text-lg font-medium text-foreground">Nutzer</h2>
-        <CustomerUsersManager customerId={customer.id} users={customerUsers} />
+        <CustomerUsersManager
+          customerId={customer.id}
+          users={customerUsers}
+          allUsers={allUsers.map((u) => ({ id: u.id, email: u.email, name: u.name }))}
+        />
       </section>
 
       <section className="space-y-3">

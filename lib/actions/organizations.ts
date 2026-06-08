@@ -8,6 +8,7 @@ import {
   getOrgById,
   listOrganizations,
   renameOrganization,
+  setOrganizationCustomer,
 } from "@/lib/db/queries";
 
 export interface ActionResult {
@@ -54,6 +55,19 @@ export async function renameOrgAction(orgId: string, name: string): Promise<Acti
   await renameOrganization(orgId, trimmed);
   revalidatePath("/settings");
   revalidatePath("/dashboard");
+  return { ok: true };
+}
+
+export async function moveProjectToCustomerAction(
+  orgId: string,
+  customerId: string,
+): Promise<ActionResult> {
+  await requireAdmin();
+  if (!customerId) return { ok: false, error: "Kunde fehlt." };
+  const org = await getOrgById(orgId);
+  if (!org) return { ok: false, error: "Projekt nicht gefunden." };
+  await setOrganizationCustomer(orgId, customerId);
+  revalidatePath("/kunden");
   return { ok: true };
 }
 
