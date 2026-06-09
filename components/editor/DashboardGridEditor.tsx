@@ -18,6 +18,7 @@ import {
   PieChart,
   AlignLeft,
   Grid3x3,
+  Compass,
 } from "lucide-react";
 import {
   addWidgetAction,
@@ -35,6 +36,7 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { WidgetConfigForm } from "./WidgetConfigForm";
+import { ReportWidgetConfig } from "./ReportWidgetConfig";
 import { cn } from "@/lib/utils";
 import "./grid-editor.css";
 
@@ -49,6 +51,7 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   donut: PieChart,
   "bar-chart": BarChart3,
   "cross-tab": Grid3x3,
+  report: Compass,
 };
 
 interface EditorWidget {
@@ -73,6 +76,8 @@ interface Props {
     config: Record<string, unknown>;
     layout: { x: number; y: number; w: number; h: number };
   }[];
+  /** Matomo-Site fuer katalog-getriebene Config-UIs (Report-Explorer) */
+  siteId?: number;
 }
 
 export function DashboardGridEditor({
@@ -80,6 +85,7 @@ export function DashboardGridEditor({
   projectSlug,
   dashboardSlug,
   initialWidgets,
+  siteId,
 }: Props) {
   const [items, setItems] = useState<EditorWidget[]>(() =>
     initialWidgets.map((w) => ({
@@ -341,7 +347,30 @@ export function DashboardGridEditor({
             </button>
           </div>
           <div className="p-4">
-            {getWidgetMeta(selected.type)?.configSchema ? (
+            {getWidgetMeta(selected.type)?.customConfig ? (
+              siteId ? (
+                <ReportWidgetConfig
+                  key={selected.id}
+                  widgetId={selected.id}
+                  siteId={siteId}
+                  initialTitle={selected.title}
+                  initialConfig={selected.config}
+                  onSaved={(data) => {
+                    setItems((prev) =>
+                      prev.map((it) =>
+                        it.id === selected.id
+                          ? { ...it, title: data.title, config: data.config }
+                          : it
+                      )
+                    );
+                  }}
+                />
+              ) : (
+                <p className="text-sm text-muted-foreground">
+                  Für dieses Widget wird eine Matomo-Datenquelle im Projekt benötigt.
+                </p>
+              )
+            ) : getWidgetMeta(selected.type)?.configSchema ? (
               <WidgetConfigForm
                 key={selected.id}
                 widgetId={selected.id}

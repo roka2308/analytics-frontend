@@ -15,6 +15,10 @@ import {
   CrossTabWidget,
   type CrossTabConfig,
 } from "@/components/widgets/CrossTabWidget";
+import {
+  ReportWidget,
+  type ReportWidgetConfig,
+} from "@/components/widgets/ReportWidget";
 import type { WidgetDefinition } from "./types";
 
 /**
@@ -141,6 +145,16 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
       { key: "topPagesLimit", label: "Anzahl Top-Seiten", type: "number", defaultValue: 5 },
       { key: "topEventsPerPage", label: "Events je Seite", type: "number", defaultValue: 3 },
     ],
+  },
+  report: {
+    type: "report",
+    label: "Report-Explorer",
+    description:
+      "Beliebigen Matomo-Report (jede Dimension) mit frei waehlbaren Metriken – als Tabelle, Balken oder Donut.",
+    component: ReportWidget as unknown as WidgetDefinition["component"],
+    defaultConfig: { display: "table", limit: 10 } satisfies ReportWidgetConfig,
+    defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
+    // Eigene, katalog-getriebene Config-UI (kein statisches configSchema)
   },
 };
 

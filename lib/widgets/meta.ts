@@ -19,6 +19,8 @@ export interface WidgetMeta {
   defaultConfig: Record<string, unknown>;
   defaultLayout: WidgetLayout;
   configSchema?: WidgetConfigField[];
+  /** true = eigene Config-UI im Editor (statt generischem Schema-Form) */
+  customConfig?: boolean;
 }
 
 const METRIC_OPTIONS = [
@@ -129,6 +131,15 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
       { key: "topPagesLimit", label: "Anzahl Top-Seiten", type: "number", defaultValue: 5 },
       { key: "topEventsPerPage", label: "Events je Seite", type: "number", defaultValue: 3 },
     ],
+  },
+  report: {
+    type: "report",
+    label: "Report-Explorer",
+    description:
+      "Beliebigen Matomo-Report (jede Dimension) mit frei waehlbaren Metriken – als Tabelle, Balken oder Donut.",
+    defaultConfig: { display: "table", limit: 10 },
+    defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
+    customConfig: true,
   },
 };
 

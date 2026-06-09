@@ -9,6 +9,7 @@ import {
   listDashboardsForOrg,
   getVisibleProjectsForSession,
   resolveOrgBranding,
+  getSitesForOrg,
 } from "@/lib/db/queries";
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
@@ -29,12 +30,14 @@ export default async function DashboardEditPage({ params }: PageProps) {
   const dashboard = await getDashboardBySlug(project.id, params.slug);
   if (!dashboard) notFound();
 
-  const [widgets, allDashboards, allProjects, branding] = await Promise.all([
+  const [widgets, allDashboards, allProjects, branding, sites] = await Promise.all([
     getWidgetsForDashboard(dashboard.id),
     listDashboardsForOrg(project.id),
     getVisibleProjectsForSession(session),
     resolveOrgBranding(project.id),
+    getSitesForOrg(project.id),
   ]);
+  const editorSiteId = sites[0]?.matomoSiteId;
 
   return (
     <AppShell
@@ -92,6 +95,7 @@ export default async function DashboardEditPage({ params }: PageProps) {
             dashboardId={dashboard.id}
             projectSlug={project.slug}
             dashboardSlug={dashboard.slug}
+            siteId={editorSiteId}
             initialWidgets={widgets.map((w) => ({
               id: w.id,
               type: w.type,

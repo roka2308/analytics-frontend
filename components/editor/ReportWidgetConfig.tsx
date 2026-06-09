@@ -1,0 +1,232 @@
+"use client";
+
+import { useEffect, useMemo, useState, useTransition } from "react";
+import { updateWidgetConfigAction } from "@/lib/actions/widgets";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+
+interface ReportMeta {
+  uniqueId: string;
+  category: string;
+  label: string;
+  module: string;
+  action: string;
+  dimension: string | null;
+  metrics: Record<string, string>;
+}
+
+interface Props {
+  widgetId: string;
+  siteId: number;
+  initialTitle: string | null;
+  initialConfig: Record<string, unknown>;
+  onSaved?: (data: { title: string | null; config: Record<string, unknown> }) => void;
+}
+
+const selectClass =
+  "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
+
+export function ReportWidgetConfig({
+  widgetId,
+  siteId,
+  initialTitle,
+  initialConfig,
+  onSaved,
+}: Props) {
+  const [catalog, setCatalog] = useState<ReportMeta[] | null>(null);
+  const [loadError, setLoadError] = useState<string | null>(null);
+
+  const [title, setTitle] = useState(initialTitle ?? "");
+  const [reportKey, setReportKey] = useState<string>(
+    initialConfig.apiModule && initialConfig.apiAction
+      ? `${initialConfig.apiModule}.${initialConfig.apiAction}`
+      : "",
+  );
+  const [metrics, setMetrics] = useState<string[]>(
+    Array.isArray(initialConfig.metrics) ? (initialConfig.metrics as string[]) : [],
+  );
+  const [display, setDisplay] = useState<string>((initialConfig.display as string) ?? "table");
+  const [limit, setLimit] = useState<number>((initialConfig.limit as number) ?? 10);
+  const [sortColumn, setSortColumn] = useState<string>((initialConfig.sortColumn as string) ?? "");
+
+  const [error, setError] = useState<string | null>(null);
+  const [success, setSuccess] = useState<string | null>(null);
+  const [isPending, startTransition] = useTransition();
+
+  useEffect(() => {
+    let active = true;
+    fetch(`/api/matomo/reports?siteId=${siteId}`)
+      .then((r) => (r.ok ? r.json() : Promise.reject(new Error(`HTTP ${r.status}`))))
+      .then((d) => {
+        if (active) setCatalog(d.reports ?? []);
+      })
+      .catch((e) => {
+        if (active) setLoadError(e instanceof Error ? e.message : "Katalog konnte nicht geladen werden");
+      });
+    return () => {
+      active = false;
+    };
+  }, [siteId]);
+
+  // Nach Kategorie gruppieren (nur Reports mit Dimension sind sinnvoll explorierbar)
+  const grouped = useMemo(() => {
+    const map = new Map<string, ReportMeta[]>();
+    for (const r of catalog ?? []) {
+      if (!r.dimension) continue;
+      if (!map.has(r.category)) map.set(r.category, []);
+      map.get(r.category)!.push(r);
+    }
+    return Array.from(map.entries());
+  }, [catalog]);
+
+  const current = useMemo(
+    () => (catalog ?? []).find((r) => `${r.module}.${r.action}` === reportKey) ?? null,
+    [catalog, reportKey],
+  );
+  const metricEntries = current ? Object.entries(current.metrics) : [];
+
+  const toggleMetric = (id: string) =>
+    setMetrics((prev) => (prev.includes(id) ? prev.filter((m) => m !== id) : [...prev, id]));
+
+  const save = () => {
+    setError(null);
+    setSuccess(null);
+    if (!current) {
+      setError("Bitte einen Report wählen.");
+      return;
+    }
+    const config = {
+      ...initialConfig,
+      apiModule: current.module,
+      apiAction: current.action,
+      reportLabel: current.label,
+      metrics,
+      display,
+      limit,
+      sortColumn: sortColumn || undefined,
+    };
+    startTransition(async () => {
+      const r = await updateWidgetConfigAction({
+        widgetId,
+        config,
+        title: title.trim() || null,
+      });
+      if (!r.ok) setError(r.error ?? "Fehler");
+      else {
+        setSuccess("Gespeichert.");
+        onSaved?.({ title: title.trim() || null, config });
+      }
+    });
+  };
+
+  return (
+    <div className="space-y-3">
+      <div className="space-y-1">
+        <Label className="text-xs">Titel (optional)</Label>
+        <Input value={title} onChange={(e) => setTitle(e.target.value)} placeholder="Eigener Titel" />
+      </div>
+
+      {loadError ? (
+        <p className="rounded-md bg-warning/10 px-2 py-1.5 text-xs text-foreground">
+          Report-Katalog nicht verfügbar: {loadError}
+        </p>
+      ) : !catalog ? (
+        <p className="text-xs text-muted-foreground">Katalog wird geladen…</p>
+      ) : (
+        <>
+          <div className="space-y-1">
+            <Label className="text-xs">Report / Dimension</Label>
+            <select
+              className={selectClass}
+              value={reportKey}
+              onChange={(e) => {
+                setReportKey(e.target.value);
+                setMetrics([]);
+                setSortColumn("");
+              }}
+            >
+              <option value="">— wählen —</option>
+              {grouped.map(([cat, reports]) => (
+                <optgroup key={cat} label={cat}>
+                  {reports.map((r) => (
+                    <option key={r.uniqueId} value={`${r.module}.${r.action}`}>
+                      {r.label}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+          </div>
+
+          {current && (
+            <>
+              <div className="space-y-1">
+                <Label className="text-xs">Metriken</Label>
+                <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-border p-2">
+                  {metricEntries.map(([id, label]) => (
+                    <label key={id} className="flex items-center gap-2 text-xs text-foreground">
+                      <input
+                        type="checkbox"
+                        checked={metrics.includes(id)}
+                        onChange={() => toggleMetric(id)}
+                        className="h-3.5 w-3.5 rounded border-input"
+                      />
+                      {label}
+                    </label>
+                  ))}
+                </div>
+                <p className="text-[11px] text-muted-foreground">
+                  Keine Auswahl = alle Metriken des Reports.
+                </p>
+              </div>
+
+              <div className="grid grid-cols-2 gap-2">
+                <div className="space-y-1">
+                  <Label className="text-xs">Darstellung</Label>
+                  <select className={selectClass} value={display} onChange={(e) => setDisplay(e.target.value)}>
+                    <option value="table">Tabelle</option>
+                    <option value="bar">Balken</option>
+                    <option value="donut">Donut</option>
+                  </select>
+                </div>
+                <div className="space-y-1">
+                  <Label className="text-xs">Anzahl Zeilen</Label>
+                  <Input
+                    type="number"
+                    value={limit}
+                    onChange={(e) => setLimit(parseInt(e.target.value, 10) || 10)}
+                  />
+                </div>
+              </div>
+
+              <div className="space-y-1">
+                <Label className="text-xs">Sortieren nach</Label>
+                <select className={selectClass} value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
+                  <option value="">Standard</option>
+                  {metricEntries.map(([id, label]) => (
+                    <option key={id} value={id}>
+                      {label}
+                    </option>
+                  ))}
+                </select>
+              </div>
+            </>
+          )}
+        </>
+      )}
+
+      <div className="flex items-center gap-2 pt-1">
+        <Button size="sm" onClick={save} disabled={isPending}>
+          {isPending ? "Speichern…" : "Speichern"}
+        </Button>
+        {error && (
+          <span className="rounded-md bg-destructive/10 px-2 py-0.5 text-xs text-destructive">{error}</span>
+        )}
+        {success && (
+          <span className="rounded-md bg-success/10 px-2 py-0.5 text-xs text-success">{success}</span>
+        )}
+      </div>
+    </div>
+  );
+}
