@@ -124,3 +124,109 @@ export async function getCrossRecords(
   await expand(0, undefined, {});
   return records;
 }
+
+// ── Gruppierte/mehrdimensionale Tabelle (mehrere Dimensionen + mehrere
+//    Metriken, OHNE Spalten-Kreuzung) ──────────────────────────
+
+interface MultiRow {
+  label: string;
+  segment: string | null;
+  values: Record<string, number>;
+}
+
+async function fetchRowsMulti(
+  siteId: number,
+  range: { from: string; to: string },
+  ref: ReportRef,
+  metrics: string[],
+  sortMetric: string,
+  limit: number,
+  segment: string | undefined,
+): Promise<MultiRow[]> {
+  const key = [
+    "xtabm",
+    siteId,
+    range.from,
+    range.to,
+    `${ref.module}.${ref.action}`,
+    metrics.join(","),
+    sortMetric,
+    limit,
+    segment ?? "",
+  ].join("_");
+  return withCache(key, 600, async () => {
+    const data = await matomoRequest<unknown>({
+      method: `${ref.module}.${ref.action}`,
+      idSite: siteId,
+      period: "range",
+      date: toMatomoDate(range),
+      filter_limit: limit,
+      filter_sort_column: sortMetric,
+      segment,
+    });
+    const arr = Array.isArray(data)
+      ? data
+      : data && typeof data === "object"
+        ? Object.values(data as Record<string, unknown>)
+        : [];
+    return arr.map((r) => {
+      const row = r as Record<string, unknown>;
+      const values: Record<string, number> = {};
+      for (const m of metrics) values[m] = parseMatomoNumber(row[m]);
+      return {
+        label: String(row.label ?? "—"),
+        segment: typeof row.segment === "string" ? row.segment : null,
+        values,
+      };
+    });
+  });
+}
+
+export interface GroupedConfig {
+  dimReports: ReportRef[];
+  metrics: string[];
+  limitPerLevel?: number;
+  sortMetric?: string;
+}
+
+export async function getGroupedRecords(
+  siteId: number,
+  range: { from: string; to: string },
+  cfg: GroupedConfig,
+): Promise<PivotRecord[]> {
+  const limit = Math.max(1, Math.min(cfg.limitPerLevel ?? 8, 50));
+  const metrics = cfg.metrics.length ? cfg.metrics : ["nb_visits"];
+  const sortMetric = cfg.sortMetric ?? metrics[0];
+  const records: PivotRecord[] = [];
+  let fetches = 0;
+
+  async function expand(
+    idx: number,
+    segment: string | undefined,
+    dimsSoFar: Record<string, string>,
+  ): Promise<void> {
+    if (fetches >= MAX_FETCHES) return;
+    fetches++;
+    const rows = await fetchRowsMulti(
+      siteId,
+      range,
+      cfg.dimReports[idx],
+      metrics,
+      sortMetric,
+      limit,
+      segment,
+    );
+    for (const row of rows) {
+      const nextDims = { ...dimsSoFar, [`d${idx}`]: row.label };
+      if (idx === cfg.dimReports.length - 1) {
+        records.push({ dims: nextDims, values: row.values });
+      } else if (row.segment) {
+        const nextSeg = segment ? `${segment};${row.segment}` : row.segment;
+        await expand(idx + 1, nextSeg, nextDims);
+      }
+    }
+  }
+
+  await expand(0, undefined, {});
+  return records;
+}

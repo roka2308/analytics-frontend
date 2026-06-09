@@ -53,9 +53,11 @@ export function ReportWidgetConfig({
   const refKey = (r?: { module: string; action: string }) => (r ? `${r.module}.${r.action}` : "");
   const pivotRowsInit = (initialConfig.pivotRows as { module: string; action: string }[]) ?? [];
   const pivotColsInit = (initialConfig.pivotCols as { module: string; action: string }[]) ?? [];
-  const [rowDim2, setRowDim2] = useState<string>(refKey(pivotRowsInit[1]));
+  const groupDimsInit = (initialConfig.groupDims as { module: string; action: string }[]) ?? [];
+  const [rowDim2, setRowDim2] = useState<string>(refKey(pivotRowsInit[1] ?? groupDimsInit[1]));
   const [colDim1, setColDim1] = useState<string>(refKey(pivotColsInit[0]));
   const [colDim2, setColDim2] = useState<string>(refKey(pivotColsInit[1]));
+  const [groupDim3, setGroupDim3] = useState<string>(refKey(groupDimsInit[2]));
   const [pivotMeasure, setPivotMeasure] = useState<string>((initialConfig.pivotMeasure as string) ?? "");
 
   const [error, setError] = useState<string | null>(null);
@@ -143,6 +145,13 @@ export function ReportWidgetConfig({
         pivotMeasure: measure,
         pivotMeasureLabel: current.metrics[measure] ?? measure,
       };
+    } else if (display === "grouped") {
+      const dimRefs = [refFromKey(reportKey), refFromKey(rowDim2), refFromKey(groupDim3)].filter(
+        Boolean,
+      );
+      const ids = metrics.length ? metrics : metricEntries.map(([id]) => id);
+      const groupMetrics = ids.map((id) => ({ id, label: current.metrics[id] ?? id }));
+      config = { ...base, groupDims: dimRefs, groupMetrics };
     } else {
       config = { ...base, metrics, sortColumn: sortColumn || undefined };
     }
@@ -209,6 +218,7 @@ export function ReportWidgetConfig({
                     <option value="bar">Balken</option>
                     <option value="donut">Donut</option>
                     <option value="pivot">Pivot (Kreuztabelle)</option>
+                    <option value="grouped">Gruppierte Tabelle (mehrdim.)</option>
                   </select>
                 </div>
                 <div className="space-y-1">
@@ -266,6 +276,28 @@ export function ReportWidgetConfig({
                 </div>
               ) : (
                 <>
+                  {display === "grouped" && (
+                    <div className="space-y-2 rounded-md border border-border p-2">
+                      <p className="text-[11px] text-muted-foreground">
+                        Dimension 1 = der oben gewählte Report. Weitere Ebenen verschachteln die
+                        Tabelle (mehr Ebenen = mehr Matomo-Abfragen).
+                      </p>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Dimension 2 (optional)</Label>
+                        <select className={selectClass} value={rowDim2} onChange={(e) => setRowDim2(e.target.value)}>
+                          <option value="">— keine —</option>
+                          {renderDims()}
+                        </select>
+                      </div>
+                      <div className="space-y-1">
+                        <Label className="text-xs">Dimension 3 (optional)</Label>
+                        <select className={selectClass} value={groupDim3} onChange={(e) => setGroupDim3(e.target.value)}>
+                          <option value="">— keine —</option>
+                          {renderDims()}
+                        </select>
+                      </div>
+                    </div>
+                  )}
                   <div className="space-y-1">
                     <Label className="text-xs">Metriken</Label>
                     <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-border p-2">
@@ -286,17 +318,19 @@ export function ReportWidgetConfig({
                     </p>
                   </div>
 
-                  <div className="space-y-1">
-                    <Label className="text-xs">Sortieren nach</Label>
-                    <select className={selectClass} value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
-                      <option value="">Standard</option>
-                      {metricEntries.map(([id, label]) => (
-                        <option key={id} value={id}>
-                          {label}
-                        </option>
-                      ))}
-                    </select>
-                  </div>
+                  {display !== "grouped" && (
+                    <div className="space-y-1">
+                      <Label className="text-xs">Sortieren nach</Label>
+                      <select className={selectClass} value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
+                        <option value="">Standard</option>
+                        {metricEntries.map(([id, label]) => (
+                          <option key={id} value={id}>
+                            {label}
+                          </option>
+                        ))}
+                      </select>
+                    </div>
+                  )}
                 </>
               )}
             </>

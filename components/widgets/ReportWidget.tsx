@@ -8,12 +8,13 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getProcessedReport } from "@/lib/matomo/metadata";
-import { getCrossRecords, type ReportRef } from "@/lib/matomo/crosstab";
+import { getCrossRecords, getGroupedRecords, type ReportRef } from "@/lib/matomo/crosstab";
 import { buildPivot } from "@/lib/analytics/pivot";
 import { InlineBar } from "@/components/charts/InlineBar";
 import { BarListClient } from "@/components/charts/BarListClient";
 import { DonutChartClient } from "@/components/charts/DonutChartClient";
 import { PivotTable } from "@/components/charts/PivotTable";
+import { GroupedTable } from "@/components/charts/GroupedTable";
 import { WidgetCard } from "./WidgetCard";
 import type { WidgetProps } from "@/lib/widgets/types";
 
@@ -25,13 +26,16 @@ export interface ReportWidgetConfig {
   metrics?: string[];
   limit?: number;
   sortColumn?: string;
-  display?: "table" | "bar" | "donut" | "pivot";
+  display?: "table" | "bar" | "donut" | "pivot" | "grouped";
   segment?: string;
   // Pivot (R3): Zeilen-/Spalten-Dimensionen (Reports) + Kennzahl
   pivotRows?: ReportRef[];
   pivotCols?: ReportRef[];
   pivotMeasure?: string;
   pivotMeasureLabel?: string;
+  // Gruppierte Tabelle: mehrere Dimensionen + mehrere Metriken (ohne Kreuzung)
+  groupDims?: ReportRef[];
+  groupMetrics?: { id: string; label: string }[];
 }
 
 function fmt(n: number): string {
@@ -85,6 +89,48 @@ export async function ReportWidget({ config, title, ctx }: WidgetProps<ReportWid
       return (
         <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
           <p className="text-sm text-muted-foreground">Pivot konnte nicht geladen werden.</p>
+        </WidgetCard>
+      );
+    }
+  }
+
+  // ── Gruppierte/mehrdimensionale Tabelle (ohne Spalten-Kreuzung) ──
+  if (config.display === "grouped") {
+    const dims = config.groupDims ?? [];
+    const gms = config.groupMetrics ?? [];
+    if (dims.length === 0 || gms.length === 0) {
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
+          <p className="text-sm text-muted-foreground">
+            Für die gruppierte Tabelle bitte mindestens eine Dimension und eine Metrik wählen.
+          </p>
+        </WidgetCard>
+      );
+    }
+    try {
+      const records = await getGroupedRecords(
+        ctx.siteId,
+        { from: ctx.range.from, to: ctx.range.to },
+        { dimReports: dims, metrics: gms.map((m) => m.id), limitPerLevel: config.limit ?? 8 },
+      );
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />} scroll>
+          {records.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Keine Daten für diese Kombination.</p>
+          ) : (
+            <GroupedTable
+              records={records}
+              dimKeys={dims.map((_, i) => `d${i}`)}
+              dimLabels={dims.map((d) => d.label ?? "Dimension")}
+              metrics={gms}
+            />
+          )}
+        </WidgetCard>
+      );
+    } catch {
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
+          <p className="text-sm text-muted-foreground">Tabelle konnte nicht geladen werden.</p>
         </WidgetCard>
       );
     }
