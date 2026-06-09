@@ -8,9 +8,12 @@ import {
   TableRow,
 } from "@/components/ui/table";
 import { getProcessedReport } from "@/lib/matomo/metadata";
+import { getCrossRecords, type ReportRef } from "@/lib/matomo/crosstab";
+import { buildPivot } from "@/lib/analytics/pivot";
 import { InlineBar } from "@/components/charts/InlineBar";
 import { BarListClient } from "@/components/charts/BarListClient";
 import { DonutChartClient } from "@/components/charts/DonutChartClient";
+import { PivotTable } from "@/components/charts/PivotTable";
 import { WidgetCard } from "./WidgetCard";
 import type { WidgetProps } from "@/lib/widgets/types";
 
@@ -22,11 +25,13 @@ export interface ReportWidgetConfig {
   metrics?: string[];
   limit?: number;
   sortColumn?: string;
-  display?: "table" | "bar" | "donut";
+  display?: "table" | "bar" | "donut" | "pivot";
   segment?: string;
-  // Vorbereitet fuer R3 (Pivot)
-  pivotBy?: string;
-  pivotByColumn?: string;
+  // Pivot (R3): Zeilen-/Spalten-Dimensionen (Reports) + Kennzahl
+  pivotRows?: ReportRef[];
+  pivotCols?: ReportRef[];
+  pivotMeasure?: string;
+  pivotMeasureLabel?: string;
 }
 
 function fmt(n: number): string {
@@ -35,6 +40,55 @@ function fmt(n: number): string {
 
 export async function ReportWidget({ config, title, ctx }: WidgetProps<ReportWidgetConfig>) {
   const displayTitle = title ?? config.reportLabel ?? "Report-Explorer";
+
+  // ── Pivot (Multi-Level Kreuztabelle) ──────────────────────────
+  if (config.display === "pivot") {
+    const rows = config.pivotRows ?? [];
+    const cols = config.pivotCols ?? [];
+    const measure = config.pivotMeasure ?? "nb_visits";
+    if (rows.length === 0 || cols.length === 0) {
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
+          <p className="text-sm text-muted-foreground">
+            Für die Pivot-Darstellung bitte mindestens eine Zeilen- und eine
+            Spalten-Dimension wählen.
+          </p>
+        </WidgetCard>
+      );
+    }
+    try {
+      const records = await getCrossRecords(
+        ctx.siteId,
+        { from: ctx.range.from, to: ctx.range.to },
+        { rowReports: rows, colReports: cols, measure, limitPerLevel: config.limit ?? 6 },
+      );
+      const model = buildPivot(records, {
+        rowDims: rows.map((_, i) => `r${i}`),
+        colDims: cols.map((_, i) => `c${i}`),
+        measure,
+      });
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />} scroll>
+          {model.rows.length === 0 ? (
+            <p className="text-sm text-muted-foreground">Keine Daten für diese Kombination.</p>
+          ) : (
+            <PivotTable
+              model={model}
+              rowDimLabels={rows.map((r) => r.label ?? "Dimension")}
+              colDimLabels={cols.map((c) => c.label ?? "Dimension")}
+              measureLabel={config.pivotMeasureLabel ?? measure}
+            />
+          )}
+        </WidgetCard>
+      );
+    } catch {
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
+          <p className="text-sm text-muted-foreground">Pivot konnte nicht geladen werden.</p>
+        </WidgetCard>
+      );
+    }
+  }
 
   if (!config.apiModule || !config.apiAction) {
     return (

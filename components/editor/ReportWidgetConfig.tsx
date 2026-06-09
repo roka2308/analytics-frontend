@@ -50,6 +50,14 @@ export function ReportWidgetConfig({
   const [limit, setLimit] = useState<number>((initialConfig.limit as number) ?? 10);
   const [sortColumn, setSortColumn] = useState<string>((initialConfig.sortColumn as string) ?? "");
 
+  const refKey = (r?: { module: string; action: string }) => (r ? `${r.module}.${r.action}` : "");
+  const pivotRowsInit = (initialConfig.pivotRows as { module: string; action: string }[]) ?? [];
+  const pivotColsInit = (initialConfig.pivotCols as { module: string; action: string }[]) ?? [];
+  const [rowDim2, setRowDim2] = useState<string>(refKey(pivotRowsInit[1]));
+  const [colDim1, setColDim1] = useState<string>(refKey(pivotColsInit[0]));
+  const [colDim2, setColDim2] = useState<string>(refKey(pivotColsInit[1]));
+  const [pivotMeasure, setPivotMeasure] = useState<string>((initialConfig.pivotMeasure as string) ?? "");
+
   const [error, setError] = useState<string | null>(null);
   const [success, setSuccess] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
@@ -80,6 +88,17 @@ export function ReportWidgetConfig({
     return Array.from(map.entries());
   }, [catalog]);
 
+  const renderDims = () =>
+    grouped.map(([cat, reports]) => (
+      <optgroup key={cat} label={cat}>
+        {reports.map((r) => (
+          <option key={r.uniqueId} value={`${r.module}.${r.action}`}>
+            {r.label}
+          </option>
+        ))}
+      </optgroup>
+    ));
+
   const current = useMemo(
     () => (catalog ?? []).find((r) => `${r.module}.${r.action}` === reportKey) ?? null,
     [catalog, reportKey],
@@ -96,16 +115,37 @@ export function ReportWidgetConfig({
       setError("Bitte einen Report wählen.");
       return;
     }
-    const config = {
+    const refFromKey = (key: string) => {
+      const r = (catalog ?? []).find((x) => `${x.module}.${x.action}` === key);
+      return r ? { module: r.module, action: r.action, label: r.label } : null;
+    };
+    const base = {
       ...initialConfig,
       apiModule: current.module,
       apiAction: current.action,
       reportLabel: current.label,
-      metrics,
       display,
       limit,
-      sortColumn: sortColumn || undefined,
     };
+    let config: Record<string, unknown>;
+    if (display === "pivot") {
+      const rowRefs = [refFromKey(reportKey), refFromKey(rowDim2)].filter(Boolean);
+      const colRefs = [refFromKey(colDim1), refFromKey(colDim2)].filter(Boolean);
+      if (colRefs.length === 0) {
+        setError("Bitte mindestens eine Spalten-Dimension wählen.");
+        return;
+      }
+      const measure = pivotMeasure || "nb_visits";
+      config = {
+        ...base,
+        pivotRows: rowRefs,
+        pivotCols: colRefs,
+        pivotMeasure: measure,
+        pivotMeasureLabel: current.metrics[measure] ?? measure,
+      };
+    } else {
+      config = { ...base, metrics, sortColumn: sortColumn || undefined };
+    }
     startTransition(async () => {
       const r = await updateWidgetConfigAction({
         widgetId,
@@ -161,26 +201,6 @@ export function ReportWidgetConfig({
 
           {current && (
             <>
-              <div className="space-y-1">
-                <Label className="text-xs">Metriken</Label>
-                <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-border p-2">
-                  {metricEntries.map(([id, label]) => (
-                    <label key={id} className="flex items-center gap-2 text-xs text-foreground">
-                      <input
-                        type="checkbox"
-                        checked={metrics.includes(id)}
-                        onChange={() => toggleMetric(id)}
-                        className="h-3.5 w-3.5 rounded border-input"
-                      />
-                      {label}
-                    </label>
-                  ))}
-                </div>
-                <p className="text-[11px] text-muted-foreground">
-                  Keine Auswahl = alle Metriken des Reports.
-                </p>
-              </div>
-
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">Darstellung</Label>
@@ -188,10 +208,11 @@ export function ReportWidgetConfig({
                     <option value="table">Tabelle</option>
                     <option value="bar">Balken</option>
                     <option value="donut">Donut</option>
+                    <option value="pivot">Pivot (Kreuztabelle)</option>
                   </select>
                 </div>
                 <div className="space-y-1">
-                  <Label className="text-xs">Anzahl Zeilen</Label>
+                  <Label className="text-xs">{display === "pivot" ? "Anzahl je Ebene" : "Anzahl Zeilen"}</Label>
                   <Input
                     type="number"
                     value={limit}
@@ -200,17 +221,84 @@ export function ReportWidgetConfig({
                 </div>
               </div>
 
-              <div className="space-y-1">
-                <Label className="text-xs">Sortieren nach</Label>
-                <select className={selectClass} value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
-                  <option value="">Standard</option>
-                  {metricEntries.map(([id, label]) => (
-                    <option key={id} value={id}>
-                      {label}
-                    </option>
-                  ))}
-                </select>
-              </div>
+              {display === "pivot" ? (
+                <div className="space-y-2 rounded-md border border-border p-2">
+                  <p className="text-[11px] text-muted-foreground">
+                    Zeilen-Dimension 1 = der oben gewählte Report. Weitere Ebenen ergänzen –
+                    mehr Ebenen bedeuten mehr Matomo-Abfragen.
+                  </p>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Zeilen-Dimension 2 (optional)</Label>
+                    <select className={selectClass} value={rowDim2} onChange={(e) => setRowDim2(e.target.value)}>
+                      <option value="">— keine —</option>
+                      {renderDims()}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Spalten-Dimension 1</Label>
+                    <select className={selectClass} value={colDim1} onChange={(e) => setColDim1(e.target.value)}>
+                      <option value="">— wählen —</option>
+                      {renderDims()}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Spalten-Dimension 2 (optional)</Label>
+                    <select className={selectClass} value={colDim2} onChange={(e) => setColDim2(e.target.value)}>
+                      <option value="">— keine —</option>
+                      {renderDims()}
+                    </select>
+                  </div>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Wert (Kennzahl)</Label>
+                    <select
+                      className={selectClass}
+                      value={pivotMeasure}
+                      onChange={(e) => setPivotMeasure(e.target.value)}
+                    >
+                      <option value="">Besuche (Standard)</option>
+                      {metricEntries.map(([id, label]) => (
+                        <option key={id} value={id}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </div>
+              ) : (
+                <>
+                  <div className="space-y-1">
+                    <Label className="text-xs">Metriken</Label>
+                    <div className="max-h-44 space-y-1 overflow-y-auto rounded-md border border-border p-2">
+                      {metricEntries.map(([id, label]) => (
+                        <label key={id} className="flex items-center gap-2 text-xs text-foreground">
+                          <input
+                            type="checkbox"
+                            checked={metrics.includes(id)}
+                            onChange={() => toggleMetric(id)}
+                            className="h-3.5 w-3.5 rounded border-input"
+                          />
+                          {label}
+                        </label>
+                      ))}
+                    </div>
+                    <p className="text-[11px] text-muted-foreground">
+                      Keine Auswahl = alle Metriken des Reports.
+                    </p>
+                  </div>
+
+                  <div className="space-y-1">
+                    <Label className="text-xs">Sortieren nach</Label>
+                    <select className={selectClass} value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
+                      <option value="">Standard</option>
+                      {metricEntries.map(([id, label]) => (
+                        <option key={id} value={id}>
+                          {label}
+                        </option>
+                      ))}
+                    </select>
+                  </div>
+                </>
+              )}
             </>
           )}
         </>
