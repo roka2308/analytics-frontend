@@ -37,6 +37,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import { WidgetConfigForm } from "./WidgetConfigForm";
 import { ReportWidgetConfig } from "./ReportWidgetConfig";
+import { DimensionMetricConfig } from "./DimensionMetricConfig";
 import { cn } from "@/lib/utils";
 import "./grid-editor.css";
 
@@ -349,22 +350,28 @@ export function DashboardGridEditor({
           <div className="p-4">
             {getWidgetMeta(selected.type)?.customConfig ? (
               siteId ? (
-                <ReportWidgetConfig
-                  key={selected.id}
-                  widgetId={selected.id}
-                  siteId={siteId}
-                  initialTitle={selected.title}
-                  initialConfig={selected.config}
-                  onSaved={(data) => {
-                    setItems((prev) =>
-                      prev.map((it) =>
-                        it.id === selected.id
-                          ? { ...it, title: data.title, config: data.config }
-                          : it
-                      )
-                    );
-                  }}
-                />
+                (() => {
+                  const Comp =
+                    selected.type === "report" ? ReportWidgetConfig : DimensionMetricConfig;
+                  return (
+                    <Comp
+                      key={selected.id}
+                      widgetId={selected.id}
+                      siteId={siteId}
+                      initialTitle={selected.title}
+                      initialConfig={selected.config}
+                      onSaved={(data) => {
+                        setItems((prev) =>
+                          prev.map((it) =>
+                            it.id === selected.id
+                              ? { ...it, title: data.title, config: data.config }
+                              : it
+                          )
+                        );
+                      }}
+                    />
+                  );
+                })()
               ) : (
                 <p className="text-sm text-muted-foreground">
                   Für dieses Widget wird eine Matomo-Datenquelle im Projekt benötigt.

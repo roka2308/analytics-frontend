@@ -31,19 +31,6 @@ const METRIC_OPTIONS = [
   { value: "avgDuration", label: "Ø Verweildauer" },
 ];
 
-const BREAKDOWN_SOURCE_OPTIONS = [
-  { value: "device-type", label: "Gerätetyp" },
-  { value: "device-brand", label: "Gerätemarke" },
-  { value: "browser", label: "Browser" },
-  { value: "os", label: "Betriebssystem" },
-  { value: "country", label: "Land" },
-  { value: "referrer-type", label: "Traffic-Quelle" },
-  { value: "search-engine", label: "Suchmaschine" },
-  { value: "social-network", label: "Soziales Netzwerk" },
-  { value: "event-category", label: "Event-Kategorie" },
-  { value: "event-action", label: "Event-Aktion" },
-];
-
 export const WIDGET_META: Record<string, WidgetMeta> = {
   "kpi-card": {
     type: "kpi-card",
@@ -91,35 +78,26 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
   breakdown: {
     type: "breakdown",
     label: "Breakdown-Tabelle",
-    description: "Top-N einer Dimension als Tabelle (z.B. Geraete, Laender, Browser).",
-    defaultConfig: { source: "device-type", limit: 10 },
+    description: "Top-N einer beliebigen Dimension als Tabelle (jede Matomo-Dimension + Metrik).",
+    defaultConfig: { apiModule: "UserCountry", apiAction: "getCountry", metric: "nb_visits", limit: 10, reportLabel: "Land" },
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-    configSchema: [
-      { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "device-type" },
-      { key: "limit", label: "Anzahl Eintraege", type: "number", defaultValue: 10 },
-    ],
+    customConfig: true,
   },
   donut: {
     type: "donut",
     label: "Donut-Diagramm",
-    description: "Anteilige Verteilung einer Dimension als Tortendiagramm.",
-    defaultConfig: { source: "device-type", limit: 6 },
+    description: "Anteilige Verteilung einer beliebigen Dimension als Tortendiagramm.",
+    defaultConfig: { apiModule: "DevicesDetection", apiAction: "getType", metric: "nb_visits", limit: 6, reportLabel: "Gerätetyp" },
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-    configSchema: [
-      { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "device-type" },
-      { key: "limit", label: "Anzahl Segmente", type: "number", defaultValue: 6 },
-    ],
+    customConfig: true,
   },
   "bar-chart": {
     type: "bar-chart",
     label: "Balken-Diagramm",
-    description: "Horizontale Balken fuer Rankings (z.B. Traffic-Quellen).",
-    defaultConfig: { source: "referrer-type", limit: 8 },
+    description: "Horizontale Balken fuer Rankings beliebiger Dimensionen.",
+    defaultConfig: { apiModule: "Referrers", apiAction: "getReferrerType", metric: "nb_visits", limit: 8, reportLabel: "Traffic-Quelle" },
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-    configSchema: [
-      { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "referrer-type" },
-      { key: "limit", label: "Anzahl Balken", type: "number", defaultValue: 8 },
-    ],
+    customConfig: true,
   },
   "cross-tab": {
     type: "cross-tab",

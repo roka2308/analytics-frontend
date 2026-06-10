@@ -37,19 +37,6 @@ const METRIC_OPTIONS = [
   { value: "avgDuration", label: "Ø Verweildauer" },
 ];
 
-const BREAKDOWN_SOURCE_OPTIONS = [
-  { value: "device-type", label: "Gerätetyp" },
-  { value: "device-brand", label: "Gerätemarke" },
-  { value: "browser", label: "Browser" },
-  { value: "os", label: "Betriebssystem" },
-  { value: "country", label: "Land" },
-  { value: "referrer-type", label: "Traffic-Quelle" },
-  { value: "search-engine", label: "Suchmaschine" },
-  { value: "social-network", label: "Soziales Netzwerk" },
-  { value: "event-category", label: "Event-Kategorie" },
-  { value: "event-action", label: "Event-Aktion" },
-];
-
 export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   "kpi-card": {
     type: "kpi-card",
@@ -101,38 +88,44 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
   breakdown: {
     type: "breakdown",
     label: "Breakdown-Tabelle",
-    description: "Top-N einer Dimension als Tabelle (z.B. Geraete, Laender, Browser).",
+    description: "Top-N einer beliebigen Dimension als Tabelle (jede Matomo-Dimension + Metrik).",
     component: BreakdownWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "device-type", limit: 10 } satisfies BreakdownConfig,
+    defaultConfig: {
+      apiModule: "UserCountry",
+      apiAction: "getCountry",
+      metric: "nb_visits",
+      limit: 10,
+      reportLabel: "Land",
+    } satisfies BreakdownConfig,
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-    configSchema: [
-      { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "device-type" },
-      { key: "limit", label: "Anzahl Eintraege", type: "number", defaultValue: 10 },
-    ],
   },
   donut: {
     type: "donut",
     label: "Donut-Diagramm",
-    description: "Anteilige Verteilung einer Dimension als Tortendiagramm.",
+    description: "Anteilige Verteilung einer beliebigen Dimension als Tortendiagramm.",
     component: DonutWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "device-type", limit: 6 } satisfies DonutConfig,
+    defaultConfig: {
+      apiModule: "DevicesDetection",
+      apiAction: "getType",
+      metric: "nb_visits",
+      limit: 6,
+      reportLabel: "Gerätetyp",
+    } satisfies DonutConfig,
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-    configSchema: [
-      { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "device-type" },
-      { key: "limit", label: "Anzahl Segmente", type: "number", defaultValue: 6 },
-    ],
   },
   "bar-chart": {
     type: "bar-chart",
     label: "Balken-Diagramm",
-    description: "Horizontale Balken fuer Rankings (z.B. Traffic-Quellen).",
+    description: "Horizontale Balken fuer Rankings beliebiger Dimensionen.",
     component: BarChartWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { source: "referrer-type", limit: 8 } satisfies BarChartConfig,
+    defaultConfig: {
+      apiModule: "Referrers",
+      apiAction: "getReferrerType",
+      metric: "nb_visits",
+      limit: 8,
+      reportLabel: "Traffic-Quelle",
+    } satisfies BarChartConfig,
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-    configSchema: [
-      { key: "source", label: "Dimension", type: "select", options: BREAKDOWN_SOURCE_OPTIONS, defaultValue: "referrer-type" },
-      { key: "limit", label: "Anzahl Balken", type: "number", defaultValue: 8 },
-    ],
   },
   "cross-tab": {
     type: "cross-tab",
