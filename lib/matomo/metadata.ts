@@ -56,6 +56,15 @@ export async function getReportCatalog(siteId: number): Promise<ReportMeta[]> {
   });
 }
 
+function toNum(raw: unknown): number {
+  if (typeof raw === "number") return Number.isFinite(raw) ? raw : 0;
+  if (typeof raw !== "string") return 0;
+  const cleaned = raw.replace(/[^0-9.,-]/g, "");
+  if (!cleaned) return 0;
+  const n = parseFloat(cleaned.replace(/\./g, "").replace(",", "."));
+  return Number.isFinite(n) ? n : 0;
+}
+
 export interface ProcessedReportRow {
   label: string;
   values: Record<string, number>;
@@ -140,5 +149,82 @@ export async function getProcessedReport(
     });
 
     return { dimensionLabel: String(columns.label ?? ""), measures, rows };
+  });
+}
+
+// ── Evolution / Zeitreihe ─────────────────────────────────────
+
+export interface EvolutionResult {
+  buckets: { key: string; label: string }[];
+  /** je Metrik die aggregierten Werte je Zeit-Bucket (Summe ueber Dimension) */
+  series: { id: string; points: number[] }[];
+}
+
+function daysBetween(from: string, to: string): number {
+  const a = new Date(from).getTime();
+  const b = new Date(to).getTime();
+  return Math.max(0, Math.round((b - a) / 86_400_000));
+}
+
+function formatBucket(key: string): string {
+  const m = key.match(/\d{4}-\d{2}-\d{2}/);
+  if (m) {
+    return new Date(m[0]).toLocaleDateString("de-DE", { day: "2-digit", month: "short" });
+  }
+  const mm = key.match(/^(\d{4})-(\d{2})$/);
+  if (mm) return new Date(`${key}-01`).toLocaleDateString("de-DE", { month: "short", year: "2-digit" });
+  return key;
+}
+
+function bucketTotal(value: unknown, metric: string): number {
+  if (Array.isArray(value)) {
+    return value.reduce<number>((s, r) => s + toNum((r as Record<string, unknown>)?.[metric]), 0);
+  }
+  if (value && typeof value === "object") {
+    return toNum((value as Record<string, unknown>)[metric]);
+  }
+  return 0;
+}
+
+/**
+ * Zeitreihe einer/mehrerer Kennzahlen ueber den Zeitraum. Granularitaet je nach
+ * Zeitraumlaenge (Tag/Woche/Monat). Pro Bucket wird die Metrik ueber alle Zeilen
+ * der Dimension summiert (Gesamt der Kennzahl im Zeitverlauf).
+ */
+export async function getMetricEvolution(
+  siteId: number,
+  range: { from: string; to: string },
+  opts: { apiModule: string; apiAction: string; metrics: string[]; segment?: string },
+): Promise<EvolutionResult> {
+  const days = daysBetween(range.from, range.to);
+  const period = days <= 31 ? "day" : days <= 210 ? "week" : "month";
+  const metrics = opts.metrics.length ? opts.metrics : ["nb_visits"];
+  const key = [
+    "evo",
+    siteId,
+    range.from,
+    range.to,
+    period,
+    `${opts.apiModule}.${opts.apiAction}`,
+    metrics.join(","),
+    opts.segment ?? "",
+  ].join("_");
+
+  return withCache(key, 600, async () => {
+    const data = await matomoRequest<Record<string, unknown>>({
+      method: `${opts.apiModule}.${opts.apiAction}`,
+      idSite: siteId,
+      period,
+      date: toMatomoDate(range),
+      filter_limit: -1,
+      segment: opts.segment,
+    });
+    const entries = Object.entries(data ?? {});
+    const buckets = entries.map(([k]) => ({ key: k, label: formatBucket(k) }));
+    const series = metrics.map((m) => ({
+      id: m,
+      points: entries.map(([, v]) => bucketTotal(v, m)),
+    }));
+    return { buckets, series };
   });
 }

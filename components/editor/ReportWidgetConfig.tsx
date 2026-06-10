@@ -217,6 +217,9 @@ export function ReportWidgetConfig({
                     <option value="table">Tabelle</option>
                     <option value="bar">Balken</option>
                     <option value="donut">Donut</option>
+                    <option value="line">Linie (Verlauf)</option>
+                    <option value="area">Fläche (Verlauf)</option>
+                    <option value="kpi">KPI (Einzelwert)</option>
                     <option value="pivot">Pivot (Kreuztabelle)</option>
                     <option value="grouped">Gruppierte Tabelle (mehrdim.)</option>
                   </select>

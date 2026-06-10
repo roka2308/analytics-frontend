@@ -7,7 +7,7 @@ import {
   TableHeader,
   TableRow,
 } from "@/components/ui/table";
-import { getProcessedReport } from "@/lib/matomo/metadata";
+import { getProcessedReport, getMetricEvolution, getReportCatalog } from "@/lib/matomo/metadata";
 import { getCrossRecords, getGroupedRecords, type ReportRef } from "@/lib/matomo/crosstab";
 import { buildPivot } from "@/lib/analytics/pivot";
 import { InlineBar } from "@/components/charts/InlineBar";
@@ -15,6 +15,7 @@ import { BarListClient } from "@/components/charts/BarListClient";
 import { DonutChartClient } from "@/components/charts/DonutChartClient";
 import { PivotTable } from "@/components/charts/PivotTable";
 import { GroupedTable } from "@/components/charts/GroupedTable";
+import { EvolutionChart } from "@/components/charts/EvolutionChart";
 import { WidgetCard } from "./WidgetCard";
 import type { WidgetProps } from "@/lib/widgets/types";
 
@@ -26,7 +27,7 @@ export interface ReportWidgetConfig {
   metrics?: string[];
   limit?: number;
   sortColumn?: string;
-  display?: "table" | "bar" | "donut" | "pivot" | "grouped";
+  display?: "table" | "bar" | "donut" | "pivot" | "grouped" | "line" | "area" | "kpi";
   segment?: string;
   // Pivot (R3): Zeilen-/Spalten-Dimensionen (Reports) + Kennzahl
   pivotRows?: ReportRef[];
@@ -145,6 +146,56 @@ export async function ReportWidget({ config, title, ctx }: WidgetProps<ReportWid
         </p>
       </WidgetCard>
     );
+  }
+
+  // ── Verlauf (Linie/Fläche) und KPI (Einzelwert) ──────────────
+  if (config.display === "line" || config.display === "area" || config.display === "kpi") {
+    const metricIds = config.metrics && config.metrics.length > 0 ? config.metrics : ["nb_visits"];
+    try {
+      const [evo, catalog] = await Promise.all([
+        getMetricEvolution(
+          ctx.siteId,
+          { from: ctx.range.from, to: ctx.range.to },
+          { apiModule: config.apiModule, apiAction: config.apiAction, metrics: metricIds, segment: config.segment },
+        ),
+        getReportCatalog(ctx.siteId).catch(() => []),
+      ]);
+      const report = catalog.find(
+        (r) => r.module === config.apiModule && r.action === config.apiAction,
+      );
+      const labelOf = (id: string) => report?.metrics[id] ?? id;
+
+      if (config.display === "kpi") {
+        const primary = evo.series[0];
+        const total = primary ? primary.points.reduce((s, p) => s + p, 0) : 0;
+        return (
+          <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />} center>
+            <div className="text-center">
+              <div className="text-3xl font-semibold tabular-nums text-foreground">{fmt(total)}</div>
+              <p className="mt-1 text-sm text-muted-foreground">{labelOf(primary?.id ?? "")}</p>
+            </div>
+          </WidgetCard>
+        );
+      }
+
+      const data = evo.buckets.map((b, bi) => {
+        const row: Record<string, unknown> = { t: b.label };
+        for (const s of evo.series) row[labelOf(s.id)] = s.points[bi] ?? 0;
+        return row;
+      });
+      const categories = evo.series.map((s) => labelOf(s.id));
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
+          <EvolutionChart data={data} index="t" categories={categories} type={config.display === "area" ? "area" : "line"} />
+        </WidgetCard>
+      );
+    } catch {
+      return (
+        <WidgetCard title={displayTitle} icon={<Compass className="h-4 w-4" />}>
+          <p className="text-sm text-muted-foreground">Verlauf konnte nicht geladen werden.</p>
+        </WidgetCard>
+      );
+    }
   }
 
   const limit = config.limit ?? 10;
