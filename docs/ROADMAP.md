@@ -48,7 +48,7 @@ Weiteres in der Entwicklungsumgebung (Überführung in Unternehmens-Infra späte
 |---|---|---|
 | #10 | Matomo-API ausschöpfen: alle Dimensionen & Metriken, frei kombinier-/pivotierbar | ✅ (Report-Explorer + Pivot/Gruppiert, metadaten-getrieben) |
 | #11 | Widgets überarbeiten & ausbauen | ✅ (Report-Explorer mit 8 Darstellungen; breakdown/donut/bar katalog-fähig) |
-| #12 | Dashboard-Templates: speichern & für andere Projekte wiederverwenden | ⬜ |
+| #12 | Dashboard-Templates: speichern & für andere Projekte wiederverwenden | ✅ (Library /templates + Cache-Vorwärmen) |
 
 ## 5. Customization / Branding
 
