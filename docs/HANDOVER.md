@@ -5,7 +5,75 @@
 
 ---
 
-## 1. Was ist das Projekt?
+## 0. AKTUELLER STAND (Juni 2026) — ZUERST LESEN
+
+> Die Abschnitte 1–11 unten beschreiben den URSPRUNGSstand. Vieles ist seither
+> stark erweitert. Maßgeblich aktuell sind: **diese Sektion 0**, die **Projekt-
+> Memory** (wird automatisch geladen), **docs/ROADMAP.md** (kanonische To-Do)
+> und der Analytics-Plan `~/.claude/plans/fluttering-whistling-quasar.md`.
+
+**Hierarchie & Datenmodell:** `Kunde (customers) → Projekt (organizations) →
+Datenquelle (data_sources) → Dashboard`. Branding: Kunde-Default + Projekt-
+Override. `matomo_sites` wurde durch `data_sources` (type=matomo|sql) ersetzt und
+entfernt. Rechtemodell: Rollen admin|creator|viewer + datengetriebene
+`access_grants` (Scope customer/project/dashboard); zentrale Policy in
+`lib/auth/permissions.ts`. JWT liest Rolle bei jedem Request frisch (Admins sehen
+immer alles). Migrationen bis **0012**.
+
+**Datenquellen:** Matomo + SQL hinter gemeinsamem Interface (`lib/datasource.ts`,
+`lib/matomo-datasource.ts`, `lib/sql-datasource.ts`), Route `/api/data`. SQL
+verdrahtet aber NICHT live getestet (DB liegt bei Kollegin → Task #6).
+
+**Analytics-Engine (#10/#11, fertig):** metadaten-getrieben über
+`lib/matomo/metadata.ts` (getReportCatalog, getProcessedReport, getMetricEvolution).
+**Report-Explorer-Widget** (`components/widgets/ReportWidget.tsx`) mit 8
+Darstellungen: Tabelle, Balken, Donut, Linie, Fläche, KPI, **Pivot (Kreuztabelle)**,
+**Gruppierte Tabelle**. Multi-Level-Pivot über `lib/analytics/pivot.ts` (Engine) +
+`lib/matomo/crosstab.ts` (Segment-Drilldown; rohe Report-Methoden liefern pro
+Zeile `segment`!). Editor-Config: `ReportWidgetConfig` (katalog-getrieben, lädt
+`/api/matomo/reports`). breakdown/donut/bar-chart sind ebenfalls katalog-fähig
+(`lib/widgets/dimensionReport.ts`, abwärtskompatibel zu altem `source`).
+
+**Verwaltung (Master-Detail, volle Breite):** `/kunden` (+/[slug] Detail:
+Projekte, Dashboards, Datenquellen, Nutzer, Branding), `/zugriffe` (+/[userId]),
+`/protokoll` (Audit-Log), `/papierkorb` (Soft-Delete + Restore), `/konto`,
+`/templates` (Vorlagen-Library + Cache-Vorwärmen). Einladungs-Flow per Link
+(`/einladung/[token]`, kein Mailversand). Settings-One-Pager entfernt.
+
+**#12 Templates + Performance (fertig):** Vorlagen speichern/anwenden
+(`dashboard_templates`, `lib/actions/templates.ts`). Cache-Vorwärmen:
+`lib/cache/warm.ts`, Button auf /templates, scheduler-agnostischer Endpunkt
+`/api/cron/warm?secret=<CRON_SECRET>`. Wichtig: Templates machen Daten nicht per
+se schneller; Vorwärmen schiebt die Erst-Abfrage in den Hintergrund. Größter
+externer Hebel: Matomo `core:archive`.
+
+**Sharing:** Dashboards ohne Login teilbar via ShareButton im Dashboard-Header
+(Tokens, `/share/[token]`). Projekt-Auswahl überall nach **Kunde → Projekt**
+gruppiert (getVisibleProjectsForSession liefert customerName).
+
+**Workflow-Updates ggü. unten:** Push direkt auf main ist per Regel in
+`.claude/settings.local.json` erlaubt (Vercel auto-deploy). Migrationen IMMER
+lokal (`DATABASE_URL=file:local.db npm run db:migrate`) UND Turso anwenden; Turso
+VOR dem Deploy (sonst crasht Live). turso CLI fehlt → Backup/Migration via inline
+node-Script, das Turso-Creds aus den auskommentierten .env.local-Zeilen parst
+(Backups unter `backups/`, gitignored, enthalten Hashes). Klassifizierer kann
+prod-Migration/Push blocken → ggf. User-Freigabe einholen.
+
+**OFFEN / als Nächstes:** #6 SQL live (DB-Zugang), #7 weitere Quellen (GA4/Mapp/
+Piano), #13 Branding bis in Chart-Farben, #14 Mobile durchgängig, #15 Security
+(u.a. Matomo-Token rotieren), #16 TeleNeo-Font, #17 Export. Kleinere Reste:
+kpi-card/line-chart katalog-fähig machen; Zugriffsrechte-Projektauswahl nach Kunde
+gruppieren; `users.organizationId` final entfernen (deprecated). **Browser-
+Verifikation** noch offen für: Pivot/Gruppiert/Verlauf im Report-Explorer,
+Teilen-Links, Cache-Vorwärmen, Kunde→Projekt-Gruppierung.
+
+**Konvention-Stolperstein:** Actions, die ein Dashboard betreffen, müssen das
+Projekt aus `getDashboardById` ableiten (NICHT `adminOrgId()`). `getById`-Queries
+bleiben ungefiltert (für Soft-Delete-Restore/Purge).
+
+---
+
+## 1. Was ist das Projekt? (Ursprungsstand – teils überholt, siehe Sektion 0)
 
 **Matomo Analytics Frontend** – eine mandantenfähige White-Label-Dashboard-
 Plattform. Sie holt Daten aus einer bestehenden **Matomo-Instanz**, bereitet
