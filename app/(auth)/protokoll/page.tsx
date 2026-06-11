@@ -34,7 +34,7 @@ export default async function ProtokollPage() {
     new Date(d).toLocaleString("de-DE", { dateStyle: "medium", timeStyle: "short" });
 
   return (
-    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name }))} dashboards={[]}>
+    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))} dashboards={[]}>
       <Topbar
         title="Protokoll"
         subtitle={<span>Administrative Aktionen und Logins (neueste zuerst, letzte 150).</span>}

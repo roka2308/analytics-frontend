@@ -131,12 +131,22 @@ export async function deleteOrganization(id: string) {
 export async function getVisibleProjectsForSession(session: {
   user: { role: "admin" | "creator" | "viewer"; organizationId: string | null };
 }) {
+  let orgs: Awaited<ReturnType<typeof listOrganizations>>;
   if (session.user.role === "admin") {
-    return listOrganizations();
+    orgs = await listOrganizations();
+  } else if (!session.user.organizationId) {
+    orgs = [];
+  } else {
+    const org = await getOrgById(session.user.organizationId);
+    orgs = org ? [org] : [];
   }
-  if (!session.user.organizationId) return [];
-  const org = await getOrgById(session.user.organizationId);
-  return org ? [org] : [];
+  // Kundennamen anreichern (fuer Kunde -> Projekt Auswahl ueberall)
+  const customers = await listCustomers();
+  const nameById = new Map(customers.map((c) => [c.id, c.name] as const));
+  return orgs.map((o) => ({
+    ...o,
+    customerName: o.customerId ? nameById.get(o.customerId) ?? null : null,
+  }));
 }
 
 export async function countUsersInOrg(orgId: string): Promise<number> {

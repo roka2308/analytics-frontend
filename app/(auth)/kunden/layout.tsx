@@ -30,7 +30,7 @@ export default async function KundenLayout({
   const projects = await getVisibleProjectsForSession(session);
 
   return (
-    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name }))} dashboards={[]}>
+    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))} dashboards={[]}>
       <Topbar
         title="Kunden"
         subtitle={<span>Kunden, Projekte, Datenquellen, Dashboards und Nutzer verwalten.</span>}

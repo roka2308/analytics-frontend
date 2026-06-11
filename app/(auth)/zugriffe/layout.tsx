@@ -20,7 +20,7 @@ export default async function ZugriffeLayout({
   ]);
 
   return (
-    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name }))} dashboards={[]}>
+    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))} dashboards={[]}>
       <Topbar
         title="Zugriffsrechte"
         subtitle={<span>Nutzer anlegen und gezielt auf Kunden, Projekte oder Dashboards berechtigen.</span>}

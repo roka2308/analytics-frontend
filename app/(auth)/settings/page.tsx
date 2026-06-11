@@ -28,7 +28,7 @@ export default async function SettingsPage({
 
   return (
     <AppShell
-      projects={projects.map((p) => ({ slug: p.slug, name: p.name }))}
+      projects={projects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))}
       dashboards={[]}
     >
       <Topbar title="Hinweis" />

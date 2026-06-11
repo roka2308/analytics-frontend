@@ -16,7 +16,7 @@ export default async function TemplatesPage() {
 
   return (
     <AppShell
-      projects={projects.map((p) => ({ slug: p.slug, name: p.name }))}
+      projects={projects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))}
       dashboards={[]}
     >
       <Topbar
@@ -45,7 +45,12 @@ export default async function TemplatesPage() {
               category: t.category,
               widgetCount: t.widgetCount,
             }))}
-            projects={projects.map((p) => ({ id: p.id, name: p.name, slug: p.slug }))}
+            projects={projects.map((p) => ({
+              id: p.id,
+              name: p.name,
+              slug: p.slug,
+              customerName: p.customerName,
+            }))}
             isAdmin={session.user.role === "admin"}
           />
         </div>

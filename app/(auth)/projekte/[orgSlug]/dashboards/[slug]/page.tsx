@@ -76,7 +76,7 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
     if (isAdmin) redirect(`/settings?error=no-sites-in-project`);
     return (
       <AppShell
-        projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
+        projects={allProjects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))}
         currentProjectSlug={project.slug}
         currentProjectLogo={branding.logoBase64}
         dashboards={allDashboards.map((d) => ({
@@ -138,7 +138,7 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
 
   return (
     <AppShell
-      projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
+      projects={allProjects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))}
       currentProjectSlug={project.slug}
       currentProjectLogo={branding.logoBase64}
       dashboards={allDashboards.map((d) => ({

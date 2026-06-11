@@ -42,7 +42,7 @@ export default async function DashboardEditPage({ params }: PageProps) {
 
   return (
     <AppShell
-      projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
+      projects={allProjects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))}
       currentProjectSlug={project.slug}
       currentProjectLogo={branding.logoBase64}
       dashboards={allDashboards.map((d) => ({

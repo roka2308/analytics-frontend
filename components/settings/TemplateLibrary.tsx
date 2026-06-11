@@ -19,6 +19,21 @@ interface ProjectVM {
   id: string;
   name: string;
   slug: string;
+  customerName?: string | null;
+}
+
+function groupByCustomer(projects: ProjectVM[]): { customer: string; projects: ProjectVM[] }[] {
+  const groups: { customer: string; projects: ProjectVM[] }[] = [];
+  const idx = new Map<string, number>();
+  for (const p of projects) {
+    const c = p.customerName || "Ohne Kunde";
+    if (!idx.has(c)) {
+      idx.set(c, groups.length);
+      groups.push({ customer: c, projects: [] });
+    }
+    groups[idx.get(c)!].projects.push(p);
+  }
+  return groups;
 }
 
 export function TemplateLibrary({
@@ -93,10 +108,14 @@ export function TemplateLibrary({
                     onChange={(e) => setTargetProject(e.target.value)}
                     className="block w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
                   >
-                    {projects.map((p) => (
-                      <option key={p.id} value={p.id}>
-                        {p.name}
-                      </option>
+                    {groupByCustomer(projects).map((g) => (
+                      <optgroup key={g.customer} label={g.customer}>
+                        {g.projects.map((p) => (
+                          <option key={p.id} value={p.id}>
+                            {p.name}
+                          </option>
+                        ))}
+                      </optgroup>
                     ))}
                   </select>
                   <div className="flex gap-2">

@@ -52,7 +52,7 @@ export default async function PapierkorbPage() {
   }
 
   return (
-    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name }))} dashboards={[]}>
+    <AppShell projects={projects.map((p) => ({ slug: p.slug, name: p.name, customerName: p.customerName }))} dashboards={[]}>
       <Topbar
         title="Papierkorb"
         subtitle={

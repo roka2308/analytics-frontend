@@ -28,12 +28,30 @@ import { cn } from "@/lib/utils";
 export interface SidebarProject {
   slug: string;
   name: string;
+  customerName?: string | null;
 }
 
 export interface SidebarDashboard {
   slug: string;
   name: string;
   isDefault: boolean;
+}
+
+/** Gruppiert Projekte nach Kunde (Reihenfolge bleibt erhalten). */
+function groupProjectsByCustomer(
+  projects: SidebarProject[],
+): { customer: string; projects: SidebarProject[] }[] {
+  const groups: { customer: string; projects: SidebarProject[] }[] = [];
+  const idx = new Map<string, number>();
+  for (const p of projects) {
+    const c = p.customerName || "Ohne Kunde";
+    if (!idx.has(c)) {
+      idx.set(c, groups.length);
+      groups.push({ customer: c, projects: [] });
+    }
+    groups[idx.get(c)!].projects.push(p);
+  }
+  return groups;
 }
 
 interface Props {
@@ -98,12 +116,15 @@ export function SidebarNav({
         </Link>
       </div>
 
-      {/* Project-Selector */}
+      {/* Kunde -> Projekt-Selector */}
       <div className="border-b border-border px-3 py-3">
         {projects.length <= 1 ? (
           <div className="flex items-center gap-2 rounded-lg px-2.5 py-2 text-sm">
             <Briefcase className="h-4 w-4 shrink-0 text-muted-foreground" />
-            <span className="truncate text-foreground">
+            <span className="min-w-0 truncate text-foreground">
+              {currentProject?.customerName ? (
+                <span className="text-muted-foreground">{currentProject.customerName} · </span>
+              ) : null}
               {currentProject?.name ?? "Projekt"}
             </span>
           </div>
@@ -112,23 +133,32 @@ export function SidebarNav({
             <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg border border-border bg-background/50 px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
               <Briefcase className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="flex-1 truncate text-left">
+                {currentProject?.customerName ? (
+                  <span className="text-muted-foreground">{currentProject.customerName} · </span>
+                ) : null}
                 {currentProject?.name ?? "Projekt"}
               </span>
               <ChevronDown className="h-3.5 w-3.5 shrink-0 text-muted-foreground" />
             </DropdownMenuTrigger>
-            <DropdownMenuContent align="start" className="min-w-[220px]">
-              <DropdownMenuLabel>Projekte</DropdownMenuLabel>
-              <DropdownMenuSeparator />
-              {projects.map((p) => (
-                <DropdownMenuItem key={p.slug} asChild>
-                  <Link
-                    href={`/projekte/${p.slug}`}
-                    onClick={onNavigate}
-                    className={p.slug === currentProjectSlug ? "bg-muted" : ""}
-                  >
-                    {p.name}
-                  </Link>
-                </DropdownMenuItem>
+            <DropdownMenuContent align="start" className="max-h-[70vh] min-w-[240px] overflow-y-auto">
+              {groupProjectsByCustomer(projects).map((group, gi) => (
+                <div key={group.customer}>
+                  {gi > 0 && <DropdownMenuSeparator />}
+                  <DropdownMenuLabel className="text-[11px] uppercase tracking-wide text-muted-foreground">
+                    {group.customer}
+                  </DropdownMenuLabel>
+                  {group.projects.map((p) => (
+                    <DropdownMenuItem key={p.slug} asChild>
+                      <Link
+                        href={`/projekte/${p.slug}`}
+                        onClick={onNavigate}
+                        className={p.slug === currentProjectSlug ? "bg-muted" : ""}
+                      >
+                        {p.name}
+                      </Link>
+                    </DropdownMenuItem>
+                  ))}
+                </div>
               ))}
             </DropdownMenuContent>
           </DropdownMenu>
