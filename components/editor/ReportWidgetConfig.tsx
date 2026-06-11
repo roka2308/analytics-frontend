@@ -5,6 +5,7 @@ import { updateWidgetConfigAction } from "@/lib/actions/widgets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 
 interface ReportMeta {
   uniqueId: string;
@@ -23,9 +24,6 @@ interface Props {
   initialConfig: Record<string, unknown>;
   onSaved?: (data: { title: string | null; config: Record<string, unknown> }) => void;
 }
-
-const selectClass =
-  "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
 export function ReportWidgetConfig({
   widgetId,
@@ -186,8 +184,7 @@ export function ReportWidgetConfig({
         <>
           <div className="space-y-1">
             <Label className="text-xs">Report / Dimension</Label>
-            <select
-              className={selectClass}
+            <NativeSelect
               value={reportKey}
               onChange={(e) => {
                 setReportKey(e.target.value);
@@ -205,7 +202,7 @@ export function ReportWidgetConfig({
                   ))}
                 </optgroup>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
           {current && (
@@ -213,7 +210,7 @@ export function ReportWidgetConfig({
               <div className="grid grid-cols-2 gap-2">
                 <div className="space-y-1">
                   <Label className="text-xs">Darstellung</Label>
-                  <select className={selectClass} value={display} onChange={(e) => setDisplay(e.target.value)}>
+                  <NativeSelect value={display} onChange={(e) => setDisplay(e.target.value)}>
                     <option value="table">Tabelle</option>
                     <option value="bar">Balken</option>
                     <option value="donut">Donut</option>
@@ -222,7 +219,7 @@ export function ReportWidgetConfig({
                     <option value="kpi">KPI (Einzelwert)</option>
                     <option value="pivot">Pivot (Kreuztabelle)</option>
                     <option value="grouped">Gruppierte Tabelle (mehrdim.)</option>
-                  </select>
+                  </NativeSelect>
                 </div>
                 <div className="space-y-1">
                   <Label className="text-xs">{display === "pivot" ? "Anzahl je Ebene" : "Anzahl Zeilen"}</Label>
@@ -242,29 +239,28 @@ export function ReportWidgetConfig({
                   </p>
                   <div className="space-y-1">
                     <Label className="text-xs">Zeilen-Dimension 2 (optional)</Label>
-                    <select className={selectClass} value={rowDim2} onChange={(e) => setRowDim2(e.target.value)}>
+                    <NativeSelect value={rowDim2} onChange={(e) => setRowDim2(e.target.value)}>
                       <option value="">— keine —</option>
                       {renderDims()}
-                    </select>
+                    </NativeSelect>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Spalten-Dimension 1</Label>
-                    <select className={selectClass} value={colDim1} onChange={(e) => setColDim1(e.target.value)}>
+                    <NativeSelect value={colDim1} onChange={(e) => setColDim1(e.target.value)}>
                       <option value="">— wählen —</option>
                       {renderDims()}
-                    </select>
+                    </NativeSelect>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Spalten-Dimension 2 (optional)</Label>
-                    <select className={selectClass} value={colDim2} onChange={(e) => setColDim2(e.target.value)}>
+                    <NativeSelect value={colDim2} onChange={(e) => setColDim2(e.target.value)}>
                       <option value="">— keine —</option>
                       {renderDims()}
-                    </select>
+                    </NativeSelect>
                   </div>
                   <div className="space-y-1">
                     <Label className="text-xs">Wert (Kennzahl)</Label>
-                    <select
-                      className={selectClass}
+                    <NativeSelect
                       value={pivotMeasure}
                       onChange={(e) => setPivotMeasure(e.target.value)}
                     >
@@ -274,7 +270,7 @@ export function ReportWidgetConfig({
                           {label}
                         </option>
                       ))}
-                    </select>
+                    </NativeSelect>
                   </div>
                 </div>
               ) : (
@@ -287,17 +283,17 @@ export function ReportWidgetConfig({
                       </p>
                       <div className="space-y-1">
                         <Label className="text-xs">Dimension 2 (optional)</Label>
-                        <select className={selectClass} value={rowDim2} onChange={(e) => setRowDim2(e.target.value)}>
+                        <NativeSelect value={rowDim2} onChange={(e) => setRowDim2(e.target.value)}>
                           <option value="">— keine —</option>
                           {renderDims()}
-                        </select>
+                        </NativeSelect>
                       </div>
                       <div className="space-y-1">
                         <Label className="text-xs">Dimension 3 (optional)</Label>
-                        <select className={selectClass} value={groupDim3} onChange={(e) => setGroupDim3(e.target.value)}>
+                        <NativeSelect value={groupDim3} onChange={(e) => setGroupDim3(e.target.value)}>
                           <option value="">— keine —</option>
                           {renderDims()}
-                        </select>
+                        </NativeSelect>
                       </div>
                     </div>
                   )}
@@ -324,14 +320,14 @@ export function ReportWidgetConfig({
                   {display !== "grouped" && (
                     <div className="space-y-1">
                       <Label className="text-xs">Sortieren nach</Label>
-                      <select className={selectClass} value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
+                      <NativeSelect value={sortColumn} onChange={(e) => setSortColumn(e.target.value)}>
                         <option value="">Standard</option>
                         {metricEntries.map(([id, label]) => (
                           <option key={id} value={id}>
                             {label}
                           </option>
                         ))}
-                      </select>
+                      </NativeSelect>
                     </div>
                   )}
                 </>

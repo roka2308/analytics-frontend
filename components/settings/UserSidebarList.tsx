@@ -8,6 +8,7 @@ import { createUserAction, inviteUserAction } from "@/lib/actions/users";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PasswordField } from "./PasswordField";
 import { cn } from "@/lib/utils";
 
@@ -55,8 +56,6 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
     return matchQ && matchRole;
   });
 
-  const selectClass =
-    "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
   const create = (form: HTMLFormElement) => {
     setError(null);
@@ -146,11 +145,11 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
           </div>
           <div className="space-y-1">
             <Label htmlFor="nu-role" className="text-xs">Rolle</Label>
-            <select id="nu-role" name="role" className={selectClass} defaultValue="viewer">
+            <NativeSelect id="nu-role" name="role" defaultValue="viewer">
               <option value="viewer">Viewer</option>
               <option value="creator">Creator</option>
               <option value="admin">Admin</option>
-            </select>
+            </NativeSelect>
           </div>
           {error && <p className="text-xs text-destructive">{error}</p>}
           <div className="flex flex-wrap gap-2">
@@ -184,16 +183,16 @@ export function UserSidebarList({ users }: { users: UserVM[] }) {
             placeholder="Nutzer suchen…"
             className="h-8"
           />
-          <select
+          <NativeSelect
             value={roleFilter}
             onChange={(e) => setRoleFilter(e.target.value)}
-            className="block h-8 w-full rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+            className="h-8 rounded-md px-2 pr-8"
           >
             <option value="">Alle Rollen</option>
             <option value="admin">Admin</option>
             <option value="creator">Creator</option>
             <option value="viewer">Viewer</option>
-          </select>
+          </NativeSelect>
         </div>
       )}
 

@@ -12,6 +12,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { PasswordField } from "./PasswordField";
 
 interface UserVM {
@@ -57,9 +58,6 @@ export function CustomerUsersManager({
       }
     });
   };
-
-  const selectClass =
-    "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
   const create = (form: HTMLFormElement) => {
     setError(null);
@@ -120,10 +118,10 @@ export function CustomerUsersManager({
 
       {assignable.length > 0 && (
         <div className="flex flex-wrap items-end gap-2">
-          <select
+          <NativeSelect
             value={assignId}
             onChange={(e) => setAssignId(e.target.value)}
-            className={`${selectClass} flex-1`}
+            wrapperClassName="flex-1"
           >
             <option value="">Bestehenden Nutzer zuordnen…</option>
             {assignable.map((u) => (
@@ -131,7 +129,7 @@ export function CustomerUsersManager({
                 {u.name ? `${u.name} (${u.email})` : u.email}
               </option>
             ))}
-          </select>
+          </NativeSelect>
           <Button size="sm" variant="outline" disabled={isPending || !assignId} onClick={assign}>
             Zuordnen
           </Button>
@@ -161,11 +159,11 @@ export function CustomerUsersManager({
             </div>
             <div className="space-y-1.5">
               <Label htmlFor="cu-role">Rolle</Label>
-              <select id="cu-role" name="role" className={selectClass} defaultValue="viewer">
+              <NativeSelect id="cu-role" name="role" defaultValue="viewer">
                 <option value="viewer">Viewer</option>
                 <option value="creator">Creator</option>
                 <option value="admin">Admin</option>
-              </select>
+              </NativeSelect>
             </div>
           </div>
           {error && <p className="text-sm text-destructive">{error}</p>}

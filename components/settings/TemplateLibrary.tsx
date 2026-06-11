@@ -6,6 +6,7 @@ import { LayoutTemplate, Trash2, Plus } from "lucide-react";
 import { applyTemplateAction, deleteTemplateAction } from "@/lib/actions/templates";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { DangerConfirm } from "./DangerConfirm";
 
 interface TemplateVM {
@@ -103,10 +104,10 @@ export function TemplateLibrary({
 
               {applyFor === t.id ? (
                 <div className="space-y-2">
-                  <select
+                  <NativeSelect
                     value={targetProject}
                     onChange={(e) => setTargetProject(e.target.value)}
-                    className="block w-full rounded-md border border-input bg-background px-2 py-1.5 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                    className="h-9 px-2 pr-8"
                   >
                     {groupByCustomer(projects).map((g) => (
                       <optgroup key={g.customer} label={g.customer}>
@@ -117,7 +118,7 @@ export function TemplateLibrary({
                         ))}
                       </optgroup>
                     ))}
-                  </select>
+                  </NativeSelect>
                   <div className="flex gap-2">
                     <Button size="sm" onClick={() => apply(t.id)} disabled={isPending || !targetProject}>
                       {isPending ? "Erstelle…" : "Erstellen"}

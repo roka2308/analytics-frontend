@@ -14,6 +14,7 @@ import { PasswordField } from "./PasswordField";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 
 type ScopeType = "customer" | "project" | "dashboard";
 type Role = "viewer" | "creator" | "admin";
@@ -87,9 +88,6 @@ export function UserAccessDetail({
   const [msg, setMsg] = useState<string | null>(null);
   const [isPending, startTransition] = useTransition();
 
-  const selectClass =
-    "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
-
   const run = (fn: () => Promise<{ ok: boolean; error?: string }>, ok?: string) => {
     setError(null);
     setMsg(null);
@@ -132,15 +130,14 @@ export function UserAccessDetail({
           <div className="flex items-end gap-2">
             <div className="w-48 space-y-1.5">
               <Label>Rolle</Label>
-              <select
-                className={selectClass}
+              <NativeSelect
                 value={role}
                 onChange={(e) => setRole(e.target.value as Role)}
               >
                 <option value="viewer">Viewer</option>
                 <option value="creator">Creator</option>
                 <option value="admin">Admin</option>
-              </select>
+              </NativeSelect>
             </div>
             <Button
               disabled={isPending || role === user.role}
@@ -211,8 +208,7 @@ export function UserAccessDetail({
           <div className="grid gap-3 sm:grid-cols-4">
             <div className="space-y-1.5">
               <Label>Ebene</Label>
-              <select
-                className={selectClass}
+              <NativeSelect
                 value={scopeType}
                 onChange={(e) => {
                   setScopeType(e.target.value as ScopeType);
@@ -222,12 +218,11 @@ export function UserAccessDetail({
                 <option value="dashboard">Dashboard</option>
                 <option value="project">Projekt</option>
                 <option value="customer">Kunde</option>
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5 sm:col-span-2">
               <Label>Ziel</Label>
-              <select
-                className={selectClass}
+              <NativeSelect
                 value={scopeId}
                 onChange={(e) => setScopeId(e.target.value)}
               >
@@ -249,12 +244,11 @@ export function UserAccessDetail({
                     </optgroup>
                   )
                 )}
-              </select>
+              </NativeSelect>
             </div>
             <div className="space-y-1.5">
               <Label>Rolle</Label>
-              <select
-                className={selectClass}
+              <NativeSelect
                 value={grantRole}
                 onChange={(e) => setGrantRole(e.target.value as Role | "")}
               >
@@ -262,7 +256,7 @@ export function UserAccessDetail({
                 <option value="viewer">Viewer</option>
                 <option value="creator">Creator</option>
                 <option value="admin">Admin</option>
-              </select>
+              </NativeSelect>
             </div>
           </div>
           <Button

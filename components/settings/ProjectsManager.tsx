@@ -24,6 +24,7 @@ import {
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
+import { NativeSelect } from "@/components/ui/native-select";
 import { DangerConfirm } from "./DangerConfirm";
 
 export interface ProjectVM {
@@ -126,8 +127,8 @@ export function ProjectsManager({
                   <CardTitle className="text-base">{p.name}</CardTitle>
                   <div className="flex flex-wrap items-center justify-end gap-1">
                     {customers.length > 1 && (
-                      <select
-                        className="h-8 rounded-md border border-input bg-background px-2 text-xs text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                      <NativeSelect
+                        className="h-8 px-2 pr-8 text-xs"
                         value=""
                         disabled={isPending}
                         title="Projekt zu anderem Kunden verschieben"
@@ -144,7 +145,7 @@ export function ProjectsManager({
                               → {c.name}
                             </option>
                           ))}
-                      </select>
+                      </NativeSelect>
                     )}
                     <Button
                       size="sm"
@@ -386,9 +387,6 @@ function DataSourcesBlock({
     });
   };
 
-  const selectClass =
-    "h-9 rounded-md border border-input bg-background px-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
-
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -483,14 +481,14 @@ function DataSourcesBlock({
         </ul>
       )}
       <div className="flex flex-wrap items-end gap-2">
-        <select
+        <NativeSelect
           value={type}
           onChange={(e) => setType(e.target.value as "matomo" | "sql")}
-          className={selectClass}
+          className="h-9 px-2 pr-8"
         >
           <option value="matomo">Matomo</option>
           <option value="sql">SQL</option>
-        </select>
+        </NativeSelect>
         <Input
           value={label}
           onChange={(e) => setLabel(e.target.value)}

@@ -5,6 +5,7 @@ import { updateWidgetConfigAction } from "@/lib/actions/widgets";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { NativeSelect } from "@/components/ui/native-select";
 
 interface ReportMeta {
   uniqueId: string;
@@ -23,9 +24,6 @@ interface Props {
   initialConfig: Record<string, unknown>;
   onSaved?: (data: { title: string | null; config: Record<string, unknown> }) => void;
 }
-
-const selectClass =
-  "block w-full rounded-md border border-input bg-background px-3 py-2 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent";
 
 export function DimensionMetricConfig({
   widgetId,
@@ -118,8 +116,7 @@ export function DimensionMetricConfig({
         <>
           <div className="space-y-1">
             <Label className="text-xs">Dimension</Label>
-            <select
-              className={selectClass}
+            <NativeSelect
               value={reportKey}
               onChange={(e) => {
                 setReportKey(e.target.value);
@@ -136,20 +133,20 @@ export function DimensionMetricConfig({
                   ))}
                 </optgroup>
               ))}
-            </select>
+            </NativeSelect>
           </div>
 
           {current && (
             <div className="grid grid-cols-2 gap-2">
               <div className="space-y-1">
                 <Label className="text-xs">Metrik</Label>
-                <select className={selectClass} value={metric} onChange={(e) => setMetric(e.target.value)}>
+                <NativeSelect value={metric} onChange={(e) => setMetric(e.target.value)}>
                   {metricEntries.map(([id, label]) => (
                     <option key={id} value={id}>
                       {label}
                     </option>
                   ))}
-                </select>
+                </NativeSelect>
               </div>
               <div className="space-y-1">
                 <Label className="text-xs">Anzahl</Label>
