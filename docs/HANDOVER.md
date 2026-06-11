@@ -59,13 +59,22 @@ node-Script, das Turso-Creds aus den auskommentierten .env.local-Zeilen parst
 (Backups unter `backups/`, gitignored, enthalten Hashes). Klassifizierer kann
 prod-Migration/Push blocken → ggf. User-Freigabe einholen.
 
+**#13 Branding→Chart-Farben (fertig):** `deriveChartPalette` (lib/branding.ts)
+leitet aus der Kunden-/Projekt-Akzentfarbe eine 6er-Palette ab (Hue-Rotation,
+eigene Dark-Variante). `ProjectThemeStyle` setzt `--accent` + `--chart-1..6` per
+`<style>`-Block (Dark-aware). Tremor (Donut/BarList) nutzt `hsl(var(--chart-N))`
+als Arbitrary-Farben (Safelist in tailwind.config.ts!); `useChartColors` liest
+im `[data-project-theme]`-Teilbaum (vorher Bug: las immer `<html>` → Recharts
+ignorierte Branding) und liefert `palette[]`.
+
 **OFFEN / als Nächstes:** #6 SQL live (DB-Zugang), #7 weitere Quellen (GA4/Mapp/
-Piano), #13 Branding bis in Chart-Farben, #14 Mobile durchgängig, #15 Security
-(u.a. Matomo-Token rotieren), #16 TeleNeo-Font, #17 Export. Kleinere Reste:
-kpi-card/line-chart katalog-fähig machen; Zugriffsrechte-Projektauswahl nach Kunde
-gruppieren; `users.organizationId` final entfernen (deprecated). **Browser-
+Piano), #14 Mobile durchgängig, #15 Security (u.a. Matomo-Token rotieren),
+#16 TeleNeo-Font, #17 Export. Kleinere Reste: kpi-card/line-chart katalog-fähig
+machen; `users.organizationId` final entfernen (deprecated). **Browser-
 Verifikation** noch offen für: Pivot/Gruppiert/Verlauf im Report-Explorer,
-Teilen-Links, Cache-Vorwärmen, Kunde→Projekt-Gruppierung.
+Teilen-Links, Cache-Vorwärmen, Kunde→Projekt-Gruppierung, Chart-Branding
+(Projekt mit eigener Akzentfarbe öffnen: Donut/Balken/Linie müssen der
+Kundenfarbe folgen, Light+Dark).
 
 **Konvention-Stolperstein:** Actions, die ein Dashboard betreffen, müssen das
 Projekt aus `getDashboardById` ableiten (NICHT `adminOrgId()`). `getById`-Queries

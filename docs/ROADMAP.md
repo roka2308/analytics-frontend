@@ -55,7 +55,7 @@ Weiteres in der Entwicklungsumgebung (Überführung in Unternehmens-Infra späte
 | | Paket | Status |
 |---|---|---|
 | | Branding Kunde-Default + Projekt-Override (Datenmodell + Vererbung) | ✅ |
-| #13 | Kundenfarben bis in die Widget-/Chart-Farben durchschlagen | 🟡 (nur chart-1) |
+| #13 | Kundenfarben bis in die Widget-/Chart-Farben durchschlagen | ✅ (6er-Palette aus Akzent abgeleitet, Tremor+Recharts, Dark-Variante) |
 
 ## 6. Querschnitt (immer mitdenken)
 
