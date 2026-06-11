@@ -121,6 +121,56 @@ export function deriveAccentVariants(hslTriplet: string): AccentVariants | null 
 }
 
 // ──────────────────────────────────────────────────────────────
+// Chart-Palette aus Akzentfarbe ableiten (#13)
+// ──────────────────────────────────────────────────────────────
+
+export interface ChartPalette {
+  /** 6 HSL-Tripel fuer --chart-1 .. --chart-6 (Light Mode) */
+  light: string[];
+  /** Hellere Varianten fuer Dark Mode */
+  dark: string[];
+}
+
+/**
+ * Hue-Abstaende zur Akzentfarbe. Gewaehlt fuer maximale Unterscheidbarkeit
+ * benachbarter Segmente (Donut/Balken) bei beliebigem Start-Hue.
+ * chart-1 bleibt exakt die Akzentfarbe (konsistent zu Buttons/Links).
+ */
+const HUE_OFFSETS = [0, 210, 150, 60, 285, 105];
+
+function clamp(v: number, min: number, max: number): number {
+  return Math.min(max, Math.max(min, v));
+}
+
+export function deriveChartPalette(hslTriplet: string): ChartPalette | null {
+  const m = hslTriplet.match(/^(\d+)\s+(\d+)%\s+(\d+)%$/);
+  if (!m) return null;
+  const h = parseInt(m[1], 10);
+  const s = parseInt(m[2], 10);
+  const l = parseInt(m[3], 10);
+
+  const light: string[] = [];
+  const dark: string[] = [];
+  HUE_OFFSETS.forEach((offset, i) => {
+    const hue = (h + offset) % 360;
+    if (i === 0) {
+      // Akzentfarbe unveraendert uebernehmen
+      light.push(`${hue} ${s}% ${l}%`);
+      dark.push(`${hue} ${s}% ${clamp(l + 14, 0, 72)}%`);
+      return;
+    }
+    // Abgeleitete Toene: Saettigung/Helligkeit in chart-taugliche Bereiche
+    // ziehen, sonst werden Begleitfarben bei sehr dunklen/grellen
+    // Akzentfarben unleserlich.
+    const sat = clamp(s, 45, 88);
+    const lig = clamp(l, 40, 58);
+    light.push(`${hue} ${sat}% ${lig}%`);
+    dark.push(`${hue} ${clamp(sat - 8, 40, 80)}% ${clamp(lig + 14, 50, 70)}%`);
+  });
+  return { light, dark };
+}
+
+// ──────────────────────────────────────────────────────────────
 // Logo-Validierung
 // ──────────────────────────────────────────────────────────────
 

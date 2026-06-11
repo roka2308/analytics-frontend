@@ -23,14 +23,8 @@ interface Props {
 
 export function EvolutionChart({ data, index, categories, type = "line" }: Props) {
   const c = useChartColors();
-  const palette = [
-    c.accent,
-    "hsl(217 91% 60%)",
-    "hsl(173 70% 41%)",
-    "hsl(142 71% 45%)",
-    "hsl(25 95% 53%)",
-    "hsl(262 83% 58%)",
-  ];
+  // Serien-Farben aus --chart-1..6 -> folgen dem Kunden-/Projekt-Branding (#13)
+  const palette = c.palette;
 
   if (data.length === 0) {
     return (

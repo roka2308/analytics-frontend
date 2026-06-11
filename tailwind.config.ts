@@ -12,6 +12,16 @@ const config: Config = {
   // Tailwind sie weg -> Diagramme erscheinen grau. Wir safelisten die
   // Palette, die unsere Charts nutzen.
   safelist: [
+    // Branding-faehige Chart-Farben (#13): Tremor bekommt CSS-Variablen als
+    // Arbitrary-Farben ("hsl(var(--chart-1))" -> Klasse "fill-[hsl(var(--chart-1))]").
+    // Diese Klassen tauchen nirgends woertlich im Quelltext auf -> safelisten.
+    ...[1, 2, 3, 4, 5, 6].flatMap((i) => [
+      `fill-[hsl(var(--chart-${i}))]`,
+      `bg-[hsl(var(--chart-${i}))]`,
+      `stroke-[hsl(var(--chart-${i}))]`,
+    ]),
+    "bg-[hsl(var(--accent))]",
+    "fill-[hsl(var(--accent))]",
     {
       pattern:
         /^(bg|text|fill|stroke|border|ring)-(slate|gray|pink|rose|fuchsia|blue|sky|violet|purple|amber|orange|teal|emerald|green|red|cyan|indigo)-(300|400|500|600|700|800|900)$/,
@@ -74,6 +84,7 @@ const config: Config = {
           "3": "hsl(var(--chart-3))",
           "4": "hsl(var(--chart-4))",
           "5": "hsl(var(--chart-5))",
+          "6": "hsl(var(--chart-6))",
         },
 
         // ── Tremor-Farbtokens, an unsere CSS-Variablen gebunden ──

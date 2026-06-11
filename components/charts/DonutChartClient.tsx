@@ -6,16 +6,10 @@ interface Props {
   data: { name: string; value: number }[];
 }
 
-// Scale-Funktionsfarben: Magenta, Blau, Teal, Gruen, Orange, Violett
-const COLORS = ["pink", "blue", "cyan", "green", "orange", "violet"];
-const DOT_CLASSES = [
-  "bg-pink-500",
-  "bg-blue-500",
-  "bg-cyan-500",
-  "bg-green-500",
-  "bg-orange-500",
-  "bg-violet-500",
-];
+// Chart-Palette ueber CSS-Variablen: folgt dem Kunden-/Projekt-Branding (#13).
+// Tremor erzeugt daraus Arbitrary-Klassen (fill-[hsl(var(--chart-1))]),
+// die in tailwind.config.ts gesafelistet sind.
+const COLORS = [1, 2, 3, 4, 5, 6].map((i) => `hsl(var(--chart-${i}))`);
 
 export function DonutChartClient({ data }: Props) {
   const total = data.reduce((sum, d) => sum + d.value, 0);
@@ -39,9 +33,8 @@ export function DonutChartClient({ data }: Props) {
             <li key={d.name} className="flex items-center gap-2 text-sm">
               <span
                 aria-hidden
-                className={`h-2.5 w-2.5 shrink-0 rounded-full ${
-                  DOT_CLASSES[i % DOT_CLASSES.length]
-                }`}
+                className="h-2.5 w-2.5 shrink-0 rounded-full"
+                style={{ backgroundColor: COLORS[i % COLORS.length] }}
               />
               <span className="min-w-0 flex-1 truncate text-foreground">
                 {d.name}

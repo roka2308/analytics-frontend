@@ -14,7 +14,7 @@ export function BarListClient({ data }: Props) {
     <BarList
       data={sorted}
       valueFormatter={(v: number) => v.toLocaleString("de-DE")}
-      color="pink"
+      color="hsl(var(--accent))"
     />
   );
 }
