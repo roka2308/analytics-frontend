@@ -25,6 +25,9 @@ import { Topbar } from "@/components/layout/Topbar";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
 import { SiteSelector } from "@/components/dashboard/SiteSelector";
 import { DashboardRenderer } from "@/components/dashboard/DashboardRenderer";
+import { ShareButton } from "@/components/dashboard/ShareButton";
+import { listShareTokensForDashboard } from "@/lib/sharing/tokens";
+import { headers } from "next/headers";
 import { Skeleton } from "@/components/ui/skeleton";
 
 export const dynamic = "force-dynamic";
@@ -128,6 +131,11 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
 
   const widgets = await getWidgetsForDashboard(dashboard.id);
 
+  // Share-Links (Teilen ohne Login)
+  const shareTokens = isAdmin ? await listShareTokensForDashboard(dashboard.id) : [];
+  const hdrs = headers();
+  const shareBaseUrl = `${hdrs.get("x-forwarded-proto") ?? "https"}://${hdrs.get("host") ?? "localhost:3000"}`;
+
   return (
     <AppShell
       projects={allProjects.map((p) => ({ slug: p.slug, name: p.name }))}
@@ -171,6 +179,14 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
             <Suspense fallback={<Skeleton className="h-10 w-72" />}>
               <DateRangePicker />
             </Suspense>
+            {isAdmin && (
+              <ShareButton
+                dashboardId={dashboard.id}
+                tokens={shareTokens}
+                sites={sites.map((s) => ({ matomoSiteId: s.matomoSiteId, label: s.label }))}
+                baseUrl={shareBaseUrl}
+              />
+            )}
             {isAdmin && (
               <Link
                 href={`/projekte/${project.slug}/dashboards/${dashboard.slug}/edit`}
