@@ -25,20 +25,22 @@ export default async function UserDetailPage({
   if (!user) notFound();
 
   const [customers, projects] = await Promise.all([listCustomers(), listOrganizations()]);
+  const customerName = new Map(customers.map((c) => [c.id, c.name] as const));
+  const projectName = new Map(projects.map((p) => [p.id, p.name] as const));
 
-  // Alle Dashboards mit Projekt-Label
-  const dashboardTargets: { id: string; name: string }[] = [];
+  // Alle Dashboards mit Projekt-Label, gruppiert nach Kunde (gleichnamige
+  // Projekte verschiedener Kunden bleiben unterscheidbar)
+  const dashboardTargets: { id: string; name: string; group?: string }[] = [];
   const dashboardName = new Map<string, string>();
   for (const org of projects) {
     const dashes = await listDashboardsForOrg(org.id);
+    const group = org.customerId ? customerName.get(org.customerId) : undefined;
     for (const d of dashes) {
       const label = `${d.name} (${org.name})`;
-      dashboardTargets.push({ id: d.id, name: label });
+      dashboardTargets.push({ id: d.id, name: label, group });
       dashboardName.set(d.id, label);
     }
   }
-  const customerName = new Map(customers.map((c) => [c.id, c.name] as const));
-  const projectName = new Map(projects.map((p) => [p.id, p.name] as const));
 
   const grantsRaw = await listGrantsForUser(user.id);
   const grants: GrantView[] = grantsRaw.map((g) => ({
@@ -69,7 +71,11 @@ export default async function UserDetailPage({
       lastLoginLabel={fmt(user.lastLoginAt)}
       targets={{
         customer: customers.map((c) => ({ id: c.id, name: c.name })),
-        project: projects.map((p) => ({ id: p.id, name: p.name })),
+        project: projects.map((p) => ({
+          id: p.id,
+          name: p.name,
+          group: p.customerId ? customerName.get(p.customerId) : undefined,
+        })),
         dashboard: dashboardTargets,
       }}
       grants={grants}

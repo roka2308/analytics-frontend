@@ -21,6 +21,26 @@ type Role = "viewer" | "creator" | "admin";
 interface Target {
   id: string;
   name: string;
+  /** Kundenname zum Gruppieren (Projekte/Dashboards); ohne = ungruppiert */
+  group?: string;
+}
+
+/** Targets nach Kunde gruppieren; Eintraege ohne Gruppe zuerst (flach). */
+function groupTargets(list: Target[]): { group: string | null; items: Target[] }[] {
+  const buckets = new Map<string | null, Target[]>();
+  for (const t of list) {
+    const key = t.group ?? null;
+    const arr = buckets.get(key);
+    if (arr) arr.push(t);
+    else buckets.set(key, [t]);
+  }
+  return Array.from(buckets.entries())
+    .map(([group, items]) => ({ group, items }))
+    .sort((a, b) => {
+      if (a.group === null) return -1;
+      if (b.group === null) return 1;
+      return a.group.localeCompare(b.group, "de");
+    });
 }
 export interface GrantView {
   id: string;
@@ -212,11 +232,23 @@ export function UserAccessDetail({
                 onChange={(e) => setScopeId(e.target.value)}
               >
                 <option value="">— wählen —</option>
-                {targets[scopeType].map((t) => (
-                  <option key={t.id} value={t.id}>
-                    {t.name}
-                  </option>
-                ))}
+                {groupTargets(targets[scopeType]).map(({ group, items }) =>
+                  group === null ? (
+                    items.map((t) => (
+                      <option key={t.id} value={t.id}>
+                        {t.name}
+                      </option>
+                    ))
+                  ) : (
+                    <optgroup key={group} label={group}>
+                      {items.map((t) => (
+                        <option key={t.id} value={t.id}>
+                          {t.name}
+                        </option>
+                      ))}
+                    </optgroup>
+                  )
+                )}
               </select>
             </div>
             <div className="space-y-1.5">
