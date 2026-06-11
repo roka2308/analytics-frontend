@@ -14,6 +14,7 @@ import {
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
 import { DashboardGridEditor } from "@/components/editor/DashboardGridEditor";
+import { SaveAsTemplate } from "@/components/editor/SaveAsTemplate";
 
 export const dynamic = "force-dynamic";
 
@@ -90,7 +91,10 @@ export default async function DashboardEditPage({ params }: PageProps) {
 
       {/* Desktop-Editor */}
       <main className="hidden px-6 py-6 md:block">
-        <div className="mx-auto max-w-7xl">
+        <div className="mx-auto max-w-7xl space-y-3">
+          <div className="flex justify-end">
+            <SaveAsTemplate dashboardId={dashboard.id} />
+          </div>
           <DashboardGridEditor
             dashboardId={dashboard.id}
             projectSlug={project.slug}

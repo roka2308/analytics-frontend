@@ -11,6 +11,7 @@ import {
   KeyRound,
   ScrollText,
   Trash2,
+  LayoutTemplate,
   ChevronDown,
   LogOut,
 } from "lucide-react";
@@ -182,6 +183,30 @@ export function SidebarNav({
           Verwaltung
         </p>
         <ul className="space-y-0.5">
+          {role !== "viewer" && (
+            <li>
+              <Link
+                href="/templates"
+                onClick={onNavigate}
+                className={cn(
+                  "group flex items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors",
+                  pathname?.startsWith("/templates")
+                    ? "bg-accent/10 font-medium text-accent-text"
+                    : "text-foreground hover:bg-muted",
+                )}
+              >
+                <LayoutTemplate
+                  className={cn(
+                    "h-4 w-4 shrink-0 transition-colors",
+                    pathname?.startsWith("/templates")
+                      ? "text-accent-text"
+                      : "text-muted-foreground group-hover:text-foreground",
+                  )}
+                />
+                Vorlagen
+              </Link>
+            </li>
+          )}
           {isAdmin && (
             <li>
               <Link

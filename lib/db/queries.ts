@@ -10,6 +10,7 @@ import {
   dashboardWidgets,
   dashboardSections,
   dashboardShareTokens,
+  dashboardTemplates,
 } from "./schema";
 import { eq, asc, count, and, isNull, isNotNull, desc } from "drizzle-orm";
 
@@ -1066,4 +1067,104 @@ export async function listDeletedDashboards() {
     .where(isNotNull(dashboards.deletedAt))
     .orderBy(desc(dashboards.deletedAt));
   return rows.filter((d) => !delOrgIds.has(d.organizationId));
+}
+
+// ──────────────────────────────────────────────────────────────
+// Dashboard-Vorlagen-Library (#12)
+// ──────────────────────────────────────────────────────────────
+
+export interface TemplateWidget {
+  type: string;
+  title: string | null;
+  layout: WidgetLayout;
+  config: Record<string, unknown>;
+  position: number;
+}
+
+export interface TemplatePayload {
+  widgets: TemplateWidget[];
+  defaultRange?: {
+    preset?: string | null;
+    from?: string | null;
+    to?: string | null;
+    compare?: string | null;
+  };
+}
+
+export interface TemplateRow {
+  id: string;
+  name: string;
+  description: string | null;
+  category: string | null;
+  payload: TemplatePayload;
+  widgetCount: number;
+  createdAt: Date;
+}
+
+function parseTemplate(raw: typeof dashboardTemplates.$inferSelect): TemplateRow {
+  let payload: TemplatePayload;
+  try {
+    payload = JSON.parse(raw.payload) as TemplatePayload;
+  } catch {
+    payload = { widgets: [] };
+  }
+  return {
+    id: raw.id,
+    name: raw.name,
+    description: raw.description,
+    category: raw.category,
+    payload,
+    widgetCount: payload.widgets?.length ?? 0,
+    createdAt: raw.createdAt,
+  };
+}
+
+export async function listTemplates(): Promise<TemplateRow[]> {
+  const rows = await db
+    .select()
+    .from(dashboardTemplates)
+    .orderBy(asc(dashboardTemplates.category), asc(dashboardTemplates.name));
+  return rows.map(parseTemplate);
+}
+
+export async function getTemplateById(id: string): Promise<TemplateRow | null> {
+  const rows = await db
+    .select()
+    .from(dashboardTemplates)
+    .where(eq(dashboardTemplates.id, id))
+    .limit(1);
+  return rows[0] ? parseTemplate(rows[0]) : null;
+}
+
+export async function createTemplate(input: {
+  name: string;
+  description?: string | null;
+  category?: string | null;
+  payload: TemplatePayload;
+  createdByUserId?: string | null;
+}): Promise<string> {
+  const id = crypto.randomUUID();
+  await db.insert(dashboardTemplates).values({
+    id,
+    name: input.name,
+    description: input.description ?? null,
+    category: input.category ?? null,
+    payload: JSON.stringify(input.payload),
+    createdByUserId: input.createdByUserId ?? null,
+  });
+  return id;
+}
+
+export async function updateTemplateMeta(
+  id: string,
+  fields: { name?: string; description?: string | null; category?: string | null },
+) {
+  await db
+    .update(dashboardTemplates)
+    .set({ ...fields, updatedAt: new Date() })
+    .where(eq(dashboardTemplates.id, id));
+}
+
+export async function deleteTemplate(id: string) {
+  await db.delete(dashboardTemplates).where(eq(dashboardTemplates.id, id));
 }

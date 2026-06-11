@@ -293,3 +293,26 @@ export const auditLog = sqliteTable("audit_log", {
     .default(sql`(unixepoch())`),
 });
 
+/**
+ * Dashboard-Vorlagen-Library – wiederverwendbare Baeuplaene (Layout + Widgets),
+ * datenquellen-agnostisch. "Anwenden" erzeugt ein Dashboard in einem Projekt.
+ * payload = JSON-Snapshot { widgets:[{type,title,layout,config,position}],
+ * defaultRange?:{preset,from,to,compare} }.
+ */
+export const dashboardTemplates = sqliteTable("dashboard_templates", {
+  id: text("id")
+    .primaryKey()
+    .$defaultFn(() => crypto.randomUUID()),
+  name: text("name").notNull(),
+  description: text("description"),
+  category: text("category"), // Branche/Kategorie (z.B. Shop, B2B, Content)
+  payload: text("payload").notNull(),
+  createdByUserId: text("created_by_user_id"),
+  createdAt: integer("created_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+  updatedAt: integer("updated_at", { mode: "timestamp" })
+    .notNull()
+    .default(sql`(unixepoch())`),
+});
+
