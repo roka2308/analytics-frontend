@@ -21,7 +21,10 @@
       "Bash(curl -s \"https://unpkg.com/@telekom/design-tokens-suite/dist/telekom/web/tokens.css\")",
       "WebSearch",
       "Bash(npm view *)",
-      "Bash(npm install *)"
+      "Bash(npm install *)",
+      "Bash(npm run *)"
+	  "Bash(git push origin main)",
+	  "Bash(git push origin main:*)"
     ]
   }
 }

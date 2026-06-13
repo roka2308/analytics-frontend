@@ -95,7 +95,7 @@ export function DateRangePicker() {
               aria-selected={isActive}
               onClick={() => setPreset(value)}
               className={cn(
-                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+                "rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
                 isActive
                   ? "bg-foreground text-background"
                   : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -111,7 +111,7 @@ export function DateRangePicker() {
           <DropdownMenuTrigger
             aria-label="Erweiterte Zeitraumauswahl"
             className={cn(
-              "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+              "inline-flex items-center gap-1 rounded-md px-3 py-1.5 text-sm font-medium transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
               (matchedMore || isCustom)
                 ? "bg-foreground text-background"
                 : "text-muted-foreground hover:bg-muted hover:text-foreground"
@@ -141,7 +141,7 @@ export function DateRangePicker() {
                   type="date"
                   value={customFrom}
                   onChange={(e) => setCustomFrom(e.target.value)}
-                  className="mt-0.5 block w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="mt-0.5 block w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </label>
               <label className="block text-xs text-muted-foreground">
@@ -150,7 +150,7 @@ export function DateRangePicker() {
                   type="date"
                   value={customTo}
                   onChange={(e) => setCustomTo(e.target.value)}
-                  className="mt-0.5 block w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="mt-0.5 block w-full rounded-md border border-input bg-background px-2 py-1 text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                 />
               </label>
               <button
@@ -170,7 +170,7 @@ export function DateRangePicker() {
         <DropdownMenuTrigger
           aria-label="Vergleich auswählen"
           className={cn(
-            "inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2",
+            "inline-flex items-center gap-1 rounded-lg border border-border bg-card px-3 py-1.5 text-sm font-medium shadow-sm transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2",
             currentCompare !== "none"
               ? "text-accent-text"
               : "text-muted-foreground hover:text-foreground"

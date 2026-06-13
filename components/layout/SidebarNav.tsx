@@ -130,7 +130,7 @@ export function SidebarNav({
           </div>
         ) : (
           <DropdownMenu>
-            <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg border border-border bg-background/50 px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+            <DropdownMenuTrigger className="flex w-full items-center gap-2 rounded-lg border border-border bg-background/50 px-2.5 py-2 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
               <Briefcase className="h-4 w-4 shrink-0 text-muted-foreground" />
               <span className="flex-1 truncate text-left">
                 {currentProject?.customerName ? (
@@ -339,7 +339,7 @@ export function SidebarNav({
       {/* User-Footer */}
       <div className="border-t border-border px-3 py-3">
         <DropdownMenu>
-          <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent">
+          <DropdownMenuTrigger className="flex w-full items-center gap-2.5 rounded-lg px-2.5 py-2 text-sm transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring">
             <span
               aria-hidden
               className="flex h-8 w-8 shrink-0 items-center justify-center rounded-full bg-accent text-xs font-semibold text-accent-foreground"

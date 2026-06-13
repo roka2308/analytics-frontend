@@ -49,7 +49,7 @@ export function ProjectPicker({ projects, currentSlug }: Props) {
 
   return (
     <DropdownMenu>
-      <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-2">
+      <DropdownMenuTrigger className="inline-flex items-center gap-2 rounded-md px-3 py-1.5 text-sm text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2">
         <Briefcase className="h-4 w-4 text-muted-foreground" />
         <span className="truncate max-w-[180px]">{displayName}</span>
         <ChevronDown className="h-3.5 w-3.5 text-muted-foreground" />

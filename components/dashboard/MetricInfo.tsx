@@ -29,7 +29,7 @@ export function MetricInfo({ metric, size = "sm" }: Props) {
     <Popover>
       <PopoverTrigger
         aria-label={`Erklärung zu ${metric.label}`}
-        className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent focus-visible:ring-offset-1"
+        className="inline-flex items-center justify-center rounded-full p-0.5 text-muted-foreground transition-colors hover:bg-muted hover:text-accent-text focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-1"
       >
         <Info className={iconSize} />
       </PopoverTrigger>

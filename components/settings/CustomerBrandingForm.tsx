@@ -156,7 +156,7 @@ export function CustomerBrandingForm({ customer }: { customer: Customer }) {
                   type="text"
                   value={accentHex}
                   onChange={(e) => setAccentHex(e.target.value.toUpperCase())}
-                  className="block w-32 rounded-md border border-input bg-background px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+                  className="block w-32 rounded-md border border-input bg-background px-3 py-2 font-mono text-sm text-foreground focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
                   pattern="^#[0-9A-Fa-f]{6}$"
                 />
                 <button

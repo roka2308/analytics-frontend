@@ -53,7 +53,7 @@ export function Sidebar(props: Props) {
         <button
           onClick={() => setMobileOpen(true)}
           aria-label="Menü öffnen"
-          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-accent"
+          className="inline-flex h-9 w-9 items-center justify-center rounded-md text-foreground transition-colors hover:bg-muted focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring"
         >
           <Menu className="h-5 w-5" />
         </button>
