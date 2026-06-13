@@ -22,9 +22,9 @@
       "WebSearch",
       "Bash(npm view *)",
       "Bash(npm install *)",
-      "Bash(npm run *)"
-	  "Bash(git push origin main)",
-	  "Bash(git push origin main:*)"
+      "Bash(npm run *)",
+      "Bash(git push origin main)",
+      "Bash(git push origin main:*)"
     ]
   }
 }
