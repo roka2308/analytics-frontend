@@ -18,6 +18,7 @@ import {
   PieChart,
   AlignLeft,
   Compass,
+  Sparkles,
 } from "lucide-react";
 import {
   addWidgetAction,
@@ -43,6 +44,7 @@ import "./grid-editor.css";
 const ResponsiveGridLayout = WidthProvider(Responsive);
 
 const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = {
+  "hero-metric": Sparkles,
   "kpi-card": BarChart3,
   "line-chart": LineChart,
   "top-list": Table2,

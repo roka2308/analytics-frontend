@@ -72,6 +72,8 @@ export function VisitorTrendChart({ data, hasCompare }: Props) {
             stroke={c.compare}
             strokeWidth={1.5}
             strokeDasharray="4 3"
+            strokeLinejoin="miter"
+            strokeLinecap="butt"
             dot={{ r: 2.5, fill: c.compare, strokeWidth: 0 }}
             activeDot={{ r: 4 }}
             isAnimationActive
@@ -82,6 +84,8 @@ export function VisitorTrendChart({ data, hasCompare }: Props) {
           dataKey="Besuche"
           stroke={c.accent}
           strokeWidth={2}
+          strokeLinejoin="miter"
+          strokeLinecap="butt"
           fill={`url(#${gradientId})`}
           dot={{ r: 3, fill: c.accent, strokeWidth: 0 }}
           activeDot={{ r: 5 }}

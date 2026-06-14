@@ -106,7 +106,19 @@ export async function KpiCardWidget({
   }));
 
   return (
-    <Card className="relative flex h-full flex-col overflow-hidden">
+    <Card
+      className={cn(
+        "anim-rise group relative flex h-full flex-col overflow-hidden",
+        "transition-[transform,box-shadow,border-color] duration-150 ease-out",
+        "hover:-translate-y-0.5 hover:border-accent/40",
+        "hover:shadow-[0_14px_28px_-14px_hsl(var(--accent)/0.30)]"
+      )}
+    >
+      {/* Optionale Magenta-Akzentlinie oben (Scale: hervorgehobene KPI) */}
+      {config.accent && (
+        <span aria-hidden className="absolute inset-x-0 top-0 h-0.5 bg-accent" />
+      )}
+
       {/* Kopfzeile: Icon + Titel */}
       <div className="flex shrink-0 items-center gap-2 px-4 pb-1 pt-4">
         <span
@@ -121,16 +133,16 @@ export async function KpiCardWidget({
         </h3>
       </div>
 
-      {/* Wert + Trend oben, Sparkline volle Breite darunter */}
-      <div className="flex flex-1 flex-col px-4 pb-4 pt-1">
-        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1">
-          <span className="text-2xl font-bold leading-tight tabular-nums text-foreground">
+      {/* Wert + Trend oben, Sparkline randlos am unteren Rand */}
+      <div className="flex flex-1 flex-col">
+        <div className="flex flex-wrap items-baseline gap-x-2 gap-y-1 px-4 pt-1">
+          <span className="heading-display text-3xl leading-none tabular-nums text-foreground">
             {value}
           </span>
           {deltaForMetric && ctx.compareRange ? (
             <span
               className={cn(
-                "inline-flex items-center gap-0.5 rounded px-1 py-0.5 text-xs font-medium tabular-nums",
+                "inline-flex items-center gap-0.5 rounded-full px-2 py-0.5 text-xs font-semibold tabular-nums",
                 isPositive === true && "bg-success/10 text-success",
                 isPositive === false && "bg-destructive/10 text-destructive",
                 isPositive === null && "bg-muted text-muted-foreground"
@@ -145,7 +157,7 @@ export async function KpiCardWidget({
         </div>
 
         {sparklineData.length > 0 && (
-          <div className="mt-2 flex flex-1 items-end">
+          <div className="mt-auto pt-3">
             <SparklineClient data={sparklineData} />
           </div>
         )}

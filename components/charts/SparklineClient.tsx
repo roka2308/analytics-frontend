@@ -23,6 +23,8 @@ export function SparklineClient({ data }: Props) {
           dataKey="value"
           stroke={c.accent}
           strokeWidth={1.75}
+          strokeLinejoin="miter"
+          strokeLinecap="butt"
           dot={{ r: 2, fill: c.accent, strokeWidth: 0 }}
           isAnimationActive={false}
         />

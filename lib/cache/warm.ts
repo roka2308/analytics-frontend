@@ -107,8 +107,10 @@ async function warmWidget(
       });
       break;
     }
+    case "hero-metric":
     case "kpi-card":
       await getVisitorsOverviewForRange(siteId, range);
+      await getVisitorTrendForRange(siteId, range, null).catch(() => {});
       break;
     case "line-chart":
       await getVisitorTrendForRange(siteId, range, compareRange);

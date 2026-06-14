@@ -32,6 +32,16 @@ const METRIC_OPTIONS = [
 ];
 
 export const WIDGET_META: Record<string, WidgetMeta> = {
+  "hero-metric": {
+    type: "hero-metric",
+    label: "Hero-Metrik",
+    description: "Grosse Kennzahl als Magenta-Panel mit Trend, Delta und Live-Indikator.",
+    defaultConfig: { metric: "visits" },
+    defaultLayout: { x: 0, y: 0, w: 8, h: 6 },
+    configSchema: [
+      { key: "metric", label: "Kennzahl", type: "select", options: METRIC_OPTIONS, defaultValue: "visits" },
+    ],
+  },
   "kpi-card": {
     type: "kpi-card",
     label: "KPI-Karte",

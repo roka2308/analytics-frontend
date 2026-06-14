@@ -70,12 +70,14 @@ export function EvolutionChart({ data, index, categories, type = "line" }: Props
           {categories.map((cat, i) => (
             <Area
               key={cat}
-              type="monotone"
+              type="linear"
               dataKey={cat}
               stroke={palette[i % palette.length]}
               fill={palette[i % palette.length]}
               fillOpacity={0.15}
               strokeWidth={2}
+              strokeLinejoin="miter"
+              strokeLinecap="butt"
               dot={false}
               isAnimationActive
             />
@@ -87,10 +89,12 @@ export function EvolutionChart({ data, index, categories, type = "line" }: Props
           {categories.map((cat, i) => (
             <Line
               key={cat}
-              type="monotone"
+              type="linear"
               dataKey={cat}
               stroke={palette[i % palette.length]}
               strokeWidth={2}
+              strokeLinejoin="miter"
+              strokeLinecap="butt"
               dot={false}
               activeDot={{ r: 4 }}
               isAnimationActive
