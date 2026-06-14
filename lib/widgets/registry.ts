@@ -12,10 +12,6 @@ import {
   type BarChartConfig,
 } from "@/components/widgets/BarChartWidget";
 import {
-  CrossTabWidget,
-  type CrossTabConfig,
-} from "@/components/widgets/CrossTabWidget";
-import {
   ReportWidget,
   type ReportWidgetConfig,
 } from "@/components/widgets/ReportWidget";
@@ -126,18 +122,6 @@ export const WIDGET_REGISTRY: Record<string, WidgetDefinition> = {
       reportLabel: "Traffic-Quelle",
     } satisfies BarChartConfig,
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
-  },
-  "cross-tab": {
-    type: "cross-tab",
-    label: "Pivot-Tabelle (Seiten × Events)",
-    description: "Verknuepfung von Top-Seiten mit ihren Top-Ereignissen.",
-    component: CrossTabWidget as unknown as WidgetDefinition["component"],
-    defaultConfig: { topPagesLimit: 5, topEventsPerPage: 3 } satisfies CrossTabConfig,
-    defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
-    configSchema: [
-      { key: "topPagesLimit", label: "Anzahl Top-Seiten", type: "number", defaultValue: 5 },
-      { key: "topEventsPerPage", label: "Events je Seite", type: "number", defaultValue: 3 },
-    ],
   },
   report: {
     type: "report",

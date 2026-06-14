@@ -138,13 +138,6 @@ export const TEMPLATES: Record<string, DashboardTemplate> = {
         title: "Meistbesuchte Produktseiten",
         layout: { x: 0, y: 12, w: 12, h: 6 },
       },
-      {
-        type: "cross-tab",
-        title: "Top-Seiten × Ereignisse (z.B. Add-to-Cart)",
-        layout: { x: 0, y: 18, w: 12, h: 6 },
-        config: { topPagesLimit: 5, topEventsPerPage: 3 },
-        position: 30,
-      },
     ],
   },
 

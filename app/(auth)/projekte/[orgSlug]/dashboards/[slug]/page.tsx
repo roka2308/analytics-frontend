@@ -23,7 +23,6 @@ import { resolveDateRange, computeCompareRange } from "@/lib/dateRange";
 import { AppShell } from "@/components/layout/AppShell";
 import { Topbar } from "@/components/layout/Topbar";
 import { DateRangePicker } from "@/components/dashboard/DateRangePicker";
-import { SiteSelector } from "@/components/dashboard/SiteSelector";
 import { DashboardRenderer } from "@/components/dashboard/DashboardRenderer";
 import { ShareButton } from "@/components/dashboard/ShareButton";
 import { listShareTokensForDashboard } from "@/lib/sharing/tokens";
@@ -165,17 +164,6 @@ export default async function ProjectDashboardPage({ params, searchParams }: Pag
         }
         right={
           <>
-            {sites.length > 1 && (
-              <SiteSelector
-                sites={sites.map((s) => ({
-                  matomoSiteId: s.matomoSiteId,
-                  label: s.label,
-                  orgName: project.name,
-                }))}
-                currentSiteId={currentSiteId}
-                showOrgGroups={false}
-              />
-            )}
             <Suspense fallback={<Skeleton className="h-10 w-72" />}>
               <DateRangePicker />
             </Suspense>

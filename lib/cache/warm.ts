@@ -24,7 +24,6 @@ import {
   getVisitorsOverviewForRange,
   getVisitorTrendForRange,
   getTopPagesForRange,
-  getPageEventCrossTab,
 } from "@/lib/matomo/transforms";
 
 export interface WarmSummary {
@@ -116,14 +115,6 @@ async function warmWidget(
       break;
     case "top-list":
       await getTopPagesForRange(siteId, range, (config.limit as number) ?? 10);
-      break;
-    case "cross-tab":
-      await getPageEventCrossTab(
-        siteId,
-        range,
-        (config.topPagesLimit as number) ?? 5,
-        (config.topEventsPerPage as number) ?? 3,
-      );
       break;
     default:
       // text-block u.a. -> nichts zu laden

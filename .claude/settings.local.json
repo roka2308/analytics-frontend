@@ -24,7 +24,9 @@
       "Bash(npm install *)",
       "Bash(npm run *)",
       "Bash(git push origin main)",
-      "Bash(git push origin main:*)"
+      "Bash(git push origin main:*)",
+      "mcp__Claude_Preview__preview_start",
+      "Bash(sleep 8; tail -15 /tmp/devserver.log 2>/dev/null || echo \"kein log \\(preview-managed\\)\")"
     ]
   }
 }

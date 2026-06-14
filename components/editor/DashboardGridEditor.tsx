@@ -17,7 +17,6 @@ import {
   Type,
   PieChart,
   AlignLeft,
-  Grid3x3,
   Compass,
 } from "lucide-react";
 import {
@@ -51,7 +50,6 @@ const TYPE_ICONS: Record<string, React.ComponentType<{ className?: string }>> = 
   breakdown: AlignLeft,
   donut: PieChart,
   "bar-chart": BarChart3,
-  "cross-tab": Grid3x3,
   report: Compass,
 };
 

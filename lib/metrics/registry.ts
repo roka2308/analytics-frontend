@@ -154,19 +154,6 @@ export const ANALYSIS_REGISTRY: Record<string, MetricDefinition> = {
       "Sprach-Varianten der Website prüfen, wenn nicht-deutscher Traffic relevant wird.",
     ],
   },
-  "page-event-pivot": {
-    id: "page-event-pivot",
-    kind: "analysis",
-    label: "Pivot: Seiten × Events",
-    definition: "Welche Ereignisse passieren auf welchen Top-Seiten?",
-    explanation:
-      "Verbindet die zwei wichtigsten Verhaltensdimensionen: Wo halten sich Nutzer auf und was tun sie dort? Nützlich für Conversion-Pfade (z.B. Add-to-Cart auf Produktseiten) und Interaktions-Hotspots.",
-    recommendations: [
-      "Sicherstellen, dass Events in Matomo konsistent benannt sind (Category/Action).",
-      "Top-Seiten ohne relevante Events: hier verlieren Nutzer Aufmerksamkeit, ggf. CTAs prüfen.",
-      "Hohe Event-Last auf wenigen Seiten: diese Seiten ausbauen oder Pattern auf ähnliche Seiten übertragen.",
-    ],
-  },
   "visitor-trend": {
     id: "visitor-trend",
     kind: "analysis",

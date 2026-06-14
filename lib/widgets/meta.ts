@@ -99,17 +99,6 @@ export const WIDGET_META: Record<string, WidgetMeta> = {
     defaultLayout: { x: 0, y: 0, w: 6, h: 6 },
     customConfig: true,
   },
-  "cross-tab": {
-    type: "cross-tab",
-    label: "Pivot-Tabelle (Seiten × Events)",
-    description: "Verknuepfung von Top-Seiten mit ihren Top-Ereignissen.",
-    defaultConfig: { topPagesLimit: 5, topEventsPerPage: 3 },
-    defaultLayout: { x: 0, y: 0, w: 12, h: 6 },
-    configSchema: [
-      { key: "topPagesLimit", label: "Anzahl Top-Seiten", type: "number", defaultValue: 5 },
-      { key: "topEventsPerPage", label: "Events je Seite", type: "number", defaultValue: 3 },
-    ],
-  },
   report: {
     type: "report",
     label: "Report-Explorer",
