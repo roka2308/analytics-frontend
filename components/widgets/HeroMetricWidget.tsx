@@ -110,12 +110,14 @@ export async function HeroMetricWidget({ config, title, ctx }: WidgetProps<HeroM
     : ctx.range.label;
 
   const spark = trendData.map((p) => p.Besuche);
+  const hasTrend = spark.some((v) => v > 0);
 
   return (
     <div className="hero-panel anim-rise flex h-full flex-col justify-between rounded-xl p-6">
       <span aria-hidden className="hero-glow" />
 
-      {/* Kopfzeile: Icon + Label + Live */}
+      {/* Kopfzeile: Icon + Label + Zeitraum-Badge (kein "Live" – Daten sind
+          periodenbezogen, nicht echtzeit) */}
       <div className="relative z-[1] flex items-center gap-2.5">
         <span
           aria-hidden
@@ -124,9 +126,8 @@ export async function HeroMetricWidget({ config, title, ctx }: WidgetProps<HeroM
           <Icon className="h-[18px] w-[18px]" />
         </span>
         <span className="text-sm font-medium opacity-90">{displayTitle}</span>
-        <span className="ml-auto inline-flex items-center gap-2 opacity-95">
-          <span className="live-dot" aria-hidden />
-          <span className="text-[11px] font-medium uppercase tracking-[0.04em]">Live</span>
+        <span className="ml-auto inline-flex items-center rounded-full bg-white/[0.18] px-2.5 py-1 text-[11px] font-medium uppercase tracking-[0.04em] opacity-95 backdrop-blur-sm">
+          {ctx.range.label}
         </span>
       </div>
 
@@ -151,11 +152,15 @@ export async function HeroMetricWidget({ config, title, ctx }: WidgetProps<HeroM
         <p className="mt-2 text-[13px] opacity-85">{subLabel}</p>
       </div>
 
-      {/* Weisse eckige Sparkline */}
-      {spark.length > 1 && (
+      {/* Weisse eckige Sparkline – oder ehrlicher No-Data-Hinweis */}
+      {hasTrend ? (
         <div className="relative z-[1] mt-4">
           <HeroSparkline values={spark} />
         </div>
+      ) : (
+        <p className="relative z-[1] mt-4 text-[12px] opacity-70">
+          Keine Daten im gewählten Zeitraum.
+        </p>
       )}
     </div>
   );

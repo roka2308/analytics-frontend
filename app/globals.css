@@ -202,23 +202,8 @@
 }
 .anim-rise { animation: anim-rise 0.55s cubic-bezier(0.22, 0.61, 0.36, 1) both; }
 
-/* Live-Indikator-Puls */
-@keyframes live-pulse {
-  0% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0.6); }
-  70% { box-shadow: 0 0 0 7px rgba(255, 255, 255, 0); }
-  100% { box-shadow: 0 0 0 0 rgba(255, 255, 255, 0); }
-}
-.live-dot {
-  width: 8px;
-  height: 8px;
-  border-radius: 9999px;
-  background: #fff;
-  animation: live-pulse 2s infinite;
-}
-
 @media (prefers-reduced-motion: reduce) {
   .anim-rise { animation: none; }
-  .live-dot { animation: none; }
 }
 
 /* Hero-Metrik-Panel: branding-aware Magenta-Radial + weicher Schatten */
