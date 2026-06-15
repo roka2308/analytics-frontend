@@ -12,6 +12,43 @@
 > Memory** (wird automatisch geladen), **docs/ROADMAP.md** (kanonische To-Do)
 > und der Analytics-Plan `~/.claude/plans/fluttering-whistling-quasar.md`.
 
+### Letzte Session (UI-Politur, Design-Modernisierung, Vorlagen) — NEU
+
+**UI-Refactor (commits 0abead3, aca4cf0):** Zentrales **Modal-Primitive**
+(`components/ui/modal.tsx`, createPortal an document.body, z-[100]) — KEINE
+Inline-`fixed inset-0`-Dialoge mehr (Topbar `backdrop-blur` ist Stacking-Falle,
+sperrte das Teilen-Modal hinter den Header). **NativeSelect**
+(`components/ui/native-select.tsx`) ersetzt das 6× duplizierte `selectClass`
+(einheitliche Höhe, eigener Chevron, Fokusring `--ring`). Radix-`Select`-Popper-
+Breite gefixt (`--radix-select-trigger-width` statt `…-content-available-width`).
+Fokusring projektweit `focus-visible:ring-ring` (Scale-Blau) statt Magenta.
+
+**Entfernt (commit a23ab21):** Website-Umschalter (`SiteSelector`) aus dem
+Dashboard-Header — Dashboards nutzen immer die erste Datenquelle. Altes
+`cross-tab`-Widget komplett (abgelöst durch Report-Explorer „Pivot"). Renderer
+fängt unbekannte Widget-Typen graceful ab.
+
+**Design-Modernisierung aus Claude-Design-Handoff (commits f036528, 7439e9a):**
+Charts **eckig** (`strokeLinejoin="miter"`, monotone→linear). KPI-Tiles modern
+(Hover-Lift, randlose Sparkline, Delta-Pill, Entrance-Motion). **NEUES Widget
+`hero-metric`** (Magenta-Panel via `color-mix` auf `--accent` → Branding schlägt
+durch; Count-up, eckige Sparkline; KEIN „Live"-Label, stattdessen ehrliches
+Zeitraum-Badge + No-Data-Hinweis). Motion-Keyframes in globals.css. Palette: **9 Typen**.
+
+**Branchen-Vorlagen wieder angeschlossen (commit 54d2da6):** Sie waren verwaist
+(`createDashboardAction` ohne UI-Aufrufer). `createDashboardInProjectAction`
+nimmt jetzt `template?`-Param; Vorlagen-Picker in ProjectsManager. `getTemplate()`
+injiziert zentral ein Hero-Panel oben (+5 Reihen Versatz). `createDashboardAction`
+bleibt ungenutzt (toter Code, Logik in `applyTemplateToDashboard`).
+
+**Matomo-Daten (verifiziert):** Nur **Site 1** (Hauptwebsite) hat Daten
+(~1190 Besuche/30 T). **Sites 2 (ACME Commerce) und 3 (Sexy Energy) sind in Matomo
+leer** → deren Dashboards zeigen korrekt 0/„Keine Daten". Kein Bug.
+
+**Repo-Hygiene:** `.claude/settings.local.json` ist jetzt **gitignored + untracked**
+(maschinenspezifisch, bleibt lokal). `.claude/launch.json` (Dev-Server, Port 3000)
+bleibt bewusst getrackt. TeleNeoWeb-Schrift weiter Fallback (lizenziert, fehlt).
+
 **Hierarchie & Datenmodell:** `Kunde (customers) → Projekt (organizations) →
 Datenquelle (data_sources) → Dashboard`. Branding: Kunde-Default + Projekt-
 Override. `matomo_sites` wurde durch `data_sources` (type=matomo|sql) ersetzt und

@@ -73,8 +73,20 @@ Weiteres in der Entwicklungsumgebung (Überführung in Unternehmens-Infra späte
 
 ---
 
-## Aktueller Stand
+## Aktueller Stand (Juni 2026)
 
-Stufen 1–4 des Datenmodell-Umbaus sind **live** (deployed), Render-Pfad läuft über
-`data_sources`. Offen als nächster sauberer Abschluss: **#5 Cleanup-Migration**
-(braucht kurzen Live-Check der Dashboards, dann Drop mit Backup).
+Datenmodell-Umbau (Kunde→Projekt→Datenquelle→Dashboard) **live**; `matomo_sites`
+ist gedroppt (Migration 0010), Render-Pfad läuft über `data_sources`. Verwaltung
+(#8/#9), Analytics-Engine + Report-Explorer (#10/#11), Templates (#12) und Branding
+bis in die Chart-Farben (#13) sind **erledigt + deployed**.
+
+Zuletzt: UI-Politur (Portal-Modal, einheitliche Selects, Fokusring `--ring`),
+**Design-Modernisierung** aus dem Claude-Design-Handoff (eckige Charts, moderne
+KPI-Tiles, neues **Hero-Metrik-Widget**, Entrance-Motion) und die **Branchen-
+Vorlagen wieder angeschlossen** (Picker beim Dashboard-Anlegen, Hero oben).
+
+**Offen / als Nächstes:** #14 Mobile durchgängig, #15 Security-Durchgang (Matomo-
+Token rotieren, Härtung), #6 SQL live (DB bei Kollegin), #7 weitere Quellen (GA4/
+Mapp/Piano), #16 TeleNeo-Font (Dateien fehlen), #17 Export (PDF/PPTX). Kleinerer
+Rest: ungenutzte `createDashboardAction` entfernen; `users.organizationId` final
+droppen (deprecated).

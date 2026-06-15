@@ -1,23 +1,44 @@
 # Matomo Analytics Frontend
 
-Eigenes Web-Frontend für Matomo Analytics. Sauber, fokussiert, mandantenfähig.
+Mandantenfähiges White-Label-Frontend für Matomo Analytics. Sauber, fokussiert,
+mehrstufig (Kunde → Projekt → Datenquelle → Dashboard).
+
+> **Für Einarbeitung/Übergabe:** zuerst [`docs/HANDOVER.md`](docs/HANDOVER.md)
+> (Sektion 0 = aktueller Stand) und [`docs/ROADMAP.md`](docs/ROADMAP.md) lesen.
+> Architektur-Leitplanken: [`docs/CLAUDE.md`](docs/CLAUDE.md).
 
 ## Was das Projekt macht
 
-Verbindet sich mit einer bestehenden Matomo-Instanz und zeigt die wichtigsten Kennzahlen in einer klaren, modernen Oberfläche:
+Verbindet sich mit einer bestehenden Matomo-Instanz, bereitet die Daten serverseitig
+auf (Token bleibt am Server, Caching) und zeigt kuratierte Dashboards in einer
+modernen, deutschsprachigen Oberfläche:
 
-- **KPI-Karten:** Besuche, Seitenaufrufe, Bounce Rate, Ø Verweildauer
-- **Besuchertrend:** Tägliches Liniendiagramm
-- **Top-Seiten:** Meistbesuchte Seiten mit Aufrufzahlen
-- **Zeitraum-Auswahl:** Heute / 7 Tage / 30 Tage / 90 Tage
-- **Caching:** Matomo-Daten werden 10 Minuten lang zwischengespeichert (SQLite)
-- **Multi-Tenancy:** Mehrere Organisationen, Nutzer (Admin/Viewer) und Sites
-- **Authentifizierung:** E-Mail + bcrypt-gehashte Passwörter über NextAuth
+- **Hierarchie:** Kunden → Projekte → Datenquellen (Matomo/SQL) → Dashboards
+- **Widgets (9 Typen):** Hero-Metrik, KPI-Karte, Liniendiagramm, Top-Liste,
+  Text-Block, Breakdown-Tabelle, Donut, Balken, **Report-Explorer** (jeder
+  Matomo-Report, frei kombinier-/pivotierbar – 8 Darstellungen inkl. Pivot/
+  gruppierte Tabelle)
+- **In-Place-Editor:** Drag-&-Drop-Raster (react-grid-layout), Widget-Palette,
+  Konfiguration pro Widget; Dashboard-Vorlagen (Branchen-Templates + gespeicherte
+  Bibliothek unter `/templates`)
+- **Zeitraum & Vergleich:** Heute / 7 / 30 / 90 Tage, eigener Zeitraum,
+  Vorperiode-/Vorjahr-Vergleich; Default-Zeitraum pro Dashboard
+- **Teilen ohne Login:** widerrufbare Token-Links (`/share/[token]`)
+- **Branding:** Kunde-Default + Projekt-Override (Logo + Akzentfarbe), schlägt bis
+  in die Chart-Farben durch
+- **Rechte:** Rollen admin / creator / viewer + datengetriebene `access_grants`
+  (Scope Kunde/Projekt/Dashboard); zentrale Policy in `lib/auth/permissions.ts`
+- **Verwaltung:** Kunden (`/kunden`), Zugriffsrechte (`/zugriffe`), Audit-Log
+  (`/protokoll`), Papierkorb mit Soft-Delete (`/papierkorb`), Einladungen per Link
+- **Caching:** Matomo-Daten 10 Min. (SQLite); manuelles Cache-Vorwärmen
+- **Light/Dark**, Mobile-Drawer, Telekom-Scale-Design (Magenta + blauer Fokus)
 
 ## Stack
 
-Next.js 14 (App Router, TypeScript) · Tailwind · shadcn/ui · Tremor (Charts)
-NextAuth (Credentials) · Drizzle ORM · libSQL/SQLite · bcryptjs
+Next.js 14 (App Router, TypeScript) · Tailwind · shadcn/ui-Nachbauten ·
+Tremor + Recharts · NextAuth (Credentials, bcrypt) · Drizzle ORM ·
+libSQL/SQLite → Turso (Produktion, EU) · react-grid-layout · next-themes.
+Hosting: Vercel (EU).
 
 ## Voraussetzungen
 
@@ -27,111 +48,94 @@ NextAuth (Credentials) · Drizzle ORM · libSQL/SQLite · bcryptjs
 
 ## Setup (lokale Entwicklung)
 
-### 1. Abhängigkeiten installieren
 ```bash
 npm install
+copy .env.example .env.local   # dann ausfüllen (Tabelle unten)
+npm run db:migrate             # lokale SQLite-Tabellen anlegen
+npm run dev                    # http://localhost:3000
 ```
 
-### 2. Umgebungsvariablen setzen
-```bash
-copy .env.example .env.local
-```
-
-`.env.local` ausfüllen:
+Beim ersten Aufruf führt der **`/setup`-Flow** durch das Anlegen des ersten
+Admin-Kontos. Danach unter `/kunden` Kunden/Projekte/Datenquellen/Nutzer verwalten.
 
 | Variable | Beschreibung |
 |---|---|
-| `DATABASE_URL` | `file:local.db` für lokale SQLite-Datei |
-| `MATOMO_BASE_URL` | URL der Matomo-Instanz (z.B. `https://analytics.meine-domain.de`) |
+| `DATABASE_URL` | `file:local.db` für lokale SQLite-Datei (Prod: `libsql://…` Turso) |
+| `DATABASE_AUTH_TOKEN` | nur Turso (Produktion) |
+| `MATOMO_BASE_URL` | URL der Matomo-Instanz |
 | `MATOMO_API_TOKEN` | API-Token aus Matomo → Profil → Sicherheit |
-| `DEFAULT_MATOMO_SITE_ID` | Site-ID der Hauptwebsite in Matomo (wird beim ersten Start als Seed-Site angelegt) |
-| `NEXTAUTH_SECRET` | Beliebiger langer zufälliger Text (mind. 32 Zeichen) |
-| `NEXTAUTH_URL` | `http://localhost:3000` für Entwicklung, Produktiv-URL für Live |
+| `DEFAULT_MATOMO_SITE_ID` | Site-ID der ersten Datenquelle (Auto-Seed beim Start) |
+| `NEXTAUTH_SECRET` | langer Zufallstext (mind. 32 Zeichen) |
+| `NEXTAUTH_URL` | `http://localhost:3000` (dev) bzw. Produktiv-URL |
+| `CRON_SECRET` | optional, schützt `/api/cron/warm` (Cache-Vorwärmen) |
 
-### 3. Datenbank initialisieren
-```bash
-npm run db:migrate
-```
-
-### 4. Entwicklungsserver starten
-```bash
-npm run dev
-```
-
-Öffne `http://localhost:3000` und folge dem **`/setup`-Flow**, um dein Admin-Konto anzulegen. Danach kannst du im Settings-Bereich Organisationen, Sites und weitere Nutzer verwalten.
-
-## Projektstruktur
+## Projektstruktur (Auszug)
 
 ```
 app/
-  (auth)/dashboard/        # Haupt-Dashboard mit KPIs, Trend, Top-Seiten
-  (auth)/settings/         # Org-, Site-, User-Verwaltung + Passwort
-  api/auth/[...nextauth]/  # NextAuth-Endpunkte (Login/Logout/Session)
-  login/                   # Login-Seite (E-Mail + Passwort)
-  setup/                   # Einmaliger Bootstrap des ersten Admins
+  (auth)/projekte/[orgSlug]/dashboards/[slug]/        # Dashboard-Ansicht
+  (auth)/projekte/[orgSlug]/dashboards/[slug]/edit/   # In-Place-Grid-Editor
+  (auth)/kunden/ (+/[customerSlug])                   # Verwaltung (Master-Detail)
+  (auth)/zugriffe/ (+/[userId])                       # Zugriffsrechte
+  (auth)/templates/ /protokoll/ /papierkorb/ /konto/  # Library, Audit, Trash, Konto
+  share/[token]/  einladung/[token]/                  # öffentlich (kein Login)
+  login/ setup/ page.tsx  globals.css                 # Auth, Landing, Theme-Tokens
+  api/auth/[...nextauth]/  api/data/  api/matomo/reports/  api/cron/warm/
 components/
-  charts/                  # Tremor-Diagramme (VisitorTrendChart)
-  dashboard/               # Header, KpiCard, SiteSelector, DateRangePicker
-  settings/                # OrgList, SiteList, UserList, ChangePasswordForm
-  setup/                   # SetupForm (erstmaliges Admin-Anlegen)
-  login/                   # LoginForm
-  providers/               # SessionProvider (Client-Wrapper für NextAuth)
-  ui/                      # shadcn/ui Basis-Komponenten
+  layout/      # AppShell, Sidebar, SidebarNav, Topbar, MasterDetailShell
+  dashboard/   # DashboardRenderer/Grid, Header, DateRangePicker, ShareButton, …
+  widgets/     # 9 Widget-Typen (HeroMetricWidget, KpiCardWidget, ReportWidget, …)
+  charts/      # VisitorTrendChart, EvolutionChart, Sparkline, Hero/Donut/BarList
+  editor/      # DashboardGridEditor, ReportWidgetConfig, DimensionMetricConfig
+  settings/    # ProjectsManager, CustomerUsersManager, UserAccessDetail, …
+  ui/          # shadcn-Basis: button, card, input, select, native-select, modal, …
 lib/
-  actions/                 # Server-Actions (Mutations)
-    organizations.ts       # create/rename/delete (Admin-only)
-    sites.ts               # add/remove (Admin-only)
-    users.ts               # create/delete/reassign/changePassword
-  auth/
-    config.ts              # NextAuth Konfiguration (CredentialsProvider)
-    requireUser.ts         # Server-side Auth-Helper inkl. assertSiteAccess
-    users.ts               # User-DB-Helpers, bcrypt
-  db/
-    schema.ts              # Drizzle-Schema (organizations, matomo_sites, users, cache_entries)
-    index.ts               # Drizzle-Client (libSQL/SQLite)
-    queries.ts             # DB-Abfragen + Auto-Seed
-  matomo/                  # Matomo API-Client (server-only!)
-    client.ts              # HTTP-Wrapper mit Timeout & Fehlerbehandlung
-    cache.ts               # SQLite-Cache (TTL 10 Min.)
-    transforms.ts          # Matomo-Rohdaten → eigene Datenmodelle
-types/                     # TypeScript-Typen + NextAuth-Augmentation
-drizzle/                   # Auto-generierte SQL-Migrationen
+  db/          # schema.ts, queries.ts (Drizzle, libSQL/SQLite/Turso)
+  matomo/      # client.ts (server-only), cache.ts, transforms.ts, metadata.ts, crosstab.ts
+  auth/        # config.ts, requireUser.ts, permissions.ts, users.ts
+  actions/     # Server-Actions (customers, organizations, dataSources, users, dashboards,
+               #   widgets, sections, branding, sharing, templates)
+  widgets/     # registry.ts (server) · meta.ts (client) · templates.ts (Branchen-Vorlagen)
+  branding.ts  metrics/registry.ts  dateRange.ts  cache/warm.ts
+docs/          # HANDOVER, ROADMAP, CLAUDE, DESIGN-TOKENS, TELEKOM-INTEGRATION, sql-views
+drizzle/       # Migrationen 0000–0012
 ```
-
-## Meilensteine
-
-| # | Inhalt | Status |
-|---|---|---|
-| M1 | Setup, NextAuth-Login, DB-Schema (Drizzle/SQLite) | ✅ |
-| M2 | Matomo-Client, Cache-Layer, API-Route | ✅ |
-| M3 | Dashboard-UI: KPIs, Trend (Tremor), Top-Seiten, Zeitraum-Auswahl | ✅ |
-| M4.1 | Mehrere Sites verwalten, Site-Selector | ✅ |
-| M4.2 | Echte Nutzerkonten (E-Mail + bcrypt), Setup-Flow | ✅ |
-| M4.3 | Multi-Org-Verwaltung, rollenbasierte Sicht (Admin/Viewer) | ✅ |
-| M5 | Erweiterte KPIs, Design-Refinement, Produktiv-Deployment | 🚧 |
 
 ## Rollen & Berechtigungen
 
-- **Admin:** verwaltet Organisationen, Websites und Nutzer. Sieht im Dashboard alle Sites aller Orgs (gruppiert nach Org-Name).
-- **Viewer:** sieht nur die Sites der eigenen Organisation. Kann das eigene Passwort ändern.
+- **admin:** sieht/verwaltet alles (Bypass in der Policy).
+- **creator:** darf in berechtigten Projekten Dashboards/Widgets bearbeiten.
+- **viewer:** sieht nur per `access_grant` freigegebene Kunden/Projekte/Dashboards.
 
-`assertSiteAccess` prüft DB-seitig bei jedem Datenaufruf, dass ein Viewer nicht auf fremde Sites zugreifen kann – auch nicht per manuell zusammengebauter URL.
+Zentrale Policy in `lib/auth/permissions.ts` (`canViewProject`/`canEditProject`,
+Scope-basierte `access_grants`). Der JWT-Callback liest Rolle/Org bei **jedem**
+Request frisch aus der DB → Rollenänderungen greifen ohne Neu-Login.
 
-## Wichtige Regeln
+## Wichtige Regeln (Konventionen)
 
-- **Matomo-Token NIE im Client-Code** – nur in Server Components / Server Actions / API-Routes
-- **`.env.local` niemals committen** – steht in `.gitignore`
-- **Nach jedem Meilenstein git commit** – jeder Commit ist ein funktionierender Stand
-- **Server-Actions immer mit `requireUser` / `requireAdmin` absichern** – Viewer dürfen keine Mutationen auslösen
+- **`npm run build` muss grün sein** vor jedem Commit.
+- **Matomo-Token NIE im Client-Code** – nur Server Components / Actions / API-Routes.
+- **`.env.local` niemals committen** (steht in `.gitignore`).
+- **Schema-Änderung → Migration lokal UND auf Turso** anwenden, Turso **vor** dem
+  Deploy (sonst crasht Live). Details in `docs/HANDOVER.md`.
+- **Widget-Registry-Split:** `lib/widgets/registry.ts` (server-only) NICHT in
+  Client-Komponenten importieren – Client nutzt `lib/widgets/meta.ts`.
+- **Server-Actions immer mit `requireUser`/`requireAdmin`/Policy absichern.**
+- Nur Theme-Tokens nutzen (`bg-accent`, `text-foreground` …), keine Hardcoded-Farben.
 
 ## Skripte
 
 | Befehl | Zweck |
 |---|---|
-| `npm run dev` | Entwicklungsserver auf Port 3000 |
-| `npm run build` | Produktiv-Build |
+| `npm run dev` | Entwicklungsserver (Port 3000) |
+| `npm run build` | Produktiv-Build (Pflicht-Gate vor Commit) |
 | `npm run start` | Produktiv-Server (nach `build`) |
 | `npm run lint` | ESLint |
 | `npm run db:generate` | Drizzle-Migration aus Schema-Änderungen erzeugen |
 | `npm run db:migrate` | Migrationen auf DB anwenden |
-| `npm run db:push` | Schema direkt pushen (nur für Entwicklung) |
+
+## Status
+
+Produktiv einsetzbar in der Entwicklungsumgebung (Vercel + Turso, EU). Detaillierter
+Stand und offene Pakete: [`docs/ROADMAP.md`](docs/ROADMAP.md) und
+[`docs/HANDOVER.md`](docs/HANDOVER.md).

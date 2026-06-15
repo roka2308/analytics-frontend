@@ -51,3 +51,7 @@ next-env.d.ts
 
 # Lokale DB-Backups (enthalten Nutzerdaten/Hashes – niemals committen)
 backups/
+
+# Claude Code: maschinenspezifische lokale Einstellungen (Pfade, Permissions)
+# nicht committen. .claude/launch.json (Dev-Server-Config) wird bewusst geteilt.
+.claude/settings.local.json
