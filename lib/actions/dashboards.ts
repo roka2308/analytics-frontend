@@ -113,9 +113,38 @@ export async function createDashboardAction(formData: FormData): Promise<ActionR
 }
 
 /** Legt ein Dashboard in einem BESTIMMTEN Projekt an (Kunden-Verwaltung). */
+/**
+ * Wendet ein eingebautes Branchen-Template auf ein frisch angelegtes
+ * Dashboard an (Widgets + optionaler Default-Zeitraum). Zentral, damit
+ * createDashboardAction und createDashboardInProjectAction identisch sind.
+ */
+async function applyTemplateToDashboard(dashboardId: string, templateId: string) {
+  const tpl = getTemplate(templateId);
+  if (!tpl) return;
+  for (const w of tpl.widgets) {
+    await createWidget({
+      dashboardId,
+      type: w.type,
+      title: w.title ?? null,
+      layout: w.layout,
+      config: w.config,
+      position: w.position,
+    });
+  }
+  if (tpl.defaultRange) {
+    await setDashboardDefaultRange(dashboardId, {
+      preset: tpl.defaultRange.preset,
+      from: null,
+      to: null,
+      compare: tpl.defaultRange.compare,
+    });
+  }
+}
+
 export async function createDashboardInProjectAction(
   organizationId: string,
   name: string,
+  template = "empty",
 ): Promise<ActionResult> {
   const session = await requireUser();
   if (!(await canEditProject(session.user, organizationId))) {
@@ -133,7 +162,7 @@ export async function createDashboardInProjectAction(
     slug = `${base}-${i}`;
     i++;
   }
-  await createDashboard({
+  const id = await createDashboard({
     organizationId,
     slug,
     name: trimmed,
@@ -141,6 +170,7 @@ export async function createDashboardInProjectAction(
     isDefault: existing.length === 0,
     position: existing.length,
   });
+  await applyTemplateToDashboard(id, template);
   revalidatePath("/kunden");
   return { ok: true, data: { slug } };
 }

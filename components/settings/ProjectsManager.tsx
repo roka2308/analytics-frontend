@@ -25,6 +25,7 @@ import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { NativeSelect } from "@/components/ui/native-select";
+import { listTemplates } from "@/lib/widgets/templates";
 import { DangerConfirm } from "./DangerConfirm";
 
 export interface ProjectVM {
@@ -209,8 +210,10 @@ function DashboardsBlock({
   run: (fn: () => Promise<{ ok: boolean; error?: string }>) => void;
 }) {
   const [name, setName] = useState("");
+  const [template, setTemplate] = useState("empty");
   const [editId, setEditId] = useState<string | null>(null);
   const [editName, setEditName] = useState("");
+  const templates = listTemplates();
   return (
     <div className="space-y-2">
       <p className="text-xs font-semibold uppercase tracking-wider text-muted-foreground">
@@ -314,29 +317,43 @@ function DashboardsBlock({
           ))}
         </ul>
       )}
-      <div className="flex items-end gap-2">
+      <div className="flex flex-wrap items-end gap-2">
         <Input
           value={name}
           onChange={(e) => setName(e.target.value)}
           placeholder="Neues Dashboard – Name"
-          className="h-9"
+          className="h-9 min-w-[10rem] flex-1"
           onKeyDown={(e) => {
             if (e.key === "Enter" && name.trim()) {
               run(async () => {
-                const r = await createDashboardInProjectAction(project.id, name);
+                const r = await createDashboardInProjectAction(project.id, name, template);
                 if (r.ok) setName("");
                 return r;
               });
             }
           }}
         />
+        <NativeSelect
+          value={template}
+          onChange={(e) => setTemplate(e.target.value)}
+          className="h-9 px-2 pr-8"
+          wrapperClassName="w-auto"
+          title="Vorlage für das neue Dashboard"
+          aria-label="Vorlage"
+        >
+          {templates.map((t) => (
+            <option key={t.id} value={t.id}>
+              {t.label}
+            </option>
+          ))}
+        </NativeSelect>
         <Button
           size="sm"
           variant="outline"
           disabled={isPending || !name.trim()}
           onClick={() =>
             run(async () => {
-              const r = await createDashboardInProjectAction(project.id, name);
+              const r = await createDashboardInProjectAction(project.id, name, template);
               if (r.ok) setName("");
               return r;
             })

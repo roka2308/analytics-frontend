@@ -407,8 +407,37 @@ export const TEMPLATE_GROUPS: Array<{
   },
 ];
 
+/**
+ * Modernisierung: jedem nicht-leeren Template ein Hero-Metrik-Panel (volle
+ * Breite) voranstellen und die bestehenden Widgets darunter schieben. Zentral
+ * hier, damit die Template-Daten unveraendert bleiben und alle Konsumenten
+ * (createDashboard*Action) automatisch die moderne Optik bekommen.
+ */
+const HERO_HEIGHT = 5;
+/** Leitkennzahl je Template fuer das Hero-Panel. */
+const HERO_METRIC: Record<string, string> = {
+  "content-blog": "pageviews",
+};
+
+function withHero(tpl: DashboardTemplate): DashboardTemplate {
+  if (tpl.id === "empty" || tpl.widgets.length === 0) return tpl;
+  const hero: TemplateWidgetSpec = {
+    type: "hero-metric",
+    title: null,
+    layout: { x: 0, y: 0, w: 12, h: HERO_HEIGHT },
+    config: { metric: HERO_METRIC[tpl.id] ?? "visits" },
+    position: -1,
+  };
+  const shifted = tpl.widgets.map((w) => ({
+    ...w,
+    layout: { ...w.layout, y: w.layout.y + HERO_HEIGHT },
+  }));
+  return { ...tpl, widgets: [hero, ...shifted] };
+}
+
 export function getTemplate(id: string): DashboardTemplate | null {
-  return TEMPLATES[id] ?? null;
+  const tpl = TEMPLATES[id];
+  return tpl ? withHero(tpl) : null;
 }
 
 export function listTemplates(): DashboardTemplate[] {
